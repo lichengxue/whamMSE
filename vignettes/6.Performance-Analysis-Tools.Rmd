@@ -38,14 +38,17 @@ main.dir = here::here() # Or the path you want to save the results.
 plot_mse_output(mods, use.n.years = 10) # also summarize the performance from the last 10 model years
 
 ```
-![Figure 1](Report(1)/SSB.PNG)
-![Figure 2](Report(1)/Fbar.PNG)
-![Figure 3](Report(1)/Catch_r.PNG)
-![Figure 4](Report(1)/Catch_s.PNG)
-![Figure 5](Report(1)/Performance_last_10years.PNG)
+
+![Figure 1](Report(1)/SSB.PNG) ![Figure 2](Report(1)/Fbar.PNG) ![Figure
+3](Report(1)/Catch_r.PNG) ![Figure 4](Report(1)/Catch_s.PNG) ![Figure
+5](Report(1)/Performance_last_10years.PNG)
 
 ### 2. Results from n realization
-Suppose you run management strategy evaluation for n realizations following Example 5, you can use the  code below to plot the results. Remember mods[[1]] is a list that contains results of the performance of EM1 in different realizations. 
+
+Suppose you run management strategy evaluation for n realizations
+following Example 5, you can use the code below to plot the results.
+Remember mods[[1]] is a list that contains results of the performance of
+EM1 in different realizations.
 
 ```{r, eval=FALSE}
 mods_list <- list()
@@ -64,4 +67,16 @@ plot_mse_output(mods = mods_list,
                 out.type = "pdf") # Options: png, pdf, html 
 ```
 
-![Figure 1](Report(2)/Performance_Metrics.pdf)
+![Figure 1](Report(2)/Performance_last_10years.PNG)
+
+![Figure 2](Report(2)/Performance_Relative_Diff.png)
+
+![Figure 3](Report(2)/Radar_Chart.png)
+
+![Figure 4](Report(2)/Population_Status_all.png)
+
+![Figure 5](Report(2)/Performance_First_N_Years.png)
+
+![Figure 6](Report(2)/Simulation_Estimation.png)
+
+![Figure 7](Report(2)/AIC.png)
