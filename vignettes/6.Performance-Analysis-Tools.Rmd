@@ -43,7 +43,7 @@ plot_mse_output(mods, use.n.years = 10) # also summarize the performance from th
 3](Report(1)/Catch_r.PNG) ![Figure 4](Report(1)/Catch_s.PNG) ![Figure
 5](Report(1)/Performance_last_10years.PNG)
 
-### 2. Results from n realization
+### 2. Results from n realizations
 
 Suppose you run management strategy evaluation for n realizations
 following Example 5, you can use the code below to plot the results.
