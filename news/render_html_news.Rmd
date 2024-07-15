@@ -1,0 +1,19 @@
+---
+title: "Render HTML for News Updates"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(rmarkdown)
+```
+
+## Rendering News Updates
+
+To render the `news_updates.Rmd` file to HTML, you can use the `rmarkdown::render` function. Here's an example:
+
+```r
+# Render the news_updates.Rmd file
+rmarkdown::render("news_updates.Rmd", output_dir = "docs")
+```
+
+This command will generate an HTML file named `news_updates.html` in the `docs` directory. You can then link this file in your package's HTML as shown in the updated `create_html.R` script.

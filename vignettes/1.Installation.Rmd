@@ -1,0 +1,58 @@
+---
+title: "Installtion"
+author: "Chengxue Li"
+date: "Last update: `r Sys.Date()`"
+output: 
+  html_document:
+    includes:
+      in_header: header.html
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+The "whamMSE" package is a comprehensive toolbox designed to conduct
+management strategy evaluation (MSE) for supporting spatial management
+for complex, heterogeneous populations. The package is built upon a
+state-space age-structured stock assessment model - Woods Hole
+Assessment Model (WHAM). WHAM can incorporate time- and/or age-varying
+process errors (treated as random effects) on population processes, and
+can also incorporate environmental effects on population processes. This
+package provides tools to simulate and evaluate management strategies
+(combination of data collection methods, stock assessment models, and
+harvest control rules) by allowing users to explore various scenarios
+and their impacts on estimation and management performance for fish
+stocks with different life-history traits across different regions.
+
+## 1. Install "whamMSE" package
+
+Users must install wham first with all required dependencies:
+
+``` r
+install.packages("devtools") 
+devtools::install_github("timjmiller/wham", dependencies=TRUE, ref="devel") # "multi-stock" version of wham
+```
+
+Now users can install "whamMSE":
+
+``` r
+devtools::install_github("lichengxue/whamMSE", dependencies=TRUE)
+```
+
+Note: If you have "single-wham" installed before, it's recommended
+to install "multi-wham" package in a different directory to avoid one
+overwriting the other:
+
+``` r
+library_paths <- .libPaths()[1]
+new_folder <- "wham_old"
+if (file.exists(file.path(library_paths,new_folder))){
+} else {
+  dir.create(file.path(library_paths,new_folder))
+}
+
+file.copy(from = file.path(library_paths,"wham"), to = file.path(library_paths,new_folder), 
+          overwrite = TRUE,  recursive = TRUE, copy.mode = TRUE)
+
+library(wham, lib.loc = file.path(library_paths,new_folder)) # Load the single wham package
+```

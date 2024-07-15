@@ -1,0 +1,48 @@
+---
+title: "Recent News and Updates"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(htmltools)
+```
+
+```{r echo=FALSE, results='asis'}
+# Define the news updates
+news_updates <- list(
+  list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Hockey-stick HCR and parallel computing code uploaded"),
+  list(date = "2024-07-13", title = "Description of EM structure", content = "Table and cartoon of EM structure uploaded"),
+  list(date = "2024-07-10", title = "Vignettes Updated", content = "Vignettes have been updated"),
+  list(date = "2024-07-03", title = "Catch Adivice Based on Survey", content = "Automatic disallocate total catch to regional catch given the weights calculated from the most recent survey"),
+  list(date = "2024-07-01", title = "Ontogenetic Movement", content = "Ontogenetic/age-specific movement can be specified (hard coded) externally in TMB code but users have to reinstall wham package to get this functionality work"),
+  list(date = "2024-06-26", title = "Region-specific FAA", content = "Add wrapper to calculate region-specific FAA in the OM given the region-specific catch advice in the feedback loop"),
+  list(date = "2024-06-20", title = "Version 1.0.0 Released", content = "Perform comprehensive checks on whamMSE package.")
+)
+
+# Create dropdown menu
+dropdown_menu <- function(news) {
+  tags$div(
+    class = "dropdown",
+    tags$button(class = "btn btn-primary dropdown-toggle", type = "button", id = "dropdownMenuButton", `data-toggle` = "dropdown", `aria-haspopup` = "true", `aria-expanded` = "false", "Recent News"),
+    tags$div(class = "dropdown-menu", `aria-labelledby` = "dropdownMenuButton", 
+      lapply(news, function(item) {
+        tags$a(class = "dropdown-item", href = "#", item$title)
+      })
+    )
+  )
+}
+
+# Render the dropdown menu
+dropdown_menu(news_updates)
+```
+
+## Detailed Updates
+
+```{r echo=FALSE, results='asis'}
+# Display detailed news updates
+for (item in news_updates) {
+  cat(paste0("### ", item$title, "\n\n"))
+  cat(paste0("**Date:** ", item$date, "\n\n"))
+  cat(paste0(item$content, "\n\n"))
+}
+```

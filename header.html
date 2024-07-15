@@ -1,0 +1,68 @@
+<!-- header.html -->
+<style>
+body, h1, h2, h3, h4, h5, h6, p, li, pre code {
+  font-family: "Arial", sans-serif; 
+  font-size: 16px; /* Adjust the font size as needed */
+}
+
+pre {
+  position: relative;
+}
+
+pre code {
+  font-family: "Courier New", monospace; 
+  font-size: 12px; /* Adjust the font size for code blocks */
+  /*color: #2b8cbe;*/
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  right: 0;
+  margin-right: 12px;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: #d3d3d3;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+h2 {
+  font-weight: bold;
+}
+
+h3 {
+  font-weight: bold;
+  font-style: italic;
+}
+
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll('pre code').forEach(function(block) {
+    var button = document.createElement('button');
+    button.className = 'copy-btn';
+    button.type = 'button';
+    button.innerText = 'Copy to clipboard';
+    
+    block.parantNode.insertBefore(button, block);
+    
+    button.addEventListener('click', function() {
+      var code = block.innerText;
+      navigator.clipboard.writeText(code).then(function() {
+        button.innerText = 'Copied!';
+        setTimeout(function() {
+          button.innerText = 'Copy';
+        }, 2000);
+      }).catch(function(error) {
+        button.innerText = 'Error';
+      });
+    });
+    block.parentNode.style.position = 'relative';
+    block.parentNode.appendChild(button);
+  });
+});
+</script>

@@ -1,0 +1,19 @@
+---
+title: "Render HTML for Bug Report"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(rmarkdown)
+```
+
+## Rendering News Updates
+
+To render the `bug_report.Rmd` file to HTML, you can use the `rmarkdown::render` function. Here's an example:
+
+```r
+# Render the bug_report.Rmd file
+rmarkdown::render("bug_report.Rmd", output_dir = "docs")
+```
+
+This command will generate an HTML file named `bug_report.html` in the `docs` directory. You can then link this file in your package's HTML as shown in the updated `create_html.R` script.
