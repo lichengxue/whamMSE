@@ -11,7 +11,7 @@ library(htmltools)
 # Define the news updates
 news_updates <- list(
   list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Hockey-stick HCR and parallel computing code uploaded"),
-  list(date = "2024-07-13", title = "Description of EM structure", content = "Table and cartoon of EM structure uploaded"),
+  list(date = "2024-07-13", title = "Description of EM Structure", content = "Table and figures of EM structure uploaded"),
   list(date = "2024-07-10", title = "Vignettes Updated", content = "Vignettes have been updated"),
   list(date = "2024-07-03", title = "Catch Adivice Based on Survey", content = "Automatic disallocate total catch to regional catch given the weights calculated from the most recent survey"),
   list(date = "2024-07-01", title = "Ontogenetic Movement", content = "Ontogenetic/age-specific movement can be specified (hard coded) externally in TMB code but users have to reinstall wham package to get this functionality work"),

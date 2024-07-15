@@ -1,0 +1,67 @@
+---
+title: "comprehensive-Output-Analysis-Tools"
+author: "Chengxue Li"
+date: "Last update: `r Sys.Date()`"
+output: 
+  html_document:
+    includes:
+      in_header: header.html
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+This vignette introduces how to use `plot_mse_output()` function to
+summarize and visualize the results of management strategy evaluation.
+`plot_mse_output()` function is capable of summarizing management
+strategy evaluation results from one realization and from n
+realizations, when using parallel computing (see Example 5 for more
+details)). The results can be presented in line plot, scatter plot, box
+plot, and radar chart for users to better compare performance among
+different management strategies. Please use ?plot_mse_output to see more
+details. Below are one example about plotting results from one
+realization and one example about plotting results from n realizations.
+
+### 1. Results from one realization
+
+Suppose you only run a management strategy evaluation for one
+realization (e.g. Example 4):
+
+```{r, eval=FALSE}
+library(wham)
+library(whamMSE)
+
+main.dir = here::here() # Or the path you want to save the results.
+
+# Remember in Example 4 we have 2 EMs saved in a list called "mods". 
+
+plot_mse_output(mods, use.n.years = 10) # also summarize the performance from the last 10 model years
+
+```
+![Figure 1](Report(1)/SSB.PNG)
+![Figure 2](Report(1)/Fbar.PNG)
+![Figure 3](Report(1)/Catch_r.PNG)
+![Figure 4](Report(1)/Catch_s.PNG)
+![Figure 5](Report(1)/Performance_last_10years.PNG)
+
+### 2. Results from n realization
+Suppose you run management strategy evaluation for n realizations following Example 5, you can use the  code below to plot the results. Remember mods[[1]] is a list that contains results of the performance of EM1 in different realizations. 
+
+```{r, eval=FALSE}
+mods_list <- list()
+
+for (i in 1:length(mods[[1]])) { # check the number of realizations you have
+  mods_list[[i]] <- list(mods[[1]][[i]],mods[[2]][[i]],mods[[3]][[i]],
+                         mods[[4]][[i]],mods[[5]][[i]],mods[[6]][[i]]) # collect performance from EMs in every realization 
+}
+
+plot_mse_output(mods = mods_list, 
+                main.dir = getwd(), 
+                use.n.years = 10, # The last 10 years will be used for comparison of long-term performance 
+                base.mod = 4, # "correct" EM that can be used as a reference
+                short.term = NULL, # if NULL, results of first 2 years will be used for comparison of short-term performance
+                dpi = 150,
+                out.type = "pdf") # Options: png, pdf, html 
+```
+
+![Figure 1](Report(2)/Performance_Metrics.pdf)
