@@ -1,5 +1,5 @@
 ---
-title: "comprehensive-Output-Analysis-Tools"
+title: "Comprehensive-Output-Analysis-Tools"
 author: "Chengxue Li"
 date: "Last update: `r Sys.Date()`"
 output: 
