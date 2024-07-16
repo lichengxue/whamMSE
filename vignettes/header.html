@@ -25,7 +25,7 @@ pre code {
   font-size: 12px;
   cursor: pointer;
   background-color: #d3d3d3;
-    border: 1px solid #ccc;
+  border: 1px solid #ccc;
   border-radius: 3px;
 }
 
@@ -38,6 +38,25 @@ h3 {
   font-style: italic;
 }
 
+.navbar {
+  background-color: #333;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.navbar a {
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.navbar a:hover {
+  background-color: #ddd;
+  color: black;
+}
 </style>
   
   <script>
@@ -63,3 +82,13 @@ h3 {
     });
   });
 </script>
+
+<nav class="navbar"> 
+  <a href="https://lichengxue.github.io/whamMSE/"><img src="../icons/home_icon.png" alt="Home" style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Home</a> 
+  <a href="https://lichengxue.github.io/whamMSE/"><img src="../icons/vignettes_icon.png" alt="Vignettes"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Vignettes</a> 
+  <a href="https://github.com/lichengxue/whamMSE/tree/main/R"><img src="../icons/functions_icon.png" alt="Functions"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Functions</a> 
+  <a href="https://github.com/lichengxue/whamMSE"><img src="../icons/source_icon.png" alt="Source"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Source</a> 
+  <a href="news_updates.html"><img src="../icons/news_icon.png" alt="News"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">News</a> 
+  <a href="mailto:chengxue.li@noaa.gov"><img src="../icons/contact_icon.png" alt="Contact"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Contact</a> 
+  <a href="bug_report.html"><imgsrc="../icons/bug_report_icon.png" alt="Bug Report"style="vertical-align:middle; margin-right:8px; width:24px; height:24px;">Bug Report</a> 
+</nav>
