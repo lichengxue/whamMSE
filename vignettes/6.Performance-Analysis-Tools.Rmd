@@ -4,6 +4,8 @@ author: "Chengxue Li"
 date: "Last update: `r Sys.Date()`"
 output: 
   html_document:
+    toc: true
+    toc_float: true
     includes:
       in_header: header.html
 editor_options: 
