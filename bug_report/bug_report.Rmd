@@ -6,6 +6,7 @@ output: html_document
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2024-07-15", title = "plot_mse_output bug fixed", content = "Now results can be summarized and reported in png, pdf, or html"),
   list(date = "2024-07-11", title = "plot_mse_output not working", content = "debugging now"),
   list(date = "2024-07-09", title = "input$random = NULL", content = "input$random must be NULL when generating an operating model to avoid repetitive inner optimizations")
 )
