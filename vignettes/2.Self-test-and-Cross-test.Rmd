@@ -13,7 +13,7 @@ editor_options:
     wrap: 72
 ---
 
-## Generate OM and Perform Self-test
+## Generate OM and Perform Self- and Cross-test
 
 This vignette includes an example of how to use the `whamMSE` (the Woods
 Hole Assessment Model Management Strategy Evaluation) package to
@@ -381,4 +381,14 @@ sim_input <- lapply(1:nsim, function(x) {
   input_i$data <- sim
   return(input_i)
 })
+
+cross_sim_fit <- list()
+cross_sim_fit <- lapply(1:nsim, function(x){
+  cat(paste("model_fit:", x, "start \n"))
+  out <- fit_wham(sim_input[[x]], do.osa = FALSE, MakeADFun.silent = TRUE, retro.silent = TRUE, save.sdrep = FALSE)
+  cat(paste("model_fit:", x, "done \n"))
+  return(out)
+})
 ```
+
+

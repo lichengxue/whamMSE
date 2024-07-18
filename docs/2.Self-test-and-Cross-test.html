@@ -1564,13 +1564,13 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Self-test and Cross-test</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-07-16</h4>
+<h4 class="date">Last update: 2024-07-18</h4>
 
 </div>
 
 
-<div id="generate-om-and-perform-self-test" class="section level2">
-<h2>Generate OM and Perform Self-test</h2>
+<div id="generate-om-and-perform-self--and-cross-test" class="section level2">
+<h2>Generate OM and Perform Self- and Cross-test</h2>
 <p>This vignette includes an example of how to use the
 <code>whamMSE</code> (the Woods Hole Assessment Model Management
 Strategy Evaluation) package to generate an multi-stock multi-region
@@ -1884,6 +1884,14 @@ sim_input &lt;- lapply(1:nsim, function(x) {
   sim &lt;- om$simulate(complete=TRUE)
   input_i$data &lt;- sim
   return(input_i)
+})
+
+cross_sim_fit &lt;- list()
+cross_sim_fit &lt;- lapply(1:nsim, function(x){
+  cat(paste(&quot;model_fit:&quot;, x, &quot;start \n&quot;))
+  out &lt;- fit_wham(sim_input[[x]], do.osa = FALSE, MakeADFun.silent = TRUE, retro.silent = TRUE, save.sdrep = FALSE)
+  cat(paste(&quot;model_fit:&quot;, x, &quot;done \n&quot;))
+  return(out)
 })</code></pre>
 </div>
 </div>
