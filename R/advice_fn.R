@@ -50,13 +50,15 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr.type = 1, hcr.opts = NUL
   
   if (hcr.type == 1) {
     advice <- em_proj$rep$pred_catch[length(em_proj$years) + 1:pro.yr,]
-  } else if (hcr.type == 2) {
+  } 
+  if (hcr.type == 2) {
     advice <- em_proj$rep$pred_catch[length(em_proj$years) + 1:pro.yr,]
     if (nrow(advice) != 1) {
       advice <- colMeans(advice) # Mean of the projected catch over the next 5 years fishing at F40
     }
     advice <- matrix(rep(advice, pro.yr), ncol = length(advice), byrow = TRUE)
-  } else if (hcr.type == 3) {
+  } 
+  if (hcr.type == 3) {
     if (is.null(hcr.opts)) {
       max_percent <- 75
       min_percent <- 0.01

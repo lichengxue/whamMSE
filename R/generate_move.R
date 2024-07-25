@@ -10,7 +10,7 @@
 #'     \item \code{2} bidirectional movement (default)
 #'     \item \code{3} no movement
 #'   }
-#' @param move.rate Movement rate (default = 0.3)
+#' @param move.rate Movement rate (default = c(0.3, 0.2))
 #' @param move.re Movement random effects
 #'   \itemize{
 #'     \item \code{"constant"} constant movement rate across years and ages (default).
@@ -19,7 +19,7 @@
 #'     \item \code{"ar1_y"} movement rate deviations correlated by year (AR1).
 #'     \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
 #'   }
-#' @param move.sigma Sigma for movement random effects
+#' @param move.sigma Sigma for movement random effects (default = 0.5)
 #' @param move.rho_a Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)
 #' @param move.rho_y Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)
 #'
@@ -42,7 +42,7 @@
 #' }
 generate_move <- function(basic_info, 
                           move.type = 2,
-                          move.rate = 0.3, 
+                          move.rate = c(0.3, 0.2), 
                           move.re = "constant",
                           move.sigma = 0.5,
                           move.rho_a = 0.5,
@@ -51,12 +51,14 @@ generate_move <- function(basic_info,
   if (is.null(basic_info)) stop("basic_info must be provided.")
   
   sep_move <- if(any(names(basic_info) %in% "mig_type")) !as.logical(basic_info$mig_type) else FALSE
+  
   n_stocks <- basic_info$n_stocks
   n_regions <- basic_info$n_regions
   n_seasons <- basic_info$n_seasons
   fracyr_spawn <- basic_info$fracyr_spawn
   
   if (n_stocks != n_regions) stop("The current version only allows n_stocks = n_regions") 
+  if (n_stocks != length(move.rate)) stop("length of movement rates must be equal to n_regions") 
   if (!move.re %in% c("constant","iid_a","iid_y","ar1_a","ar1_y")) stop("move.re can only be constant, iid_a, iid_y, ar1_a, ar1_y")
   
   spawntime <- assign_season(fracyr_spawn, n_seasons)
@@ -70,7 +72,11 @@ generate_move <- function(basic_info,
   move <- list(stock_move = NULL, separable = sep_move, must_move = NULL, can_move = NULL, mean_vals = NULL)
   
   if (move.type == 1) {
-    move_mu <- move.rate
+    if(sum(move.rate[2:n_stocks]) != 0) {
+      move.rate[2:n_stocks] = 0
+      cat(paste0("Only stock 1 'can' move so movement rate for other stocks is set to be 0!\n"))
+    }
+    move_mu <- move.rate[1]
     move$stock_move <- c(TRUE, rep(FALSE, n_stocks - 1))
     move$must_move <- array(0, dim = c(n_stocks, n_seasons, n_regions))
     move$can_move <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions))
@@ -88,7 +94,7 @@ generate_move <- function(basic_info,
     move <- configure_move.re(move, move.type, move.re, move.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions)
     
   } else if (move.type == 2) {
-    move_mu <- c(move.rate, rep(0.1, n_stocks - 1))
+    move_mu <- move.rate
     move$stock_move <- rep(TRUE, n_stocks)
     move$must_move <- array(0, dim = c(n_stocks, n_seasons, n_regions))
     move$can_move <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions))
@@ -165,8 +171,8 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
     
     move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     
-    move$mu_repars <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 3))
-    move$mu_repars[, , , , 1] <- log(move.sigma)
+    move$sigma_vals = move.sigma
+    
     cat(paste0("\nsigma for movement is set to be ", move.sigma, "\n"))
   }
   return(move)

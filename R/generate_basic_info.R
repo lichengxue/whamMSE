@@ -55,7 +55,14 @@
 #' @param bias.correct.observation T/F observation error is bias corrected
 #' @param bias.correct.BRPs T/F biological reference point is bias corrected
 #' @param mig_type 0 = migration after survival, 1 = movement and mortality simultaneous
-#' 
+#' @param XSPR_R_opt
+#'   \itemize{
+#'     \item \code{1} use annual R estimates for annual SSB_XSPR
+#'     \item \code{2} use average R estimates for annual SSB_XSPR (default)
+#'     \item \code{3} use annual expected R for annual SSB_XSPR
+#'     \item \code{4} use average expected R estimates for annual SSB_XSPR
+#'     \item \code{5} use bias-corrected expected recruitment
+#'     }
 #' @return A list of information that will be used to prepare wham input
 #'
 #' @export
@@ -84,7 +91,8 @@ generate_basic_info <- function(n_stocks = 2,
                                 bias.correct.process = FALSE,
                                 bias.correct.observation = FALSE,
                                 bias.correct.BRPs = FALSE,
-                                mig_type = 0) {
+                                mig_type = 0,
+                                XSPR_R_opt = 2) {
   
   check_dimensions <- function(...){
     length(unique(c(...))) == 1
@@ -98,6 +106,7 @@ generate_basic_info <- function(n_stocks = 2,
   basic_info$bias_correct_observation = bias.correct.observation
   basic_info$bias_correct_BRPs = bias.correct.BRPs
   basic_info$mig_type = mig_type # 0: mortality and movement separate,  1: mortality and movement simultaneous
+  basic_info$XSPR_R_opt = XSPR_R_opt 
   
   basic_info$years = as.integer(base.years[1] - 1 + 1:(length(base.years) + n_feedback_years))
   basic_info$ages = as.integer(1:n_ages)

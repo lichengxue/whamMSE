@@ -22,7 +22,7 @@ fix_move <- function(input) {
   input$map$trans_mu <- factor(temp)
   
   if(!is.null(input$map$mu_prior_re)) {
-    cat("\nMovement is treated as random effects and fixed as known.")
+    cat("\nMovement is treated as random effects and fixed as known.\n")
     temp <- array(as.integer(input$map$mu_prior_re), dim = dim(input$par$mu_prior_re))
     temp[] <- NA
     input$map$mu_prior_re <- factor(temp)
