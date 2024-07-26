@@ -27,7 +27,8 @@ loop_through_fn(
   do.retro = FALSE,
   do.osa = FALSE,
   seed = 123,
-  save.sdrep = FALSE
+  save.sdrep = FALSE,
+  save.last.em = FALSE
 )
 }
 \arguments{

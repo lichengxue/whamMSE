@@ -23,7 +23,7 @@ plot_mse_output(
 
 \item{base.mod}{Base model for comparison. Default is 4.}
 
-\item{short.term}{List with first.n.years, year_start, and year_end for short-term analysis.}
+\item{short.term}{List with first.n.years, year_start, and year_end for short-term analysis. if = NULL, results will be summarized for the first 2 years in the feedback loop}
 
 \item{dpi}{Resolution for plots. Default is 150.}
 

@@ -24,7 +24,8 @@ generate_basic_info(
   bias.correct.process = FALSE,
   bias.correct.observation = FALSE,
   bias.correct.BRPs = FALSE,
-  mig_type = 0
+  mig_type = 0,
+  XSPR_R_opt = 2
 )
 }
 \arguments{
@@ -96,6 +97,14 @@ generate_basic_info(
 \item{bias.correct.BRPs}{T/F biological reference point is bias corrected}
 
 \item{mig_type}{0 = migration after survival, 1 = movement and mortality simultaneous}
+
+\item{XSPR_R_opt}{\itemize{
+\item \code{1} use annual R estimates for annual SSB_XSPR
+\item \code{2} use average R estimates for annual SSB_XSPR (default)
+\item \code{3} use annual expected R for annual SSB_XSPR
+\item \code{4} use average expected R estimates for annual SSB_XSPR
+\item \code{5} use bias-corrected expected recruitment
+}}
 
 \item{q}{Survey catchability}
 }

@@ -1,7 +1,7 @@
 library(shiny)
 
 # Define global variable
-result <- NULL
+mean_vals <- NULL
 
 # Define UI for the app
 ui <- fluidPage(
@@ -94,7 +94,7 @@ server <- function(input, output, session) {
     
     # Save to global environment
     isolate({
-      assign("result", mean_vals_array, envir = .GlobalEnv)
+      assign("mean_vals", mean_vals_array, envir = .GlobalEnv)
     })
   })
   

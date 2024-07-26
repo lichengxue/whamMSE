@@ -7,7 +7,7 @@
 generate_move(
   basic_info,
   move.type = 2,
-  move.rate = 0.3,
+  move.rate = c(0.3, 0.2),
   move.re = "constant",
   move.sigma = 0.5,
   move.rho_a = 0.5,
@@ -25,7 +25,7 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
   \item \code{3} no movement
 }}
 
-\item{move.rate}{Movement rate (default = 0.3)}
+\item{move.rate}{Movement rate (default = c(0.3, 0.2))}
 
 \item{move.re}{Movement random effects
 \itemize{
@@ -36,7 +36,7 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
   \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
 }}
 
-\item{move.sigma}{Sigma for movement random effects}
+\item{move.sigma}{Sigma for movement random effects (default = 0.5)}
 
 \item{move.rho_a}{Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)}
 

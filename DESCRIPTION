@@ -5,17 +5,19 @@ Version: 1.0.0
 Author: Chengxue Li <chengxue.li@noaa.gov>
 Maintainer: Chengxue Li <chengxue.li@noaa.gov>
 Description: 
-    wham-mse is a comprehensive toolbox designed to conduct management strategy evaluation (MSE) 
-    for supporting spatial management   for   complex, heterogeneous populations. The package 
+    The wham-mse is a comprehensive toolbox designed to conduct management strategy evaluation (MSE) 
+    for supporting spatial management for complex, heterogeneous populations. The package 
     is built upon a state-space age-structured stock assessment model - Woods Hole Assessment Model (WHAM). 
     WHAM can incorporate time- and/or age-varying process errors (treated as random effects) on 
     population processes, and can also incorporate environmental effects on population processes. 
-    This package provides tools to   simulate and evaluate management strategies (combination of 
-    data collection methods, stock assessment models, and harvest   control rules) by allowing users 
+    This package provides tools to simulate and evaluate management strategies (combination of 
+    data collection methods, stock assessment models, and harvest control rules) by allowing users 
     to explore various scenarios and their impacts on estimation and management performance for fish 
     stocks with different life-history traits across different regions.
 Depends:
     R (>= 3.6.0)
+Imports:
+    shiny
 URL: https://github.com/lichengxue/wham-mse/
 License: MIT
 Encoding: UTF-8
