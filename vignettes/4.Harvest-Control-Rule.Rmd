@@ -69,7 +69,7 @@ F_info = info$F # collect fishing information
 ```{r, eval=TRUE}
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2) # "bidirectional" movement
 
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "constant")
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant")
 
 ```
 

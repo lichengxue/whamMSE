@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Management Strategy Evaluation</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-07-18</h4>
+<h4 class="date">Last update: 2024-07-25</h4>
 
 </div>
 
@@ -1631,9 +1631,12 @@ F_info = info$F # collect fishing information
 <h3>3. Specify movement type and movement rate</h3>
 <pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2) # &quot;bidirectional&quot; movement
 
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = &quot;iid_y&quot;)</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;iid_y&quot;)</code></pre>
 <pre><code>## All stocks &#39;can&#39; move (default)
 ## Movement rate for stocks in region 1 is 0.3
+## Movement rate for stocks in other regions is 0.1
+##  All stocks &#39;can&#39; move (default)
+## Movement rate for stocks in region 1 is 0.1
 ## Movement rate for stocks in other regions is 0.1
 ## 
 ## Movement is treated to be varying by years
