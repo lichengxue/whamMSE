@@ -40,7 +40,7 @@ loop_through_fn <- function(om, random, M_om, sel_om, NAA_re_om,
                             NAA_re_em, move_em, em.opt = NULL, age_comp_em = "multinomial",
                             assess_years = NULL, assess_interval = NULL, base_years = NULL,
                             year.use = 30, hcr.type = 1, hcr.opts = NULL, do.retro = FALSE,
-                            do.osa = FALSE, seed = 123, save.sdrep = FALSE) {
+                            do.osa = FALSE, seed = 123, save.sdrep = FALSE, save.last.em = FALSE) {
   
   # Helper function to check convergence
   check_conv <- function(em) {
@@ -127,6 +127,7 @@ loop_through_fn <- function(om, random, M_om, sel_om, NAA_re_om,
             if (y == assess_years[length(assess_years)]) {
               em_full[[1]][[s]] <- em[[s]]
             }
+            if(!save.last.em) em_full[[1]][[s]] <- list()
           }
         }
       } else if (em.opt$separate.em.type == 2) {
@@ -161,6 +162,7 @@ loop_through_fn <- function(om, random, M_om, sel_om, NAA_re_om,
           if (y == assess_years[length(assess_years)]) {
             em_full[[1]] <- em
           }
+          if(!save.last.em) em_full[[1]] <- list()
         }
         
       } else if (em.opt$separate.em.type == 3) {
@@ -206,6 +208,7 @@ loop_through_fn <- function(om, random, M_om, sel_om, NAA_re_om,
           if (y == assess_years[length(assess_years)]) {
             em_full[[1]] <- em
           }
+          if(!save.last.em) em_full[[1]] <- list()
         }
       }
     }
@@ -260,6 +263,7 @@ loop_through_fn <- function(om, random, M_om, sel_om, NAA_re_om,
         if (y == assess_years[length(assess_years)]) {
           em_full[[1]] <- em
         }
+        if(!save.last.em) em_full[[1]] <- list()
       }
     }
   }
