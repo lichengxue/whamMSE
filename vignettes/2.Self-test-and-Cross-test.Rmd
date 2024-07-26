@@ -40,7 +40,7 @@ as input). Users can define the type of fish life history, lifespan,
 length-at-age, weight-at-age, maturity-at-age. Users can also set fleet
 information, survey information, and fishing history.
 
-```{r, eval=TRUE, cache=TRUE}
+```{r, eval=TRUE}
 year_start  <- 2003  # starting year in the burn-in period
 year_end    <- 2022  # end year in the burn-in period
 MSE_years   <- 0     # number of years in the feedback loop
@@ -99,47 +99,52 @@ Below are some examples:
 
 #### 3a. Specify movement type and movement rate (default: bidirectional)
 
-```{r, eval=TRUE, cache=TRUE}
+```{r, eval=TRUE}
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
 # Note: the default is "bidirectional" movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
 
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
 
 ```
 
 #### 3b. Specify movement type and movement rate (unidirectional)
 
 ```{r, eval=FALSE}
+# DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
-move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = 0.3, move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
+move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3,0.1), move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
 ```
 
 #### 3c. Specify movement type and movement rate (iid_y)
 
 ```{r, eval=FALSE}
+# DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
 ```
 
 #### 3d. Specify movement type and movement rate (iid_a)
 
 ```{r, eval=FALSE}
+# DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
 ```
 
 #### 3e. Specify movement type and movement rate (ar1_y)
 
 ```{r, eval=FALSE}
+# DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "ar1_y",move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "ar1_y",move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
 ```
 
 #### 3f. Specify movement type and movement rate (ar1_a)
 
-```{r, eval=FALSE, cache=TRUE}
+```{r, eval=FALSE}
+# DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = 0.3, move.re = "ar1_a",move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "ar1_a",move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
 ```
 
 ### 4. Configure selecitvity and natural mortality
@@ -149,7 +154,7 @@ selectivity and natural mortality as time and/or age varying (treated as
 random effects) is optional. More details can be found in the vignettes
 of single-wham (<https://timjmiller.github.io/wham/>).
 
-```{r, eval=TRUE, cache=TRUE}
+```{r, eval=TRUE}
 n_stocks  <- as.integer(basic_info['n_stocks'])
 n_regions <- as.integer(basic_info['n_regions'])
 n_fleets  <- as.integer(basic_info['n_fleets'])
@@ -173,7 +178,7 @@ allowed to use "Beverton-Holt" or "Ricker" stock-recruitment functions.
 More details can be found in the vignettes of single-wham
 (<https://timjmiller.github.io/wham/>).
 
-```{r, eval=TRUE, cache=TRUE}
+```{r, eval=FALSE}
 sigma        <- "rec+1"
 re_cor       <- "iid"
 ini.opt      <- "equilibrium" # option <- c("age-specific-fe", "equilibrium")
@@ -207,14 +212,14 @@ NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
 Here we use `prepare_wham_input()` function to generate a wham input
 using the basic information we set above:
 
-```{r, eval=FALSE, cache=TRUE}
+```{r, eval=FALSE}
 input <- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,
                             catch_info = catch_info, index_info = index_info, F = F_info)
 ```
 
 ### 7. Generate operating model
 
-```{r, eval=FALSE, cache=TRUE}
+```{r, eval=FALSE}
 om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
 # Note: do.fit must be FALSE (no modeling fitting yet)
 ```
@@ -223,7 +228,7 @@ om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
 
 Create a function to generate data and perform a self-test:
 
-```{r, eval=FALSE, cache=FALSE}
+```{r, eval=FALSE}
 sim_fn <- function(om, self.fit = FALSE){
   input <- om$input
   input$data <- om$simulate(complete=TRUE)
@@ -266,7 +271,7 @@ plot_wham_output(self_sim_fit, out.type = "html")
 
 Different NAA configuration is used in the estimation model:
 
-```{r, eval=FALSE, cache=FALSE}
+```{r, eval=FALSE}
 # EM with different NAA configuration
 sigma      <- "rec+1"
 re_cor     <- "2dar1" # Misspecification here
@@ -287,7 +292,7 @@ em <- fit_wham(input, do.fit = F, do.brps = F, MakeADFun.silent = TRUE)
 
 Create a function to generate data and perform a cross-test
 
-```{r, eval=FALSE, cache=FALSE}
+```{r, eval=FALSE}
 sim_fn2 <- function(om, em, cross.fit = FALSE){
   input <- em$input
   input$data <- om$simulate(complete=TRUE)

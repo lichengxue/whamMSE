@@ -57,7 +57,7 @@ The generate_move() function is used to configure movement random effects.
 \examples{
 \dontrun{
 data <- generate_basic_info()
-data <- generate_move(data, move.type = 2, move.rate = 0.3, move.re = "constant")
+data <- generate_move(data, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant")
 }
 }
 \seealso{

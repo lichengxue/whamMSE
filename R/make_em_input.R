@@ -9,13 +9,13 @@
 #' @param move_em Movement random effects
 #' @param em.opt Movement random effects
 #'   \itemize{
-#'     \item \code{$separate.em} TRUE = spatially implicit, FALSE = spatially disaggregated
-#'     \item \code{$separate.em.type} when separate.em = TRUE \cr
-#'     {=1} fleets-as-areas (global SPR brps = FALSE) \cr
-#'     {=2} fleets-as-areas (global SPR brps = TRUE) \cr
-#'     {=3} panmictic (spatially-aggregated) \cr
-#'     \item \code{$do.move} T/F movement is included (use when separate.em = FALSE)
-#'     \item \code{$est.move} T/F movement rate is estimated (use when separate.em = FALSE)
+#'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
+#'     \item \code{$separate.em.type} only if separate.em = TRUE \cr
+#'     {=1} panmictic (spatially-aggregated) \cr
+#'     {=2} fleets-as-areas \cr
+#'     {=3} n single assessment models (n = n_regions) \cr
+#'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
+#'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
 #'     }
 #' @param em_years Years used in the assessment model
 #' @param year.use Number of years used in the assessment model
@@ -49,17 +49,16 @@
 #' data <- make_em_input(mod, em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE), year.use = 10, em_years = 1973:2022)
 #' }
 
-make_em_input <- function(om = NULL, 
-                          M_em = NULL, 
-                          sel_em = NULL, 
-                          NAA_re_em = NULL, 
-                          move_em = NULL,
-                          em.opt = NULL,
-                          em_years = NULL,
-                          year.use = NULL,
+make_em_input <- function(om, 
+                          M_em, 
+                          sel_em, 
+                          NAA_re_em, 
+                          move_em,
+                          em.opt,
+                          em_years,
+                          year.use,
                           age_comp_em = "multinomial") {
   
-  move.type <- NULL
   if (is.null(em.opt)) stop("em.opt must be specified!")
   if (em.opt$separate.em) em.opt$do.move <- FALSE 
   if (!em.opt$separate.em & !em.opt$do.move) move.type <- 3 # no movement
@@ -82,70 +81,7 @@ make_em_input <- function(om = NULL,
   
   if (em.opt$separate.em) {
     
-    if (em.opt$separate.em.type == 1) {
-      
-      n_stocks <- data$n_stocks
-      em_input <- list()
-      
-      for (s in 1:n_stocks) {
-        
-        info <- generate_basic_info(n_stocks = 1, 
-                                    n_regions = 1, 
-                                    n_indices = 1, 
-                                    n_fleets = 1, 
-                                    base.years = em_years)
-        
-        basic_info <- info$basic_info
-        
-        # Fill in the data from the operating model simulation
-        info$catch_info$agg_catch <- data$agg_catch[ind_em, s, drop = FALSE]
-        info$index_info$agg_indices <- data$agg_indices[ind_em, s, drop = FALSE]
-        info$catch_info$catch_paa <- data$catch_paa[s, ind_em, , drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[s, ind_em, , drop = FALSE]
-        
-        em_input[[s]] <- prepare_wham_input(basic_info = basic_info, 
-                                            selectivity = sel_em, 
-                                            M = M_em, 
-                                            NAA_re = NAA_re_em, 
-                                            move = NULL,
-                                            age_comp = age_comp_em,
-                                            catch_info = info$catch_info, 
-                                            index_info = info$index_info,
-                                            F = info$F)
-      }
-    }
-    
-    if (em.opt$separate.em.type == 2) { 
-      
-      n_fleets <- data$n_fleets
-      n_indices <- data$n_indices
-      
-      info <- generate_basic_info(n_stocks = 1, 
-                                  n_regions = 1, 
-                                  n_indices = n_indices, 
-                                  n_fleets = n_fleets, 
-                                  base.years = em_years)
-      
-      basic_info <- info$basic_info
-      
-      # Fill in the data from the operating model simulation
-      info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
-      info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
-      info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
-      info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
-      
-      em_input <- prepare_wham_input(basic_info = basic_info, 
-                                     selectivity = sel_em, 
-                                     M = M_em, 
-                                     NAA_re = NAA_re_em, 
-                                     move = NULL,
-                                     age_comp = age_comp_em,
-                                     catch_info = info$catch_info, 
-                                     index_info = info$index_info,
-                                     F = info$F)
-    }
-    
-    if (em.opt$separate.em.type == 3) { 
+    if (em.opt$separate.em.type == 1) { 
       
       info <- generate_basic_info(n_stocks = 1, 
                                   n_regions = 1, 
@@ -193,6 +129,70 @@ make_em_input <- function(om = NULL,
                                      index_info = info$index_info,
                                      F = info$F)
     }
+    
+    if (em.opt$separate.em.type == 2) { 
+      
+      n_fleets <- data$n_fleets
+      n_indices <- data$n_indices
+      
+      info <- generate_basic_info(n_stocks = 1, 
+                                  n_regions = 1, 
+                                  n_indices = n_indices, 
+                                  n_fleets = n_fleets, 
+                                  base.years = em_years)
+      
+      basic_info <- info$basic_info
+      
+      # Fill in the data from the operating model simulation
+      info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
+      info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
+      info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
+      info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
+      
+      em_input <- prepare_wham_input(basic_info = basic_info, 
+                                     selectivity = sel_em, 
+                                     M = M_em, 
+                                     NAA_re = NAA_re_em, 
+                                     move = NULL,
+                                     age_comp = age_comp_em,
+                                     catch_info = info$catch_info, 
+                                     index_info = info$index_info,
+                                     F = info$F)
+    }
+    
+    if (em.opt$separate.em.type == 3) {
+      
+      n_stocks <- data$n_stocks
+      em_input <- list()
+      
+      for (s in 1:n_stocks) {
+        
+        info <- generate_basic_info(n_stocks = 1, 
+                                    n_regions = 1, 
+                                    n_indices = 1, 
+                                    n_fleets = 1, 
+                                    base.years = em_years)
+        
+        basic_info <- info$basic_info
+        
+        # Fill in the data from the operating model simulation
+        info$catch_info$agg_catch <- data$agg_catch[ind_em, s, drop = FALSE]
+        info$index_info$agg_indices <- data$agg_indices[ind_em, s, drop = FALSE]
+        info$catch_info$catch_paa <- data$catch_paa[s, ind_em, , drop = FALSE]
+        info$index_info$index_paa <- data$index_paa[s, ind_em, , drop = FALSE]
+        
+        em_input[[s]] <- prepare_wham_input(basic_info = basic_info, 
+                                            selectivity = sel_em, 
+                                            M = M_em, 
+                                            NAA_re = NAA_re_em, 
+                                            move = NULL,
+                                            age_comp = age_comp_em,
+                                            catch_info = info$catch_info, 
+                                            index_info = info$index_info,
+                                            F = info$F)
+      }
+    }
+    
   } else {
     
     info <- generate_basic_info(base.years = em_years)
@@ -209,8 +209,10 @@ make_em_input <- function(om = NULL,
     
     if (em.opt$do.move) {
       
-      # NAA_re_em$NAA_where = basic_info$NAA_where
+      NAA_re_em$NAA_where = basic_info$NAA_where
       
+      basic_info$NAA_where = NULL
+
       em_input <- prepare_wham_input(basic_info = basic_info, 
                                      selectivity = sel_em, 
                                      M = M_em, 
@@ -220,15 +222,17 @@ make_em_input <- function(om = NULL,
                                      catch_info = info$catch_info, 
                                      index_info = info$index_info,
                                      F = info$F)
-      
-      if (sum(em_input$data$NAA_where) == n_stocks*n_ages) stop("NAA_where is not specified correctly!")
+
+      # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages) stop("NAA_where is not specified correctly!")
       
       if (!em.opt$est.move) em_input <- fix_move(em_input)
       
     } else {
       
       basic_info$NAA_where = NULL
-        
+      
+      NAA_re_em$NAA_where = NULL
+      
       em_input <- prepare_wham_input(basic_info = basic_info, 
                                      selectivity = sel_em, 
                                      M = M_em, 
@@ -239,7 +243,7 @@ make_em_input <- function(om = NULL,
                                      index_info = info$index_info,
                                      F = info$F)
       
-      if (sum(em_input$data$NAA_where) != n_stocks*n_ages) stop("NAA_where is not specified correctly!")
+      # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages)  stop("NAA_where is not specified correctly!")
       
     }
   }

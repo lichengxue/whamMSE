@@ -114,7 +114,7 @@ initial_input_no_asap_fn <- function(input, basic_info){
     if(max(basic_info$spawn_regions) > data$n_regions) stop("maximum value of basic_info$spawn_regions is greater than data$n_regions. \n")
     for(s in 1:data$n_stocks) {
       sr = which(data$NAA_where[s,,1] == 1)
-      if(sr != basic_info$spawn_regions[s]) stop("basic_info$spawn_regions not consistent with input$dataNAA_where.")
+      if(sr != basic_info$spawn_regions[s]) stop("basic_info$spawn_regions not consistent with input$data$NAA_where.")
       data$spawn_regions[] = basic_info$spawn_regions
     }
   }

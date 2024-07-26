@@ -149,12 +149,13 @@ assess.years    <- seq(terminal.year, tail(om$years,1)-assess.interval,by = asse
 mods <- list() # Create a list to save MSE outputs
 ```
 
-### 9. Parallel computing (EM1)
-
+### 9. EM1
 ```{r, eval=FALSE}
+sub.dir = "Results"
+dir.create(file.path(getwd(), sub.dir), recursive = TRUE)
+
 library(doParallel)
 library(foreach)
-detectCores() # check how many cores available
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
@@ -165,12 +166,12 @@ results <- foreach (i = 1:10) %dopar% {
   library(wham)
   library(whamMSE)
   
-  om_with_data <- update_om_fn(om, seed = 123+i)
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
   n_stocks = n_regions = n_fleets = n_indices = 1
   
   sel_em <- list(model=rep("logistic",n_fleets+n_indices),
-                 initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
+               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
   
   NAA_re_em <- list(N1_model="equilibrium",sigma="rec+1",cor="iid")
   
@@ -188,15 +189,15 @@ results <- foreach (i = 1:10) %dopar% {
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
-                            age_comp_em = "multinomial", # Note: not multinomial!
+                            age_comp_em = "multinomial",
                             em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, 
+                            year.use = 20, # number of years of data you want to use in the assessment model
                             seed = 123+i,
                             save.sdrep = FALSE)
-    results[[i]] <- mod
+  results[[i]] <- mod
     
   }, error = function(e) {
     
@@ -212,7 +213,7 @@ mods[[1]] <- results
 stopCluster(cluster)
 ```
 
-### 10. Parallel computing (EM2)
+### 10. EM2
 ```{r, eval=FALSE}
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
@@ -224,7 +225,7 @@ results <- foreach (i = 1:10) %dopar% {
   library(wham)
   library(whamMSE)
   
-  om_with_data <- update_om_fn(om, seed = 123+i)
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
   n_stocks = n_regions = 1
   n_fleets = n_indices = 2
@@ -272,141 +273,70 @@ mods[[2]] <- results
 stopCluster(cluster)
 ```
 
-### 10. Parallel computing (EM3)
+### 11. EM3
+
 ```{r, eval=FALSE}
+library(doParallel)
+library(foreach)
+detectCores() # check how many cores available
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
   
-  om_with_data <- update_om_fn(om, seed = 123+i)
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
   n_stocks = n_regions = n_fleets = n_indices = 1
   
   sel_em <- list(model=rep("logistic",n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
+                 initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
   
   NAA_re_em <- list(N1_model="equilibrium",sigma="rec+1",cor="iid")
   
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = NULL,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
-  
+  mod <- loop_through_fn(om = om_with_data, 
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em, 
+                         NAA_re_em = NAA_re_em, 
+                         move_em = NULL,
+                         age_comp_em = "multinomial", 
+                         em.opt = list(separate.em = TRUE, 
+                                       separate.em.type = 3, 
+                                       do.move = FALSE, 
+                                       est.move = FALSE),
+                         assess_years = assess.years, 
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20, 
+                         seed = 123+i,
+                         save.sdrep = FALSE)
 }
 mods[[3]] <- results
 
 stopCluster(cluster)
 ```
 
-### 10. Parallel computing (EM4)
+### 12. EM4
 ```{r, eval=FALSE}
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
   
-  om_with_data <- update_om_fn(om, seed = 123+i)
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
-  n_stocks = n_regions = n_fleets = n_indices = 2
-  
-  sel_em <- list(model=rep("logistic",n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em <- list(N1_model=rep("equilibrium",n_stocks),
-                  sigma=rep("rec+1",n_stocks),
-                  cor=rep("iid",n_stocks))
-  
-  M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = move,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = TRUE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
-  
-}
-mods[[4]] <- results
-
-stopCluster(cluster)
-```
-
-### 10. Parallel computing (EM5)
-```{r, eval=FALSE}
-cluster <- makeCluster(10) 
-registerDoParallel(cluster)
-
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data <- update_om_fn(om, seed = 123+i)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 2
+  n_stocks = 2
+  n_regions = 2
+  n_fleets = 2
+  n_indices = 2
   
   sel_em <- list(model=rep("logistic",n_fleets+n_indices),
                initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
@@ -418,55 +348,41 @@ results <- foreach (i = 1:10) %dopar% {
 
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = NULL,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
+  mod <- loop_through_fn(om = om_with_data, 
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em, 
+                         NAA_re_em = NAA_re_em, 
+                         move_em = NULL,
+                         age_comp_em = "multinomial",
+                         em.opt = list(separate.em = FALSE, 
+                                       separate.em.type = 3, 
+                                       do.move = FALSE, 
+                                       est.move = FALSE),
+                         assess_years = assess.years, 
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20,
+                         seed = 123+i,
+                         save.sdrep = FALSE)
   
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod4_%03d.RDS",i)))
 }
-mods[[5]] <- results
 
 stopCluster(cluster)
 ```
 
-### 10. Parallel computing (EM6)
+### 13. EM5
 ```{r, eval=FALSE}
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
   
-  om_with_data <- update_om_fn(om, seed = 123+i)
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
   n_stocks = n_regions = n_fleets = n_indices = 2
   
@@ -474,43 +390,36 @@ results <- foreach (i = 1:10) %dopar% {
                initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
   
   NAA_re_em <- list(N1_model=rep("equilibrium",n_stocks),
-                  sigma=rep("rec",n_stocks),
-                  cor=rep("iid",n_stocks))
+                  sigma=rep("rec+1",n_stocks),
+                  cor=rep("iid",n_stocks),
+                  recruit_model = 2)
   
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = NULL,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
+  mod <- loop_through_fn(om = om_with_data, 
+                                random = random,
+                                M_om = M,
+                                sel_om = sel, 
+                                NAA_re_om = NAA_re, 
+                                move_om = move,
+                                age_comp_om = "multinomial",
+                                M_em = M_em, 
+                                sel_em = sel_em, 
+                                NAA_re_em = NAA_re_em, 
+                                move_em = move,
+                                age_comp_em = "multinomial",
+                                em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = TRUE, est.move = FALSE),
+                                assess_years = assess.years, 
+                                assess_interval = assess.interval, 
+                                base_years = base.years,
+                                year.use = 20, # number of years of data you want to use in the assessment model
+                                seed = 123+i,
+                                save.sdrep = FALSE)
   
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod5_%03d.RDS",i)))
 }
-mods[[6]] <- results
 
 stopCluster(cluster)
 ```
+
+

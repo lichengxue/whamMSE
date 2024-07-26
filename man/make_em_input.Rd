@@ -5,14 +5,14 @@
 \title{Generate input data for the assessment model}
 \usage{
 make_em_input(
-  om = NULL,
-  M_em = NULL,
-  sel_em = NULL,
-  NAA_re_em = NULL,
-  move_em = NULL,
-  em.opt = NULL,
-  em_years = NULL,
-  year.use = NULL,
+  om,
+  M_em,
+  sel_em,
+  NAA_re_em,
+  move_em,
+  em.opt,
+  em_years,
+  year.use,
   age_comp_em = "multinomial"
 )
 }
@@ -29,13 +29,13 @@ make_em_input(
 
 \item{em.opt}{Movement random effects
 \itemize{
-  \item \code{$separate.em} TRUE = spatially implicit, FALSE = spatially disaggregated
-  \item \code{$separate.em.type} when separate.em = TRUE \cr
-  {=1} fleets-as-areas (global SPR brps = FALSE) \cr
-  {=2} fleets-as-areas (global SPR brps = TRUE) \cr
-  {=3} panmictic (spatially-aggregated) \cr
-  \item \code{$do.move} T/F movement is included (use when separate.em = FALSE)
-  \item \code{$est.move} T/F movement rate is estimated (use when separate.em = FALSE)
+  \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
+  \item \code{$separate.em.type} only if separate.em = TRUE \cr
+  {=1} panmictic (spatially-aggregated) \cr
+  {=2} fleets-as-areas \cr
+  {=3} n single assessment models (n = n_regions) \cr
+  \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
+  \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
   }}
 
 \item{em_years}{Years used in the assessment model}

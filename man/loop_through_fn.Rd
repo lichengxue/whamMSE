@@ -7,11 +7,6 @@
 loop_through_fn(
   om,
   random,
-  M_om,
-  sel_om,
-  NAA_re_om,
-  move_om,
-  age_comp_om = "multinomial",
   M_em,
   sel_em,
   NAA_re_em,
@@ -36,16 +31,6 @@ loop_through_fn(
 
 \item{random}{A vector of processes that are treated as random effects in the operating model}
 
-\item{M_om}{Natural mortality configuration in the operating model}
-
-\item{sel_om}{Selectivity configuration in the operating model}
-
-\item{NAA_re_om}{Numbers-at-age (NAA) configuration in the operating model}
-
-\item{move_om}{Movement configuration in the operating model}
-
-\item{age_comp_om}{Likelihood distribution of age composition data in the operating model}
-
 \item{M_em}{Natural mortality configuration in the assessment model}
 
 \item{sel_em}{Selectivity configuration in the assessment model}
@@ -54,9 +39,33 @@ loop_through_fn(
 
 \item{move_em}{Movement configuration in the assessment model}
 
-\item{em.opt}{List of options for the assessment model}
+\item{em.opt}{List of options for the assessment model
+\itemize{
+  \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
+  \item \code{$separate.em.type} only if separate.em = TRUE \cr
+  {=1} panmictic (spatially-aggregated) \cr
+  {=2} fleets-as-areas \cr
+  {=3} n single assessment models (n = n_regions) \cr
+  \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
+  \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+  }}
 
-\item{age_comp_em}{Likelihood distribution of age composition data in the assessment model}
+\item{age_comp_em}{Likelihood distribution of age composition data in the assessment model
+\itemize{
+  \item \code{"multinomial"} Default
+  \item \code{"dir-mult"}
+  \item \code{"dirichlet-miss0"}
+  \item \code{"dirichlet-pool0"}
+  \item \code{"dir-mult"}
+  \item \code{"logistic-normal-miss0"}    
+  \item \code{"logistic-normal-ar1-miss0"}
+  \item \code{"logistic-normal-pool0"}
+  \item \code{"logistic-normal-01-infl"}
+  \item \code{"logistic-normal-pool0"}
+  \item \code{"logistic-normal-01-infl-2par"}
+  \item \code{"mvtweedie"}
+  \item \code{"dir-mult-linear"}
+  }}
 
 \item{assess_years}{Year in which the assessment is conducted}
 
@@ -66,9 +75,20 @@ loop_through_fn(
 
 \item{year.use}{Number of years used in the assessment model}
 
-\item{hcr.type}{Type of harvest control rule}
+\item{hcr.type}{Type of harvest control rule
+\itemize{
+  \item \code{"1"} Annual projected catch based on 75% of F40% (default)
+  \item \code{"2"} Constant catch based on 75% of F40%
+  \item \code{"3"} "Hockey stick" catch based on stock status
+  }}
 
-\item{hcr.opts}{A list of HCR information, only used if hcr.type = 3}
+\item{hcr.opts}{only used if hcr.type = 3
+\itemize{
+  \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
+  \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
+  \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5) 
+  \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
+  }}
 
 \item{do.retro}{T/F Do retrospective analysis? Default = TRUE}
 
@@ -81,6 +101,8 @@ loop_through_fn(
   \item \code{"TRUE"} Save every assessment model 
   \item \code{"FALSE"} Save the last assessment model (default)
   }}
+
+\item{save.last.em}{T/F Save the last assessment model (Default = FALSE) (use if separate.em = FALSE)}
 }
 \value{
 a list of model output
