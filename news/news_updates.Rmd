@@ -10,6 +10,7 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2024-07-15", title = "Add shiny_move.R", content = "Add a Rshiny to let users mannually specific movement rate"),
   list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Example of output analysis tools uploaded"),
   list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Hockey-stick HCR and parallel computing code uploaded"),
   list(date = "2024-07-13", title = "Description of EM Structure", content = "Table and figures of EM structure uploaded"),
