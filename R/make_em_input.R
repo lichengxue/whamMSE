@@ -209,10 +209,12 @@ make_em_input <- function(om,
     
     if (em.opt$do.move) {
       
+      # NAA_re_em$NAA_where = basic_info$NAA_where
+      
+      # basic_info$NAA_where = NULL
+      
       NAA_re_em$NAA_where = basic_info$NAA_where
       
-      basic_info$NAA_where = NULL
-
       em_input <- prepare_wham_input(basic_info = basic_info, 
                                      selectivity = sel_em, 
                                      M = M_em, 

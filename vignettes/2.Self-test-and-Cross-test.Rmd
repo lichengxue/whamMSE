@@ -22,7 +22,7 @@ self-test and cross-test.
 
 ### 1. Load "WHAM" and "whamMSE":
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 library(wham)
 library(whamMSE)
 
@@ -40,7 +40,7 @@ as input). Users can define the type of fish life history, lifespan,
 length-at-age, weight-at-age, maturity-at-age. Users can also set fleet
 information, survey information, and fishing history.
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 year_start  <- 2003  # starting year in the burn-in period
 year_end    <- 2022  # end year in the burn-in period
 MSE_years   <- 0     # number of years in the feedback loop
@@ -99,7 +99,7 @@ Below are some examples:
 
 #### 3a. Specify movement type and movement rate (default: bidirectional)
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
 # Note: the default is "bidirectional" movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
 
@@ -154,7 +154,7 @@ selectivity and natural mortality as time and/or age varying (treated as
 random effects) is optional. More details can be found in the vignettes
 of single-wham (<https://timjmiller.github.io/wham/>).
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 n_stocks  <- as.integer(basic_info['n_stocks'])
 n_regions <- as.integer(basic_info['n_regions'])
 n_fleets  <- as.integer(basic_info['n_fleets'])
@@ -248,7 +248,7 @@ self_sim_fit <- sim_fn(om, self.fit = TRUE)
 
 We use `check_convergence()` function to check the model convergence:
 
-```{r, eval=FALSE, cache=TRUE}
+```{r, eval=FALSE}
 check_convergence(self_sim_fit) # check the model convergence
 ```
 
@@ -308,7 +308,7 @@ cross_sim_fit <- sim_fn2(om, em, cross.fit = TRUE)
 
 Check model convergence:
 
-```{r, eval=FALSE, cache=TRUE}
+```{r, eval=FALSE}
 check_convergence(cross_sim_fit)
 ```
 

@@ -43,9 +43,11 @@ info <- generate_basic_info(n_stocks   = 2,
                             n_ages        = 12, 
                             Fbar_ages     = 12, 
                             recruit_model = 2, 
-                            F_info     = list(F.year1 = 0.2, Fhist = "updown",Fmax = 1, Fmin = 0.2,change_time = 0.5),
+                            F_info     = list(F.year1 = 0.2, Fhist = "updown",
+                                              Fmax = 1, Fmin = 0.2,change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
-                            index_info = list(index_cv = 0.1, index_Neff = 200, fracyr_indices = 0.5, q = 0.2), 
+                            index_info = list(index_cv = 0.1, index_Neff = 200, 
+                                              fracyr_indices = 0.5, q = 0.2), 
                             fracyr_spawn = 0.5, 
                             bias.correct.process     = FALSE, 
                             bias.correct.observation = FALSE, 
@@ -177,38 +179,27 @@ results <- foreach (i = 1:10) %dopar% {
   
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = NULL,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
+  mod <- loop_through_fn(om = om_with_data, 
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em,
+                         NAA_re_em = NAA_re_em, 
+                         move_em = NULL,
+                         age_comp_em = "multinomial",
+                         em.opt = list(separate.em = TRUE, 
+                                       separate.em.type = 1, 
+                                       do.move = FALSE, 
+                                       est.move = FALSE),
+                         assess_years = assess.years, 
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20, 
+                         seed = 123+i,
+                         save.sdrep = FALSE)
   
+    saveRDS(mod, file.path(sub.dir,sprintf("Mod1_%03d.RDS",i)))
+
 }
-mods[[1]] <- results
 
 stopCluster(cluster)
 ```
@@ -237,38 +228,27 @@ results <- foreach (i = 1:10) %dopar% {
 
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
-  tryCatch({
-    mod <- loop_through_fn(om = om_with_data, 
-                            random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
-                            M_em = M_em, 
-                            sel_em = sel_em, 
-                            NAA_re_em = NAA_re_em, 
-                            move_em = NULL,
-                            age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 2, do.move = FALSE, est.move = FALSE),
-                            assess_years = assess.years, 
-                            assess_interval = assess.interval, 
-                            base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123+i,
-                            save.sdrep = FALSE)
-  results[[i]] <- mod
-    
-  }, error = function(e) {
-    
-    warning(paste("Iteration",i,"failed","e$message"))
-    
-    results[[i]] <- NULL
-    
-  })
+  mod <- loop_through_fn(om = om_with_data, 
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em, 
+                         NAA_re_em = NAA_re_em, 
+                         move_em = NULL,
+                         age_comp_em = "multinomial",
+                         em.opt = list(separate.em = TRUE, 
+                                       separate.em.type = 2, 
+                                       do.move = FALSE, 
+                                       est.move = FALSE),
+                         assess_years = assess.years,
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20,
+                         seed = 123+i,
+                         save.sdrep = FALSE)
+  
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod2_%03d.RDS",i)))
   
 }
-mods[[2]] <- results
 
 stopCluster(cluster)
 ```
@@ -315,8 +295,8 @@ foreach (i = 1:10) %dopar% {
                          year.use = 20, 
                          seed = 123+i,
                          save.sdrep = FALSE)
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod3_%03d.RDS",i)))
 }
-mods[[3]] <- results
 
 stopCluster(cluster)
 ```
@@ -398,21 +378,19 @@ foreach (i = 1:10) %dopar% {
   
   mod <- loop_through_fn(om = om_with_data, 
                                 random = random,
-                                M_om = M,
-                                sel_om = sel, 
-                                NAA_re_om = NAA_re, 
-                                move_om = move,
-                                age_comp_om = "multinomial",
                                 M_em = M_em, 
                                 sel_em = sel_em, 
                                 NAA_re_em = NAA_re_em, 
                                 move_em = move,
                                 age_comp_em = "multinomial",
-                                em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = TRUE, est.move = FALSE),
+                                em.opt = list(separate.em = FALSE, 
+                                              separate.em.type = 3, 
+                                              do.move = TRUE, 
+                                              est.move = FALSE),
                                 assess_years = assess.years, 
                                 assess_interval = assess.interval, 
                                 base_years = base.years,
-                                year.use = 20, # number of years of data you want to use in the assessment model
+                                year.use = 20, 
                                 seed = 123+i,
                                 save.sdrep = FALSE)
   

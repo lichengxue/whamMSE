@@ -28,7 +28,7 @@ management strategy evaluation.
 
 ### 1. Load "WHAM" and "whamMSE":
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 library(wham)
 library(whamMSE)
 
@@ -44,7 +44,7 @@ during the spawning season. To save time, the burn-in period is set to
 be 10 years, and feedback period is set to be 3 years. More details can
 be found using `?generate_basic_info()`.
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 year_start  <- 2003  # starting year in the burn-in period
 year_end    <- 2022  # end year in the burn-in period
 MSE_years   <- 3     # number of years in the feedback loop
@@ -61,9 +61,11 @@ info <- generate_basic_info(n_stocks   = 2,
                             n_ages        = 12, 
                             Fbar_ages     = 12, 
                             recruit_model = 2, 
-                            F_info     = list(F.year1 = 0.2, Fhist = "F-H-L", Fmax = 2, Fmin = 1, change_time = 0.5),
+                            F_info     = list(F.year1 = 0.2, Fhist = "F-H-L", 
+                                              Fmax = 2, Fmin = 1, change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
-                            index_info = list(index_cv = 0.1, index_Neff = 200, fracyr_indices = 0.5, q = 0.2), 
+                            index_info = list(index_cv = 0.1, index_Neff = 200, 
+                                              fracyr_indices = 0.5, q = 0.2), 
                             fracyr_spawn = 0.5, 
                             bias.correct.process     = FALSE, 
                             bias.correct.observation = FALSE, 
@@ -80,16 +82,17 @@ F_info = info$F # collect fishing information
 
 ### 3. Specify movement type and movement rate
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2) # "bidirectional" movement
 
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "iid_y")
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), 
+                      move.re = "iid_y", move.sigma = 0.5)
 
 ```
 
 ### 4. Configure selecitvity and natural mortality
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 n_stocks  <- as.integer(basic_info['n_stocks'])
 n_regions <- as.integer(basic_info['n_regions'])
 n_fleets  <- as.integer(basic_info['n_fleets'])
@@ -111,17 +114,17 @@ M <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n
 The Beverton-Holt model is used here and NAA deviations are treated as
 random effects with IID (sigma = 0.2):
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 sigma      <- "rec+1"
 re_cor     <- "iid"
 ini.opt    <- "equilibrium" # option   <- c("age-specific-fe", "equilibrium")
 
 # Set para. for B-H function
-alpha <- 15
-beta  <- 1.5e-3
+alpha <- 12
+beta  <- 1.5e-4
 
 # Set sigma for NAA
-NAA_sig <- 0.2
+NAA_sig <- 0.5
 sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages"
 
 # Set initial NAA for each stock
@@ -225,17 +228,15 @@ M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_region
 
 mods[[1]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 3, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
@@ -262,17 +263,15 @@ M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_region
 
 mods[[2]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 2, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 2, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
@@ -298,21 +297,19 @@ M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_region
 
 mods[[3]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 1, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
+                            year.use = 20, 
                             hcr.type = 1,
                             seed = 123,
                             save.sdrep = FALSE)
@@ -339,17 +336,15 @@ M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_region
 
 mods[[4]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = FALSE, 
+                                          separate.em.type = 3, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
@@ -372,27 +367,26 @@ sel_em <- list(model=rep("logistic",n_fleets+n_indices),
 
 NAA_re_em <- list(N1_model=rep("equilibrium",n_stocks),
                   sigma=rep("rec+1",n_stocks),
-                  cor=rep("iid",n_stocks))
+                  cor=rep("iid",n_stocks),
+                  NAA_where = basic_info$NAA_where)
 
 M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[5]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = "multinomial",
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = move,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = FALSE, separate.em.type = 3, do.move = TRUE, est.move = FALSE),
+                            em.opt = list(separate.em = FALSE, 
+                                          separate.em.type = 3, 
+                                          do.move = TRUE,
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
+                            year.use = 20, 
                             seed = 123,
                             save.sdrep = FALSE)
 ```
