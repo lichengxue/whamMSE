@@ -242,7 +242,8 @@ mods[[1]] = loop_through_fn(om = om_with_data,
                             base_years = base.years,
                             year.use = 20, # number of years of data you want to use in the assessment model
                             seed = 123,
-                            save.sdrep = FALSE)
+                            save.sdrep = FALSE, 
+                            save.last.em = TRUE)
 ```
 
 #### EM2:
@@ -350,7 +351,8 @@ mods[[4]] = loop_through_fn(om = om_with_data,
                             base_years = base.years,
                             year.use = 20, # number of years of data you want to use in the assessment model
                             seed = 123,
-                            save.sdrep = FALSE)
+                            save.sdrep = FALSE, 
+                            save.last.em = TRUE)
 ```
 
 #### EM5:
@@ -388,7 +390,8 @@ mods[[5]] = loop_through_fn(om = om_with_data,
                             base_years = base.years,
                             year.use = 20, 
                             seed = 123,
-                            save.sdrep = FALSE)
+                            save.sdrep = FALSE, 
+                            save.last.em = TRUE)
 ```
 
 ### 12. Compare model performance

@@ -9,16 +9,6 @@
 #' @param sel_em Selectivity configuration in the assessment model
 #' @param NAA_re_em Numbers-at-age (NAA) configuration in the assessment model
 #' @param move_em Movement configuration in the assessment model
-#' @param em.opt List of options for the assessment model
-#'   \itemize{
-#'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
-#'     \item \code{$separate.em.type} only if separate.em = TRUE \cr
-#'     {=1} panmictic (spatially-aggregated) \cr
-#'     {=2} fleets-as-areas \cr
-#'     {=3} n single assessment models (n = n_regions) \cr
-#'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
-#'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
-#'     }
 #' @param age_comp_em Likelihood distribution of age composition data in the assessment model
 #'   \itemize{
 #'     \item \code{"multinomial"} Default
@@ -34,6 +24,16 @@
 #'     \item \code{"logistic-normal-01-infl-2par"}
 #'     \item \code{"mvtweedie"}
 #'     \item \code{"dir-mult-linear"}
+#'     }
+#' @param em.opt List of options for the assessment model
+#'   \itemize{
+#'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
+#'     \item \code{$separate.em.type} only if separate.em = TRUE \cr
+#'     {=1} panmictic (spatially-aggregated) \cr
+#'     {=2} fleets-as-areas \cr
+#'     {=3} n single assessment models (n = n_regions) \cr
+#'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
+#'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
 #'     }
 #' @param assess_years Year in which the assessment is conducted
 #' @param assess_interval Assessment interval used in the MSE feedback loop
@@ -66,7 +66,7 @@
 #' @seealso \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}
 
 loop_through_fn <- function(om, random, M_em, sel_em, NAA_re_em, move_em, 
-                            em.opt = NULL, age_comp_em = "multinomial",
+                            age_comp_em = "multinomial",em.opt = NULL, 
                             assess_years = NULL, assess_interval = NULL, base_years = NULL,
                             year.use = 30, hcr.type = 1, hcr.opts = NULL, do.retro = FALSE,
                             do.osa = FALSE, seed = 123, save.sdrep = FALSE, save.last.em = FALSE) {

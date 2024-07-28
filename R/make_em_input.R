@@ -209,22 +209,19 @@ make_em_input <- function(om,
     
     if (em.opt$do.move) {
       
-      # NAA_re_em$NAA_where = basic_info$NAA_where
-      
+      NAA_re_em$NAA_where = basic_info$NAA_where
       # basic_info$NAA_where = NULL
       
-      NAA_re_em$NAA_where = basic_info$NAA_where
-      
-      em_input <- prepare_wham_input(basic_info = basic_info, 
-                                     selectivity = sel_em, 
-                                     M = M_em, 
-                                     NAA_re = NAA_re_em, 
-                                     move = move_em, 
+      em_input <- prepare_wham_input(basic_info = basic_info,
+                                     selectivity = sel_em,
+                                     M = M_em,
+                                     NAA_re = NAA_re_em,
+                                     move = move,
                                      age_comp = age_comp_em,
-                                     catch_info = info$catch_info, 
+                                     catch_info = info$catch_info,
                                      index_info = info$index_info,
                                      F = info$F)
-
+      
       # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages) stop("NAA_where is not specified correctly!")
       
       if (!em.opt$est.move) em_input <- fix_move(em_input)

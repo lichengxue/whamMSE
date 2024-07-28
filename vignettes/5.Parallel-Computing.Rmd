@@ -206,6 +206,8 @@ stopCluster(cluster)
 
 ### 10. EM2
 ```{r, eval=FALSE}
+library(doParallel)
+library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
@@ -303,6 +305,8 @@ stopCluster(cluster)
 
 ### 12. EM4
 ```{r, eval=FALSE}
+library(doParallel)
+library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
@@ -354,10 +358,12 @@ stopCluster(cluster)
 
 ### 13. EM5
 ```{r, eval=FALSE}
+library(doParallel)
+library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:2) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -372,27 +378,28 @@ foreach (i = 1:10) %dopar% {
   NAA_re_em <- list(N1_model=rep("equilibrium",n_stocks),
                   sigma=rep("rec+1",n_stocks),
                   cor=rep("iid",n_stocks),
-                  recruit_model = 2)
+                  NAA_where = om$input$data$NAA_where)
   
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
-                                random = random,
-                                M_em = M_em, 
-                                sel_em = sel_em, 
-                                NAA_re_em = NAA_re_em, 
-                                move_em = move,
-                                age_comp_em = "multinomial",
-                                em.opt = list(separate.em = FALSE, 
-                                              separate.em.type = 3, 
-                                              do.move = TRUE, 
-                                              est.move = FALSE),
-                                assess_years = assess.years, 
-                                assess_interval = assess.interval, 
-                                base_years = base.years,
-                                year.use = 20, 
-                                seed = 123+i,
-                                save.sdrep = FALSE)
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em,
+                         NAA_re_em = NAA_re_em,
+                         move_em = move,
+                         age_comp_em = "multinomial",
+                         em.opt = list(separate.em = FALSE, 
+                                       separate.em.type = 3, 
+                                       do.move = TRUE,
+                                       est.move = TRUE),
+                         assess_years = assess.years, 
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20, 
+                         seed = 123+i,
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   
   saveRDS(mod, file.path(sub.dir,sprintf("Mod5_%03d.RDS",i)))
 }
