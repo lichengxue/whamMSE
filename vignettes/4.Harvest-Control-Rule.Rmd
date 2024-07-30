@@ -272,14 +272,15 @@ mods[[3]] = loop_through_fn(om = om_with_data,
                             hcr.opts = hcr.opts,
                             seed = 123,
                             save.sdrep = FALSE)
+
+saveRDS(mods, "Mods.rds")
 ```
 
 ### 11. Compare model performance
 
-The "whamMSE" package has comprehensive output analysis tools (see Vignettes: Output-Analysis). For now we just extract some key quantities (e.g. SSB, catch) for comparison:
+The "whamMSE" package has comprehensive output analysis tools, please save the results for Ex6: Performance Analysis Tools. For now we just extract some key quantities (e.g. SSB, catch) for comparison:
 
 ```{r, eval=FALSE}
-
 par(mfrow = c(1,2))
 SSB_s1_m1 <- mods[[1]]$om$rep$SSB[,1] # Stock 1 SSB in model 1
 SSB_s1_m2 <- mods[[2]]$om$rep$SSB[,1] # Stock 1 SSB in model 2

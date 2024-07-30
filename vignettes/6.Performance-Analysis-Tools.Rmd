@@ -13,7 +13,7 @@ editor_options:
     wrap: 72
 ---
 
-This vignette introduces how to use `plot_mse_output()` function to
+This vignette introduces how to use `plot_mse_output()` function to 
 summarize and visualize the results of management strategy evaluation.
 `plot_mse_output()` function is capable of summarizing management
 strategy evaluation results from one realization and from n
@@ -35,9 +35,14 @@ library(whamMSE)
 
 main.dir = here::here() # Or the path you want to save the results.
 
-# Remember in Example 4 we have 2 EMs saved in a list called "mods". 
+# Remember in Example 4 we have 3 EMs saved in a list called "mods". 
+mods <- readRDS("Mods.rds") # path where you saved the results from Ex4.
 
-plot_mse_output(mods, use.n.years = 10) # also summarize the performance from the last 10 model years
+plot_mse_output(mods = mods, main.dir = getwd(), dpi = 150,
+                use.n.years = 10, # The last 10 years will be used for comparison of long-term performance 
+                base.mod = 1, # specify which model is used as a base model
+                short.term = NULL, # if NULL, results of first 2 years will be used for comparison of short-term performance
+                out.type = "png") # Options: png, pdf, html 
 
 ```
 
@@ -54,7 +59,7 @@ plot_mse_output(mods, use.n.years = 10) # also summarize the performance from th
 ![Figure 4](Report(1)/Catch_s.PNG) 
 
 #### 1.5 Performance summarized over the last 10 years are summarized below:
-![Figure 5](Report(1)/Performance_last_10years.PNG)
+![Figure 5](Report(1)/Performance_last_10_years.PNG)
 
 ### 2. Results from n realizations
 
@@ -64,24 +69,22 @@ Remember mods[[1]] is a list that contains results of the performance of
 EM1 in different realizations.
 
 ```{r, eval=FALSE}
-mods_list <- list()
+mods = list()
 
-for (i in 1:length(mods[[1]])) { # check the number of realizations you have
-  mods_list[[i]] <- list(mods[[1]][[i]],mods[[2]][[i]],mods[[3]][[i]],
-                         mods[[4]][[i]],mods[[5]][[i]],mods[[6]][[i]]) # collect performance from EMs in every realization 
+for (nsim in 1:10) {
+  file.names <- file.path(sub.dir,paste0("Mod",1:6,sprintf("_%03d.RDS",nsim))) # path where you saved the results from Ex5.
+  mods[[nsim]] <- lapply(file.names, readRDS)
 }
 
-plot_mse_output(mods = mods_list, 
-                main.dir = getwd(), 
+plot_mse_output(mods = mods, main.dir = getwd(), dpi = 150,
                 use.n.years = 10, # The last 10 years will be used for comparison of long-term performance 
-                base.mod = 4, # "correct" EM that can be used as a reference
+                base.mod = 6, # "correct" EM that can be used as a reference
                 short.term = NULL, # if NULL, results of first 2 years will be used for comparison of short-term performance
-                dpi = 150,
-                out.type = "pdf") # Options: png, pdf, html 
+                out.type = "html") # Options: png, pdf, html 
 ```
 
 #### 2.1 Performance summarized over the last 10 years across EMs over n realizations:
-![Figure 1](Report(2)/Performance_last_10years.PNG)
+![Figure 1](Report(2)/Performance_last_10_years.PNG)
 
 #### 2.2 Relative difference in performance between correct EMs and mis-specified EMs:
 ![Figure 2](Report(2)/Performance_Relative_Diff.png)
@@ -95,24 +98,21 @@ plot_mse_output(mods = mods_list,
 #### 2.5 Short-term performance (over the first 2 years) across EMs and n realizations:
 ![Figure 5](Report(2)/Performance_First_N_Years.png)
 
-#### 2.6 Estimates of mean recruitment and variances of recruitment and survival deviations:
-![Figure 6](Report(2)/Simulation_Estimation.png)
+#### 2.6 Estimates of mean recruitment, variances of NAA deviations, and AIC:
+![Figure 6](Report(2)/Diagnostic_Results.png)
 
-#### 2.7 Margial AIC calculated for each EM:
-![Figure 7](Report(2)/AIC.png)
-
-#### 2.8 For full report of terminal-year assessment model, please use:
+#### 2.7 For full report of terminal-year assessment model, please use:
 ```{r, eval=FALSE}
-plot_wham_output(mods_list[[1]][[1]], out.type = "html") # plot EM1 from the first realization
+plot_wham_output(mods[[1]][[6]]$em_full[[1]], out.type = "html") # plot EM6 from the 1st realization
 ```
 
-#### 2.9 Check model convergence in every assessment model in the feedback period
+#### 2.8 Check model convergence in every assessment model in the feedback period
 ```{r, eval=FALSE}
-mods_list[[1]][[2]]$converge_list # EM2 from the first realization
-# 2 indicates the assessment model is converged.
+mods[[1]][[6]]$converge_list # EM6 from the 1st realization
+# Here 2 indicates the assessment model is converged (optimization complete = 1 and Hessian is invertible = 1).
 ```
 
-#### 2.10 Check catch advice generated from every assessment model in the feedback period
+#### 2.9 Check catch advice generated from every assessment model in the feedback period
 ```{r, eval=FALSE}
-mods_list[[1]][[4]]$catch_advice # catch advice generated from EM4 from the first realization
+mods[[1]][[6]]$catch_advice # catch advice generated from EM6 from the first realization
 ```

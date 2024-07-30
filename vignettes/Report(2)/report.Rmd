@@ -3,7 +3,7 @@
 title: 'Performance Metrics Report'
 output: html_document
 params:
-  box_plots: !r NULL
+  All_plots: !r NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r plots, results='asis'}
-for (p in params$box_plots) {
+for (p in params$All_plots) {
   print(p)
 }
 ```

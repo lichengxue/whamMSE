@@ -21,7 +21,7 @@ plot_mse_output(
 
 \item{use.n.years}{Number of years to use for comparison. Default is 10.}
 
-\item{base.mod}{Base model for comparison. Default is 4.}
+\item{base.mod}{Base model for comparison. Default is 1.}
 
 \item{short.term}{List with first.n.years, year_start, and year_end for short-term analysis. if = NULL, results will be summarized for the first 2 years in the feedback loop}
 

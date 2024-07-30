@@ -5,7 +5,7 @@
 #' @param mods List of models to compare.
 #' @param main.dir Main directory for output files. Default is the current working directory.
 #' @param use.n.years Number of years to use for comparison. Default is 10.
-#' @param base.mod Base model for comparison. Default is 4.
+#' @param base.mod Base model for comparison. Default is 1.
 #' @param short.term List with first.n.years, year_start, and year_end for short-term analysis. if = NULL, results will be summarized for the first 2 years in the feedback loop 
 #' @param dpi Resolution for plots. Default is 150.
 #' @param out.type Output type for plots.
@@ -23,7 +23,7 @@
 
 plot_mse_output <- function(mods, main.dir = getwd(), 
                             use.n.years = 10, 
-                            base.mod = 4, 
+                            base.mod = 1, 
                             short.term = NULL,
                             dpi = 150,
                             out.type = 'png') {
@@ -74,7 +74,7 @@ plot_mse_output <- function(mods, main.dir = getwd(),
       list(var = "Catch_r", title = "Region-specific Catch", ylab = "Catch")
     )
     
-    box_plots <- lapply(vars, function(v) {
+    All_plots <- lapply(vars, function(v) {
       res = NULL
       for (i in 1:length(mods)){
         for (j in 1:length(mods[[i]])) {
@@ -98,7 +98,7 @@ plot_mse_output <- function(mods, main.dir = getwd(),
       return(p)
     })
     
-    return(box_plots)
+    return(All_plots)
   }
   
   save_plots_to_pdf <- function(plot_list, file_path) {
@@ -109,7 +109,7 @@ plot_mse_output <- function(mods, main.dir = getwd(),
     dev.off()
   }
   
-  generate_html_report <- function(main.dir, sub.dir, box_plots) {
+  generate_html_report <- function(main.dir, sub.dir, All_plots) {
     report_file <- file.path(main.dir, sub.dir, "report.Rmd")
     html_file <- file.path(main.dir, sub.dir, "report.html")
     
@@ -118,7 +118,7 @@ plot_mse_output <- function(mods, main.dir = getwd(),
 title: 'Performance Metrics Report'
 output: html_document
 params:
-  box_plots: !r NULL
+  All_plots: !r NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -126,13 +126,13 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r plots, results='asis'}
-for (p in params$box_plots) {
+for (p in params$All_plots) {
   print(p)
 }
 ```"
   
   writeLines(rmd_content, report_file)
-  render(report_file, output_file = html_file, params = list(box_plots = box_plots))
+  render(report_file, output_file = html_file, params = list(All_plots = All_plots))
   browseURL(html_file)
   }
 
@@ -247,7 +247,6 @@ if (!is.list(mods[[1]][[1]][[1]])) {
   p <- ggarrange(p1,p2,p3,p4,common.legend = TRUE,legend = "right")
   ggsave(file.path(main.dir,sub.dir,"Performance_Metrics.PNG"), p, width = 15, height = 10, dpi = dpi)
   
-  
   # ------------------------------------------------------------
   # ------------------------------------------------------------
   # ------------------------- Box Plot ------------------------
@@ -282,7 +281,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     ggtitle(paste0("SSB"," (over last ",use.n.years," years)")) +
     ylab("SSB") +
     theme_bw()
-  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"years.PNG")), p1, width = 10, height = 7, dpi = dpi)
+  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"_years.PNG")), p1, width = 10, height = 7, dpi = dpi)
   
   var = "Fbar"
   res = NULL
@@ -310,7 +309,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     ggtitle(paste0("Fleet-specific F"," (over last ",use.n.years," years)")) +
     ylab("F") +
     theme_bw()
-  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"years.PNG")), p2, width = 10, height = 7, dpi = dpi)
+  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"_years.PNG")), p2, width = 10, height = 7, dpi = dpi)
   
   var = "Catch_s"
   res = NULL
@@ -338,7 +337,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     ggtitle(paste0("Stock-specific Catch"," (over last ",use.n.years," years)")) +
     ylab("Catch") +
     theme_bw()
-  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"years.PNG")), p3, width = 10, height = 7, dpi = dpi)
+  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"_years.PNG")), p3, width = 10, height = 7, dpi = dpi)
   
   var = "Catch_r"
   res = NULL
@@ -364,14 +363,14 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     scale_colour_brewer(palette = "Set2") + 
     ggtitle(paste0("Region-specific Catch"," (over last ",use.n.years," years)")) +
     ylab("Catch") +
-    coord_cartesian(ylim = quantile(res[[var]],c(0.05,0.95))) + 
+    coord_cartesian(ylim = quantile(res[[var]],c(0.025,0.975))) + 
     theme_bw()
   
-  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"years.PNG")), p4, width = 10, height = 7, dpi = dpi)
+  ggsave(file.path(main.dir,sub.dir,paste0(var,"_last_",use.n.years,"_years.PNG")), p4, width = 10, height = 7, dpi = dpi)
   
   # Plot them together
   p <- ggarrange(p1,p2,p3,p4,common.legend = TRUE,legend = "right")
-  ggsave(file.path(main.dir,sub.dir,paste0("Performance_last_",use.n.years,"years.PNG")), p, width = 15, height = 10, dpi = dpi)
+  ggsave(file.path(main.dir,sub.dir,paste0("Performance_last_",use.n.years,"_years.PNG")), p, width = 15, height = 10, dpi = dpi)
   
   cat("\n----------------------------------\n| Congrats! Your report is done! |\n----------------------------------\n")
   cat(paste0("\nReport has been saved in ",file.path(main.dir,sub.dir)))
@@ -416,12 +415,29 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     p3 <- generate_box_plot("Catch_s", "Stock-specific Catch", "Catch")
     p4 <- generate_box_plot("Catch_r", "Region-specific Catch", "Catch")
     
-    box_plots <- list(p1, p2, p3, p4)
+    performance_plot <- list(p1, p2, p3, p4)
+    
+    All_plots <- list()
+    
+    if (out.type == 'png') {
+      filenames <- c("SSB", "Fbar", "Catch_s", "Catch_r")
+      mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, "_last_", use.n.years, "_years.png")), p, width = 10, height = 7, dpi = dpi), performance_plot, filenames)
+      combined_performance_plot <- ggarrange(plotlist = performance_plot, common.legend = TRUE, legend = "right")
+      ggsave(file.path(main.dir, sub.dir, paste0("Performance_last_",use.n.years,"_years.png")), combined_performance_plot, width = 15, height = 10, dpi = dpi)
+    } else if (out.type == 'pdf') {
+      pdf(file.path(main.dir, sub.dir, paste0("Performance_last_",use.n.years,"_years.pdf")), width = 10, height = 7)
+      lapply(performance_plot, print)
+      dev.off()
+    } else if (out.type == 'html') {
+      generate_html_report(main.dir, sub.dir, performance_plot)
+    }
+    
+    All_plots <- c(All_plots, performance_plot)
     
     # Additional plots
     cat("\nGenerating additional plots for multiple realizations...\n")
     
-    # Box Plot for Stock Status
+    # Box Plot for SSB Stock Status
     res = NULL
     for (i in 1:length(mods)){
       for (j in 1:length(mods[[1]])){
@@ -448,9 +464,128 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       ylab("SSB/SSB40%") +
       theme_bw()
     
-    ggsave(file.path(main.dir, sub.dir, "SSB_Box.png"), p1, width = 10, height = 7, dpi = dpi)
+    ggsave(file.path(main.dir, sub.dir, paste0("SSB_status_last_",use.n.years,"_years.PNG")), p1, width = 10, height = 7, dpi = dpi)
     
-    box_plots <- c(box_plots, list(p1))
+    # All_plots <- c(All_plots, list(p1))
+    
+    # Box Plot for SSB Stock Status (Terminal)
+    res = NULL
+    for (i in 1:length(mods)){
+      for (j in 1:length(mods[[1]])){
+        tmp <- mods[[i]][[j]]$om$rep$SSB
+        tmp <- cbind(tmp, rowSums(tmp))
+        tmp <- tmp / exp(mods[[i]][[j]]$om$rep$log_SSB_FXSPR)
+        tmp <- as.data.frame(tmp)
+        names(tmp) <- paste0("SSB/SSB40%.s",1:ncol(tmp))
+        names(tmp)[ncol(tmp)] <- "SSB/SSB40%_Global"
+        tmp$nsim <- i
+        tmp$Model <- paste("Model",j)
+        tmp$Year <- Years
+        tmp <- tail(tmp, 1)
+        res <- rbind(res, tmp)
+      }
+    }
+    var = "SSB/SSB40%"
+    res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
+    p2 <- ggplot(res, aes(x = Model, y = !! rlang::sym(var), col = Model)) +
+      geom_boxplot(outlier.shape = NA) +
+      facet_grid(Label ~., scales = "free") + 
+      scale_colour_brewer(palette = "Set2") + 
+      ggtitle("SSB/SSB40% in the terminal year") +
+      ylab("SSB/SSB40%") +
+      theme_bw()
+    
+    ggsave(file.path(main.dir, sub.dir, paste0("SSB_status_in_the_terminal_year.PNG")), p1, width = 10, height = 7, dpi = dpi)
+    
+    # All_plots <- c(All_plots, list(p2))
+    
+    # Box Plot for F Stock Status 
+    res = NULL
+    for (i in 1:length(mods)){
+      for (j in 1:length(mods[[1]])){
+        Fbar <- mods[[i]][[j]]$om$rep$Fbar
+        Fbar <- cbind(Fbar, rowSums(Fbar))
+        n_fleets <- mods[[i]][[j]]$om$input$data$n_fleets
+        n_regions <- mods[[i]][[j]]$om$input$data$n_regions
+        Fbar_age <- max(mods[[i]][[j]]$om$input$data$Fbar_ages)
+        Fbar_XSPR <- exp(mods[[i]][[j]]$om$rep$log_FAA_XSPR)[,,Fbar_age]
+        Fbar_XSPR <- t(rbind(Fbar_XSPR[1:n_fleets,], Fbar_XSPR[n_fleets + n_regions + 1,]))
+        tmp <- as.data.frame(Fbar / Fbar_XSPR)
+        names(tmp) <- paste0("F/F40%.r",1:ncol(tmp))
+        names(tmp)[ncol(tmp)] <- "F/F40%_Global"
+        tmp$nsim <- i
+        tmp$Model <- paste("Model",j)
+        tmp$Year <- Years
+        tmp <- tail(tmp, use.n.years)
+        res <- rbind(res, tmp)
+      }
+    }
+    
+    var = "F/F40%"
+    res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
+    p3 <- ggplot(res, aes(x = Model, y = !! rlang::sym(var), col = Model)) +
+      geom_boxplot(outlier.shape = NA) +
+      facet_grid(Label ~., scales = "free") + 
+      scale_colour_brewer(palette = "Set2") + 
+      ggtitle(paste0("F/F40%"," (over last ",use.n.years," years)")) +
+      ylab("F/F40%") +
+      theme_bw()
+    
+    ggsave(file.path(main.dir, sub.dir, paste0("F_status_last_",use.n.years,"_years.PNG")), p1, width = 10, height = 7, dpi = dpi)
+    
+    # All_plots <- c(All_plots, list(p3))
+    
+    # Box Plot for F Stock Status (Terminal)
+    res = NULL
+    for (i in 1:length(mods)){
+      for (j in 1:length(mods[[1]])){
+        Fbar <- mods[[i]][[j]]$om$rep$Fbar
+        Fbar <- cbind(Fbar, rowSums(Fbar))
+        n_fleets <- mods[[i]][[j]]$om$input$data$n_fleets
+        n_regions <- mods[[i]][[j]]$om$input$data$n_regions
+        Fbar_age <- max(mods[[i]][[j]]$om$input$data$Fbar_ages)
+        Fbar_XSPR <- exp(mods[[i]][[j]]$om$rep$log_FAA_XSPR)[,,Fbar_age]
+        Fbar_XSPR <- t(rbind(Fbar_XSPR[1:n_fleets,], Fbar_XSPR[n_fleets + n_regions + 1,]))
+        tmp <- as.data.frame(Fbar / Fbar_XSPR)
+        names(tmp) <- paste0("F/F40%.r",1:ncol(tmp))
+        names(tmp)[ncol(tmp)] <- "F/F40%_Global"
+        tmp$nsim <- i
+        tmp$Model <- paste("Model",j)
+        tmp$Year <- Years
+        tmp <- tail(tmp, 1)
+        res <- rbind(res, tmp)
+      }
+    }
+    
+    var = "F/F40%"
+    res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
+    p4 <- ggplot(res, aes(x = Model, y = !! rlang::sym(var), col = Model)) +
+      geom_boxplot(outlier.shape = NA) +
+      facet_grid(Label ~., scales = "free") + 
+      scale_colour_brewer(palette = "Set2") + 
+      ggtitle("F/F40% in the terminal year") +
+      ylab("F/F40%") +
+      theme_bw()
+    
+    ggsave(file.path(main.dir, sub.dir, paste0("F_status_in_the_terminal_year.PNG")), p1, width = 10, height = 7, dpi = dpi)
+    
+    stock_status_plots <- list(p1,p2,p3,p4)
+    
+    if (out.type == 'png') {
+      filenames <- c(paste0("SSB_status_last_",use.n.years,"_years"), "SSB_status_in_the_terminal_year", 
+                     paste0("F_status_last_",use.n.years,"_years"), "F_status_in_the_terminal_year")
+      mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, ".png")), p, width = 10, height = 7, dpi = dpi), stock_status_plots, filenames)
+      combined_relative_diff_plot <- ggarrange(plotlist = stock_status_plots, common.legend = TRUE, legend = "right")
+      ggsave(file.path(main.dir, sub.dir, "Stock_Status.png"), combined_relative_diff_plot, width = 15, height = 10, dpi = dpi)
+    } else if (out.type == 'pdf') {
+      pdf(file.path(main.dir, sub.dir, "Stock_Status.pdf"), width = 10, height = 7)
+      lapply(stock_status_plots, print)
+      dev.off()
+    } else if (out.type == 'html') {
+      generate_html_report(main.dir, sub.dir, stock_status_plots)
+    }
+    
+    All_plots <- c(All_plots,stock_status_plots)
     
     # Radar Chart
     res1 <- NULL
@@ -558,9 +693,9 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     
     # Create radar plot
     radar_plot()
-   
+    
     # Include radar chart in the list of plots for PDF
-    box_plots <- c(box_plots, list(radar_chart_plot))
+    All_plots <- c(All_plots, list(radar_chart_plot))
     
     # Save all plots to a single PDF
     save_plots_to_pdf <- function(plots, pdf_file) {
@@ -577,7 +712,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     
     if (out.type == 'pdf') {
       pdf_file <- file.path(main.dir, sub.dir, "Performance_Metrics.pdf")
-      save_plots_to_pdf(box_plots, pdf_file)
+      save_plots_to_pdf(All_plots, pdf_file)
       cat(paste0("\nReport has been saved in ", pdf_file, "\n"))
     }
     
@@ -618,7 +753,6 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     if (out.type == 'png') {
       filenames <- c("SSB_diff", "Fbar_diff", "Catch_s_diff", "Catch_r_diff")
       mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, "_last_", use.n.years, "years.png")), p, width = 10, height = 7, dpi = dpi), relative_diff_plots, filenames)
-      
       combined_relative_diff_plot <- ggarrange(plotlist = relative_diff_plots, common.legend = TRUE, legend = "right")
       ggsave(file.path(main.dir, sub.dir, "Performance_Relative_Diff.png"), combined_relative_diff_plot, width = 15, height = 10, dpi = dpi)
     } else if (out.type == 'pdf') {
@@ -629,7 +763,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       generate_html_report(main.dir, sub.dir, relative_diff_plots)
     }
     
-    box_plots <- c(box_plots, relative_diff_plots)
+    All_plots <- c(All_plots, relative_diff_plots)
     
     # KOBE Plot
     res1 <- NULL
@@ -640,7 +774,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
         tmp <- mods[[i]][[j]]$om$rep$SSB
         tmp <- cbind(tmp,rowSums(tmp))
         tmp <- data.frame(tmp/exp(mods[[i]][[j]]$om$rep$log_SSB_FXSPR))
-        tmp <- tail(tmp, use.n.years)
+        tmp <- tail(tmp, 1)
         names(tmp) <- paste0("S", 1:ncol(tmp))
         tmp$nsim <- i
         tmp$Model <- paste("Model", j)
@@ -654,7 +788,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
         names(tmp) <- paste0("S",1:ncol(tmp))
         tmp$nsim <- i
         tmp$Model <- paste("Model", j)
-        tmp <- tail(tmp, use.n.years)
+        tmp <- tail(tmp, 1)
         res2 <- rbind(res2, tmp)
       }
     }
@@ -678,7 +812,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       theme_bw() +
       xlab(bquote(paste("SSB/", SSB[paste(.(40),"%")]))) +
       ylab(bquote(paste("F/", F[paste(.(40),"%")]))) +
-      ggtitle("Stock Status") +
+      ggtitle("Stock Status in the Terminal Year") +
       theme(axis.text = element_text(size = 12),
             axis.title = element_text(size = 20),
             plot.title = element_text(size = 12),
@@ -696,9 +830,9 @@ if (!is.list(mods[[1]][[1]][[1]])) {
     xlim = c(0,quantile(temp[['Overfished']], 0.95))
     p <- p + coord_cartesian(ylim = ylim, xlim = xlim)
     
-    ggsave(file.path(main.dir, sub.dir, "Population_Status_all.png"), p, width = 15, height = 15, dpi = dpi)
+    ggsave(file.path(main.dir, sub.dir, "Population_Status_all.png"), p, width = 15, height = 10, dpi = dpi)
     
-    box_plots <- c(box_plots, list(p))
+    All_plots <- c(All_plots, list(p))
     
     # Calculate First N years
     if(!is.null(short.term)) {
@@ -718,57 +852,55 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       base.years = year_end - year_start + 1
     }
     
-      generate_first_n_years_plot <- function(var, title) {
-        res = NULL
-        for (i in 1:length(mods)){
-          for (j in 1:length(mods[[1]])){
-            tmp  <- extract_var(mods[[i]][[j]], var)
-            true <- extract_var(mods[[i]][[base.mod]], var)
-            tmp  <- tmp/true - 1
-            tmp$nsim <- i
-            tmp$Model <- paste("Model", j)
-            tmp$Year <- Years
-            tmp <- tmp[base.years + 1:first.n.years,]
-            res <- rbind(res, tmp)
-          }
+    generate_first_n_years_plot <- function(var, title) {
+      res = NULL
+      for (i in 1:length(mods)){
+        for (j in 1:length(mods[[1]])){
+          tmp  <- extract_var(mods[[i]][[j]], var)
+          true <- extract_var(mods[[i]][[base.mod]], var)
+          tmp  <- tmp/true - 1
+          tmp$nsim <- i
+          tmp$Model <- paste("Model", j)
+          tmp$Year <- Years
+          tmp <- tmp[base.years + 1:first.n.years,]
+          res <- rbind(res, tmp)
         }
-        res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
-        
-        p <- ggplot(res, aes(x = Model, y = !! rlang::sym(var), col = Model)) +
-          geom_boxplot(outlier.shape = NA) +
-          facet_grid(Label ~., scales = "free") + 
-          scale_colour_brewer(palette = "Set2") + 
-          ggtitle(paste0(title, " (over first ", first.n.years, " years)")) +
-          ylab("Relative Difference") +
-          theme_bw()
-        return(p)
       }
+      res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
       
-      p1 <- generate_first_n_years_plot("SSB", "SSB")
-      p2 <- generate_first_n_years_plot("Fbar", "Fleet-specific F")
-      p3 <- generate_first_n_years_plot("Catch_s", "Stock-specific Catch")
-      p4 <- generate_first_n_years_plot("Catch_r", "Region-specific Catch")
-      
-      first_n_years_plots <- list(p1, p2, p3, p4)
-      
-      if (out.type == 'png') {
-        filenames <- c("SSB_first_n_years", "Fbar_first_n_years", "Catch_s_first_n_years", "Catch_r_first_n_years")
-        mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, "_first_", first.n.years, "years.png")), p, width = 10, height = 7, dpi = dpi), first_n_years_plots, filenames)
-        
-        combined_first_n_years_plot <- ggarrange(plotlist = first_n_years_plots, common.legend = TRUE, legend = "right")
-        ggsave(file.path(main.dir, sub.dir, "Performance_First_N_Years.png"), combined_first_n_years_plot, width = 15, height = 10, dpi = dpi)
-      } else if (out.type == 'pdf') {
-        pdf(file.path(main.dir, sub.dir, "Performance_First_N_Years.pdf"), width = 10, height = 7)
-        lapply(first_n_years_plots, print)
-        dev.off()
-      } else if (out.type == 'html') {
-        generate_html_report(main.dir, sub.dir, first_n_years_plots)
-      }
-      
-      box_plots <- c(box_plots, first_n_years_plots)
+      p <- ggplot(res, aes(x = Model, y = !! rlang::sym(var), col = Model)) +
+        geom_boxplot(outlier.shape = NA) +
+        facet_grid(Label ~., scales = "free") + 
+        scale_colour_brewer(palette = "Set2") + 
+        ggtitle(paste0(title, " (over first ", first.n.years, " years)")) +
+        ylab("Relative Difference") +
+        theme_bw()
+      return(p)
+    }
     
+    p1 <- generate_first_n_years_plot("SSB", "SSB")
+    p2 <- generate_first_n_years_plot("Fbar", "Fleet-specific F")
+    p3 <- generate_first_n_years_plot("Catch_s", "Stock-specific Catch")
+    p4 <- generate_first_n_years_plot("Catch_r", "Region-specific Catch")
     
-    # Simulation-Estimation: Mean_rec, Sigma, Pearson_resid.
+    first_n_years_plots <- list(p1, p2, p3, p4)
+    
+    if (out.type == 'png') {
+      filenames <- c("SSB_first_n_years", "Fbar_first_n_years", "Catch_s_first_n_years", "Catch_r_first_n_years")
+      mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, "_first_", first.n.years, "years.png")), p, width = 10, height = 7, dpi = dpi), first_n_years_plots, filenames)
+      combined_first_n_years_plot <- ggarrange(plotlist = first_n_years_plots, common.legend = TRUE, legend = "right")
+      ggsave(file.path(main.dir, sub.dir, "Performance_First_N_Years.png"), combined_first_n_years_plot, width = 15, height = 10, dpi = dpi)
+    } else if (out.type == 'pdf') {
+      pdf(file.path(main.dir, sub.dir, "Performance_First_N_Years.pdf"), width = 10, height = 7)
+      lapply(first_n_years_plots, print)
+      dev.off()
+    } else if (out.type == 'html') {
+      generate_html_report(main.dir, sub.dir, first_n_years_plots)
+    }
+    
+    All_plots <- c(All_plots, first_n_years_plots)
+    
+    # Simulation-Estimation: Mean_rec, Sigma
     res <- NULL
     for (i in 1:length(mods)) {
       for (j in 1:length(mods[[1]])) {
@@ -801,13 +933,13 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       ggtitle(paste0("Mean Recruitment from the last EM")) +
       ylab("") +
       theme_bw() +
-      theme(axis.text = element_text(size = 12),
-            axis.title = element_text(size = 20),
-            plot.title = element_text(size = 15),
-            strip.text = element_text(size = 10),
-            legend.text = element_text(size = 12),
-            legend.title = element_text(size = 12)) +
-      theme(strip.text.x = element_text(size = 12, color = "black"))
+      theme(axis.text = element_text(size = 10),
+            axis.title = element_text(size = 15),
+            plot.title = element_text(size = 12),
+            strip.text = element_text(size = 8),
+            legend.text = element_text(size = 10),
+            legend.title = element_text(size = 10)) +
+      theme(strip.text.x = element_text(size = 10, color = "black"))
     ggsave(file.path(main.dir, sub.dir, "Mean_rec_par.png"), p1, width = 10, height = 10, dpi = dpi)
     
     res <- NULL
@@ -848,32 +980,14 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       ggtitle(paste0("Variance of NAA from the last EM")) +
       ylab("") +
       theme_bw() +
-      theme(axis.text = element_text(size = 12),
-            axis.title = element_text(size = 20),
-            plot.title = element_text(size = 15),
-            strip.text = element_text(size = 10),
-            legend.text = element_text(size = 12),
-            legend.title = element_text(size = 12)) +
-      theme(strip.text.x = element_text(size = 12, color = "black"))
+      theme(axis.text = element_text(size = 10),
+            axis.title = element_text(size = 15),
+            plot.title = element_text(size = 12),
+            strip.text = element_text(size = 8),
+            legend.text = element_text(size = 10),
+            legend.title = element_text(size = 10)) +
+      theme(strip.text.x = element_text(size = 10, color = "black"))
     ggsave(file.path(main.dir, sub.dir, "Variance_Para_NAA.png"), p2, width = 10, height = 15, dpi = dpi)
-    
-    sim_estimation_plots <- list(p1, p2)
-    
-    if (out.type == 'png') {
-      filenames <- c("Mean_Rec", "Variance_Para_NAA")
-      mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, ".png")), p, width = 10, height = 10, dpi = dpi), sim_estimation_plots, filenames)
-      
-      combined_sim_estimation_plot <- ggarrange(plotlist = sim_estimation_plots, common.legend = TRUE, legend = "right")
-      ggsave(file.path(main.dir, sub.dir, "Simulation_Estimation.png"), combined_sim_estimation_plot, width = 15, height = 10, dpi = dpi)
-    } else if (out.type == 'pdf') {
-      pdf(file.path(main.dir, sub.dir, "Simulation_Estimation.pdf"), width = 10, height = 7)
-      lapply(sim_estimation_plots, print)
-      dev.off()
-    } else if (out.type == 'html') {
-      # generate_html_report(main.dir, sub.dir, sim_estimation_plots)
-    }
-    
-    box_plots <- c(box_plots, sim_estimation_plots)
     
     # AIC, Pearson Residuals
     res <- NULL
@@ -908,55 +1022,52 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       ggtitle(paste0("AIC")) +
       ylab("") +
       theme_bw() +
-      theme(axis.text = element_text(size = 12),
-            axis.title = element_text(size = 20),
-            plot.title = element_text(size = 15),
-            strip.text = element_text(size = 10),
-            legend.text = element_text(size = 12),
-            legend.title = element_text(size = 12)) +
-      theme(strip.text.x = element_text(size = 12, color = "black"))
+      theme(axis.text = element_text(size = 10),
+            axis.title = element_text(size = 15),
+            plot.title = element_text(size = 12),
+            strip.text = element_text(size = 8),
+            legend.text = element_text(size = 10),
+            legend.title = element_text(size = 10)) +
+      theme(strip.text.x = element_text(size = 10, color = "black"))
     ggsave(file.path(main.dir, sub.dir, "AIC.png"), p3, width = 5, height = 5, dpi = dpi)
     
-    sim_estimation_plots <- c(sim_estimation_plots, list(p3))
+    sim_estimation_plots <- list(p1, p2, p3)
     
     if (out.type == 'png') {
-      filenames <- c("AIC")
+      filenames <- c("Mean_rec_par","Variance_Para_NAA","AIC")
       mapply(function(p, fname) ggsave(file.path(main.dir, sub.dir, paste0(fname, ".png")), p, width = 10, height = 10, dpi = dpi), sim_estimation_plots, filenames)
-      
       combined_sim_estimation_plot <- ggarrange(plotlist = sim_estimation_plots, common.legend = TRUE, legend = "right")
-      ggsave(file.path(main.dir, sub.dir, "AIC_Pearson_Residuals.png"), combined_sim_estimation_plot, width = 15, height = 10, dpi = dpi)
+      ggsave(file.path(main.dir, sub.dir, "Diagnostic_Results.png"), combined_sim_estimation_plot, width = 15, height = 10, dpi = dpi)
     } else if (out.type == 'pdf') {
-      pdf(file.path(main.dir, sub.dir, "AIC_Pearson_Residuals.pdf"), width = 10, height = 7)
+      pdf(file.path(main.dir, sub.dir, "Diagnostic_Results.pdf"), width = 10, height = 7)
       lapply(sim_estimation_plots, print)
       dev.off()
     } else if (out.type == 'html') {
       generate_html_report(main.dir, sub.dir, sim_estimation_plots)
     }
     
-    box_plots <- c(box_plots, sim_estimation_plots)
+    All_plots <- c(All_plots, sim_estimation_plots)
   }
   
   if (out.type == 'pdf') {
     pdf_file <- file.path(main.dir, sub.dir, "Performance_Metrics.pdf")
-    save_plots_to_pdf(box_plots, pdf_file)
+    save_plots_to_pdf(All_plots, pdf_file)
     cat(paste0("\nReport has been saved in ", pdf_file, "\n"))
   } else if (out.type == 'html') {
-    box_plots = box_plots[-6] # remove radar chart here!
-    generate_html_report(main.dir, sub.dir, box_plots)
+    All_plots = All_plots[-9] # remove radar chart here!
+    generate_html_report(main.dir, sub.dir, All_plots)
     cat(paste0("\nHTML report has been generated at ", file.path(main.dir, sub.dir, "report.html"), "\n"))
   } else {
     cat("Individual png figure is produced and the full report will not be provided when out.type = png is used!")
-    # filenames <- sapply(box_plots, function(p, var) file.path(main.dir, sub.dir, paste0(var, ".png")), vars)
-    # mapply(ggsave, filenames, box_plots, MoreArgs = list(width = 10, height = 7, dpi = dpi))
-    # combined_box_plot <- ggarrange(plotlist = box_plots, common.legend = TRUE, legend = "right")
+    # filenames <- sapply(All_plots, function(p, var) file.path(main.dir, sub.dir, paste0(var, ".png")), vars)
+    # mapply(ggsave, filenames, All_plots, MoreArgs = list(width = 10, height = 7, dpi = dpi))
+    # combined_box_plot <- ggarrange(plotlist = All_plots, common.legend = TRUE, legend = "right")
     # ggsave(file.path(main.dir, sub.dir, "Performance_Full_Report.png"), combined_box_plot, width = 15, height = 10, dpi = dpi)
   }
   cat("\n----------------------------------\n| Congrats! Your report is done! |\n----------------------------------\n")
   cat(paste0("\nReport has been saved in ",file.path(main.dir,sub.dir)))
 }
 }
-
-
 
 # Use the function like this:
 # plot_mse_output(mods, main.dir = "your/directory/path", out.type = 'pdf')

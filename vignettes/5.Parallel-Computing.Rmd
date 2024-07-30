@@ -151,19 +151,23 @@ assess.years    <- seq(terminal.year, tail(om$years,1)-assess.interval,by = asse
 mods <- list() # Create a list to save MSE outputs
 ```
 
-### 9. EM1
+### 9. Create a folder to save the results
 ```{r, eval=FALSE}
 sub.dir = "Results"
 dir.create(file.path(getwd(), sub.dir), recursive = TRUE)
 
 library(doParallel)
 library(foreach)
+
+detectCores() # check how many cores available
+```
+
+### 10. EM1
+```{r, eval=FALSE}
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -186,10 +190,8 @@ results <- foreach (i = 1:10) %dopar% {
                          NAA_re_em = NAA_re_em, 
                          move_em = NULL,
                          age_comp_em = "multinomial",
-                         em.opt = list(separate.em = TRUE, 
-                                       separate.em.type = 1, 
-                                       do.move = FALSE, 
-                                       est.move = FALSE),
+                         em.opt = list(separate.em = TRUE, separate.em.type = 1, 
+                                       do.move = FALSE, est.move = FALSE),
                          assess_years = assess.years, 
                          assess_interval = assess.interval, 
                          base_years = base.years,
@@ -204,16 +206,12 @@ results <- foreach (i = 1:10) %dopar% {
 stopCluster(cluster)
 ```
 
-### 10. EM2
+### 11. EM2
 ```{r, eval=FALSE}
-library(doParallel)
-library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-results <- list()
-
-results <- foreach (i = 1:10) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -237,10 +235,8 @@ results <- foreach (i = 1:10) %dopar% {
                          NAA_re_em = NAA_re_em, 
                          move_em = NULL,
                          age_comp_em = "multinomial",
-                         em.opt = list(separate.em = TRUE, 
-                                       separate.em.type = 2, 
-                                       do.move = FALSE, 
-                                       est.move = FALSE),
+                         em.opt = list(separate.em = TRUE, separate.em.type = 2, 
+                                       do.move = FALSE, est.move = FALSE),
                          assess_years = assess.years,
                          assess_interval = assess.interval, 
                          base_years = base.years,
@@ -255,12 +251,8 @@ results <- foreach (i = 1:10) %dopar% {
 stopCluster(cluster)
 ```
 
-### 11. EM3
-
+### 12. EM3
 ```{r, eval=FALSE}
-library(doParallel)
-library(foreach)
-detectCores() # check how many cores available
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
@@ -287,10 +279,8 @@ foreach (i = 1:10) %dopar% {
                          NAA_re_em = NAA_re_em, 
                          move_em = NULL,
                          age_comp_em = "multinomial", 
-                         em.opt = list(separate.em = TRUE, 
-                                       separate.em.type = 3, 
-                                       do.move = FALSE, 
-                                       est.move = FALSE),
+                         em.opt = list(separate.em = TRUE, separate.em.type = 3, 
+                                       do.move = FALSE, est.move = FALSE),
                          assess_years = assess.years, 
                          assess_interval = assess.interval, 
                          base_years = base.years,
@@ -303,10 +293,8 @@ foreach (i = 1:10) %dopar% {
 stopCluster(cluster)
 ```
 
-### 12. EM4
+### 13. EM4
 ```{r, eval=FALSE}
-library(doParallel)
-library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
@@ -317,10 +305,7 @@ foreach (i = 1:10) %dopar% {
   
   om_with_data <- update_om_fn(om, seed = 123+i, random = random)
   
-  n_stocks = 2
-  n_regions = 2
-  n_fleets = 2
-  n_indices = 2
+  n_stocks = n_regions = n_fleets = n_indices = 2
   
   sel_em <- list(model=rep("logistic",n_fleets+n_indices),
                initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
@@ -339,10 +324,8 @@ foreach (i = 1:10) %dopar% {
                          NAA_re_em = NAA_re_em, 
                          move_em = NULL,
                          age_comp_em = "multinomial",
-                         em.opt = list(separate.em = FALSE, 
-                                       separate.em.type = 3, 
-                                       do.move = FALSE, 
-                                       est.move = FALSE),
+                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
+                                       do.move = FALSE,  est.move = FALSE),
                          assess_years = assess.years, 
                          assess_interval = assess.interval, 
                          base_years = base.years,
@@ -356,14 +339,12 @@ foreach (i = 1:10) %dopar% {
 stopCluster(cluster)
 ```
 
-### 13. EM5
+### 14. EM5
 ```{r, eval=FALSE}
-library(doParallel)
-library(foreach)
 cluster <- makeCluster(10) 
 registerDoParallel(cluster)
 
-foreach (i = 1:2) %dopar% {
+foreach (i = 1:10) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -389,10 +370,54 @@ foreach (i = 1:2) %dopar% {
                          NAA_re_em = NAA_re_em,
                          move_em = move,
                          age_comp_em = "multinomial",
-                         em.opt = list(separate.em = FALSE, 
-                                       separate.em.type = 3, 
-                                       do.move = TRUE,
-                                       est.move = TRUE),
+                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
+                                       do.move = TRUE, est.move = FALSE),
+                         assess_years = assess.years, 
+                         assess_interval = assess.interval, 
+                         base_years = base.years,
+                         year.use = 20, 
+                         seed = 123+i,
+                         save.sdrep = FALSE)
+  
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod5_%03d.RDS",i)))
+}
+
+stopCluster(cluster)
+```
+
+### 15. EM6
+```{r, eval=FALSE}
+cluster <- makeCluster(10) 
+registerDoParallel(cluster)
+
+foreach (i = 1:10) %dopar% {
+  
+  library(wham)
+  library(whamMSE)
+  
+  om_with_data <- update_om_fn(om, seed = 123+i, random = random)
+  
+  n_stocks = n_regions = n_fleets = n_indices = 2
+  
+  sel_em <- list(model=rep("logistic",n_fleets+n_indices),
+               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
+  
+  NAA_re_em <- list(N1_model=rep("equilibrium",n_stocks),
+                  sigma=rep("rec+1",n_stocks),
+                  cor=rep("iid",n_stocks),
+                  NAA_where = om$input$data$NAA_where)
+  
+  M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
+  
+  mod <- loop_through_fn(om = om_with_data, 
+                         random = random,
+                         M_em = M_em, 
+                         sel_em = sel_em,
+                         NAA_re_em = NAA_re_em,
+                         move_em = move,
+                         age_comp_em = "multinomial",
+                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
+                                       do.move = TRUE, est.move = TRUE),
                          assess_years = assess.years, 
                          assess_interval = assess.interval, 
                          base_years = base.years,
@@ -401,10 +426,24 @@ foreach (i = 1:2) %dopar% {
                          save.sdrep = FALSE,
                          save.last.em = TRUE)
   
-  saveRDS(mod, file.path(sub.dir,sprintf("Mod5_%03d.RDS",i)))
+  saveRDS(mod, file.path(sub.dir,sprintf("Mod6_%03d.RDS",i)))
 }
 
 stopCluster(cluster)
 ```
 
+### 16. Collect simulation results
+```{r, eval=FALSE}
+mods = list()
+
+for (nsim in 1:10) {
+  file.names <- file.path(sub.dir,paste0("Mod",1:6,sprintf("_%03d.RDS",nsim)))
+  mods[[nsim]] <- lapply(file.names, readRDS)
+}
+# Please save the results for Ex6:6.Performance-Analysis-Tools
+
+plot_mse_output(mods, base.mod = 6, out.type = "pdf") # base.mod = correct EM
+# plot_mse_output(mods,  base.mod = 6, out.type = "png") # Alternative
+# plot_mse_output(mods,  base.mod = 6, out.type = "html") # Alternative
+```
 

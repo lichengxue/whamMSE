@@ -216,7 +216,7 @@ make_em_input <- function(om,
                                      selectivity = sel_em,
                                      M = M_em,
                                      NAA_re = NAA_re_em,
-                                     move = move,
+                                     move = move_em,
                                      age_comp = age_comp_em,
                                      catch_info = info$catch_info,
                                      index_info = info$index_info,
@@ -224,7 +224,7 @@ make_em_input <- function(om,
       
       # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages) stop("NAA_where is not specified correctly!")
       
-      if (!em.opt$est.move) em_input <- fix_move(em_input)
+      # if (!em.opt$est.move) em_input <- fix_move(em_input)
       
     } else {
       

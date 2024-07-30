@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Harvest Control Rule</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-07-26</h4>
+<h4 class="date">Last update: 2024-07-30</h4>
 
 </div>
 
@@ -1600,9 +1600,11 @@ info &lt;- generate_basic_info(n_stocks   = 2,
                             n_ages        = 12, 
                             Fbar_ages     = 12, 
                             recruit_model = 2, 
-                            F_info     = list(F.year1 = 0.2, Fhist = &quot;updown&quot;,Fmax = 1, Fmin = 0.2,change_time = 0.5),
+                            F_info     = list(F.year1 = 0.2, Fhist = &quot;updown&quot;,
+                                              Fmax = 1, Fmin = 0.2, change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
-                            index_info = list(index_cv = 0.1, index_Neff = 200, fracyr_indices = 0.5, q = 0.2), 
+                            index_info = list(index_cv = 0.1, index_Neff = 200, 
+                                              fracyr_indices = 0.5, q = 0.2), 
                             fracyr_spawn = 0.5, 
                             bias.correct.process     = FALSE, 
                             bias.correct.observation = FALSE, 
@@ -1621,11 +1623,6 @@ F_info = info$F # collect fishing information
 <pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2) # &quot;bidirectional&quot; movement
 
 move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;)</code></pre>
-<pre><code>## All stocks &#39;can&#39; move (default)
-## Movement rate for stocks in region 1 is 0.3
-## Movement rate for stocks in other regions is 0.1
-## 
-## Movement is assumed at a constant rate without random effects</code></pre>
 </div>
 <div id="configure-selecitvity-and-natural-mortality" class="section level3">
 <h3>4. Configure selecitvity and natural mortality</h3>
@@ -1675,9 +1672,12 @@ NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
 </div>
 <div id="generate-wham-input" class="section level3">
 <h3>6. Generate wham input</h3>
-<p>Here we use <code>prepare_wham_input()</code> function to generate a
-wham input using the basic information we set above:</p>
-<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,catch_info = catch_info, index_info = index_info, F = F_info)</code></pre>
+<p>In this example, instead of using the “multinomial” likelihood for
+the age composition data, we use a self-weighting likelihood
+(“logistic-normal-miss0”) in both the OM and EM. Here we use
+<code>prepare_wham_input()</code> function to generate a wham input
+using the basic information we set above:</p>
+<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,catch_info = catch_info, index_info = index_info, F = F_info, age_comp = &quot;logistic-normal-miss0&quot;)</code></pre>
 </div>
 <div id="generate-operating-model" class="section level3">
 <h3>7. Generate operating model</h3>
@@ -1701,28 +1701,20 @@ assess.years    &lt;- seq(terminal.year, tail(om$years,1)-assess.interval,by = a
 
 mods &lt;- list() # Create a list to save MSE outputs</code></pre>
 </div>
-<div id="em1-separate-panmictic-assessment-models-with-naa-random-effects" class="section level3">
-<h3>EM1: Separate panmictic assessment models with NAA random
-effects</h3>
-<p>In this example, instead of using the “multinomial” likelihood for
-the age composition data, we use a self-weighting likelihood
-(“logistic-normal-miss0”) in both the OM and EM. More details about
-options of self-weighting likelihoods can be found in
-<code>make_em_input()</code> function. For Hockey-stick harvest control
-rule, users need to set the hcr_type to be 3 (default is 1), set maximum
-percent of F40% to use for calculating catch in projections (default:
-max_percent = 75), set minimum percent of F40% to use for calculating
-catch in projections (default: min_percent = 0.01), set upper bound of
-overfished level (default = 0.5), and set lower bound of overfished
-level (default = 0). Please see <code>advice()</code> function for more
-details.</p>
+<div id="mse-with-hockey-stick-harvest-control-rule" class="section level3">
+<h3>10. MSE with “hockey-stick” harvest control rule</h3>
+<p>For Hockey-stick harvest control rule, users need to set the hcr_type
+to be 3 (default is 1), set maximum percent of F40% to use for
+calculating catch in projections (default: max_percent = 75), set
+minimum percent of F40% to use for calculating catch in projections
+(default: min_percent = 0.01), set upper bound of overfished level
+(default = 0.5), and set lower bound of overfished level (default = 0).
+Please see <code>advice()</code> function for more details.</p>
 <pre class="r"><code>hcr.type &lt;- 3
 hcr.opts &lt;- list(max_percent = 75, min_percent = 0.01, BThresh_up = 0.5, BThresh_low = 0) </code></pre>
-</div>
-</div>
-<div id="em1-one-panmictic-model-with-catch-aggregated-and-with-naa-random-effects" class="section level2">
-<h2>EM1: One panmictic model with catch aggregated and with NAA Random
-Effects</h2>
+<div id="em1-one-panmictic-model-with-catch-aggregated-and-with-naa-random-effects" class="section level4">
+<h4>EM1: One panmictic model with catch aggregated and with NAA random
+effects</h4>
 <pre class="r"><code>n_stocks = n_regions = n_fleets = n_indices = 1
 
 sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
@@ -1734,26 +1726,25 @@ M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_st
 
 mods[[1]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = &quot;multinomial&quot;,
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = &quot;multinomial&quot;,
-                            em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 1, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
+                            year.use = 20,
                             seed = 123,
                             save.sdrep = FALSE)</code></pre>
-<div id="em2-one-assessment-model-spatially-implicit-fleets-as-areas-with-naa-random-effects" class="section level3">
-<h3>EM2: One assessment model (spatially-implicit fleets-as-areas) with
-NAA random effects</h3>
+</div>
+<div id="em2-one-assessment-model-spatially-implicit-fleets-as-areas-with-naa-random-effects" class="section level4">
+<h4>EM2: One assessment model (spatially-implicit fleets-as-areas) with
+NAA random effects</h4>
 <pre class="r"><code>n_stocks = n_regions = 1
 n_fleets = n_indices = 2
 sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
@@ -1765,26 +1756,24 @@ M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_st
 
 mods[[2]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = &quot;logistic-normal-miss0&quot;,
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = &quot;logistic-normal-miss0&quot;,
-                            em.opt = list(separate.em = TRUE, separate.em.type = 2, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 2, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
+                            year.use = 20, 
                             seed = 123,
                             save.sdrep = FALSE)</code></pre>
 </div>
-<div id="em3-separate-single-assessment-models-with-naa-random-effects" class="section level3">
-<h3>EM3: Separate single assessment models with NAA random effects</h3>
+<div id="em3-separate-single-assessment-models-with-naa-random-effects" class="section level4">
+<h4>EM3: Separate single assessment models with NAA random effects</h4>
 <pre class="r"><code>n_stocks = n_regions = n_fleets = n_indices = 1
 
 sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
@@ -1796,31 +1785,32 @@ M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_st
 
 mods[[3]] = loop_through_fn(om = om_with_data, 
                             random = random,
-                            M_om = M,
-                            sel_om = sel, 
-                            NAA_re_om = NAA_re, 
-                            move_om = move,
-                            age_comp_om = &quot;logistic-normal-miss0&quot;, # Note: not multinomial!
                             M_em = M_em, 
                             sel_em = sel_em, 
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = &quot;logistic-normal-miss0&quot;, # Note: not multinomial!
-                            em.opt = list(separate.em = TRUE, separate.em.type = 3, do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 3, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, # number of years of data you want to use in the assessment model
+                            year.use = 20, 
                             hcr.type = hcr.type,
                             hcr.opts = hcr.opts,
                             seed = 123,
-                            save.sdrep = FALSE)</code></pre>
+                            save.sdrep = FALSE)
+
+saveRDS(mods, &quot;Mods.rds&quot;)</code></pre>
+</div>
 </div>
 <div id="compare-model-performance" class="section level3">
-<h3>10. Compare model performance</h3>
-<p>The “whamMSE” package has comprehensive output analysis tools (see
-Vignettes: Output-Analysis). For now we just extract some key quantities
-(e.g. SSB, catch) for comparison:</p>
+<h3>11. Compare model performance</h3>
+<p>The “whamMSE” package has comprehensive output analysis tools, please
+save the results for Ex6: Performance Analysis Tools. For now we just
+extract some key quantities (e.g. SSB, catch) for comparison:</p>
 <pre class="r"><code>par(mfrow = c(1,2))
 SSB_s1_m1 &lt;- mods[[1]]$om$rep$SSB[,1] # Stock 1 SSB in model 1
 SSB_s1_m2 &lt;- mods[[2]]$om$rep$SSB[,1] # Stock 1 SSB in model 2
@@ -1839,7 +1829,7 @@ plot(Catch_r1_m1[14:23], col = &quot;red&quot;, type = &quot;o&quot;, ylab = &qu
 lines(Catch_r1_m2[14:23], col = &quot;blue&quot;, type = &quot;o&quot;)
 lines(Catch_r1_m3[14:23], col = &quot;green&quot;, type = &quot;o&quot;)</code></pre>
 <div class="float">
-<img src="data:image/png;base64,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" width="600" alt="Figure 1" />
+<img src="data:image/png;base64,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" width="600" alt="Figure 1" />
 <div class="figcaption">Figure 1</div>
 </div>
 </div>
