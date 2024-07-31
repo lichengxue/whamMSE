@@ -930,7 +930,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       geom_boxplot(outlier.shape = NA) +
       facet_grid(Var ~., scales = "free") + 
       scale_colour_brewer(palette = "Set2") + 
-      ggtitle(paste0("Mean Recruitment from the last EM")) +
+      ggtitle(paste0("Mean Recruitment from the Last EM")) +
       ylab("") +
       theme_bw() +
       theme(axis.text = element_text(size = 10),
@@ -977,7 +977,7 @@ if (!is.list(mods[[1]][[1]][[1]])) {
       geom_boxplot(outlier.shape = NA) +
       facet_grid(Var ~., scales = "free") + 
       scale_colour_brewer(palette = "Set2") + 
-      ggtitle(paste0("Variance of NAA from the last EM")) +
+      ggtitle(paste0("Variance of NAA from the Last EM")) +
       ylab("") +
       theme_bw() +
       theme(axis.text = element_text(size = 10),
