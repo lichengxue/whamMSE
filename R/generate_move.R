@@ -140,6 +140,9 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
       cat("\nMovement is treated to be varying by years\n")
       if (move.re == "ar1_y") {
         move$year_re <- matrix("ar1", n_regions, n_regions - 1)
+        if (move.type == 1) {
+          move$year_re[2:n_regions] = "none"
+        }
         if (is.null(move.rho_y)) {
           move.rho_y <- 0.5
           cat("\nar1_y rho for movement has not been specified, so use default rho = 0.5\n")
@@ -157,6 +160,9 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
       cat("\nMovement is treated to be varying by ages\n")
       if (move.re == "ar1_a") {
         move$age_re <- matrix("ar1", n_regions, n_regions - 1)
+        if (move.type == 1) {
+          move$year_re[2:n_regions] = "none"
+        }
         if (is.null(move.rho_a)) {
           move.rho_a <- 0.5
           cat("\nar1_a rho for movement has not been specified, so use default rho = 0.5\n")
