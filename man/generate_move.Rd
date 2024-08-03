@@ -20,12 +20,12 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
 
 \item{move.type}{Movement type
 \itemize{
-  \item \code{1} unidirectional movement
-  \item \code{2} bidirectional movement (default)
+  \item \code{1} unidirectional movement, stock-specific (e.g. black sea bass)
+  \item \code{2} bidirectional movement, region-specific (default)
   \item \code{3} no movement
 }}
 
-\item{move.rate}{Movement rate (default = c(0.3, 0.2))}
+\item{move.rate}{Movement rate (default = c(0.3, 0.1))}
 
 \item{move.re}{Movement random effects
 \itemize{
@@ -57,7 +57,7 @@ The generate_move() function is used to configure movement random effects.
 \examples{
 \dontrun{
 data <- generate_basic_info()
-data <- generate_move(data, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant")
+data <- generate_move(data, move.type = 2, move.rate = c(0.3,0.2), move.re = "constant")
 }
 }
 \seealso{

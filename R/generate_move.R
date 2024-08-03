@@ -6,11 +6,11 @@
 #' Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA_where}}.
 #' @param move.type Movement type
 #'   \itemize{
-#'     \item \code{1} unidirectional movement
-#'     \item \code{2} bidirectional movement (default)
+#'     \item \code{1} unidirectional movement, stock-specific (e.g. black sea bass)
+#'     \item \code{2} bidirectional movement, region-specific (default)
 #'     \item \code{3} no movement
 #'   }
-#' @param move.rate Movement rate (default = c(0.3, 0.2))
+#' @param move.rate Movement rate (default = c(0.3, 0.1))
 #' @param move.re Movement random effects
 #'   \itemize{
 #'     \item \code{"constant"} constant movement rate across years and ages (default).
@@ -126,11 +126,19 @@ generate_move <- function(basic_info,
 configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions) {
   if (move.re == "constant") {
     cat("\nMovement is assumed at a constant rate without random effects\n")
+    move$mean_model <- matrix("constant", n_regions, n_regions - 1)
+    # move$can_move[,,,1] = 0 # "region-specific
+    # if (move.type == 1) {
+    #   move$mean_model[2:n_regions] <- "none" # Only stock 1 can move
+    # }
   } else {
+    move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
     move$prior_sigma <- array(move.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
     
     if (move.type == 1) {
+      # move$mean_model[2:n_regions] <- "none" # Only stock 1 can move
+      # move$can_move[,,,1] = 0 # "stock-specific
       move$use_prior[1, 1, , ] <- 1 # Only stock 1 can move
     } else {
       move$use_prior[1:n_stocks, 1, , ] <- 1 # All stocks can move
@@ -140,9 +148,9 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
       cat("\nMovement is treated to be varying by years\n")
       if (move.re == "ar1_y") {
         move$year_re <- matrix("ar1", n_regions, n_regions - 1)
-        if (move.type == 1) {
-          move$year_re[2:n_regions] = "none"
-        }
+        # if (move.type == 1) {
+        #   move$year_re[2:n_regions] = "none"
+        # }
         if (is.null(move.rho_y)) {
           move.rho_y <- 0.5
           cat("\nar1_y rho for movement has not been specified, so use default rho = 0.5\n")
@@ -160,9 +168,9 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
       cat("\nMovement is treated to be varying by ages\n")
       if (move.re == "ar1_a") {
         move$age_re <- matrix("ar1", n_regions, n_regions - 1)
-        if (move.type == 1) {
-          move$year_re[2:n_regions] = "none"
-        }
+        # if (move.type == 1) {
+        #   move$year_re[2:n_regions] = "none"
+        # }
         if (is.null(move.rho_a)) {
           move.rho_a <- 0.5
           cat("\nar1_a rho for movement has not been specified, so use default rho = 0.5\n")
@@ -175,8 +183,6 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, move.rho_a, 
         move$age_re <- matrix("iid", n_regions, n_regions - 1)
       }
     }
-    
-    move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     
     move$sigma_vals = move.sigma
     

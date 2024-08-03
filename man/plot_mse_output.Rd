@@ -8,7 +8,7 @@ plot_mse_output(
   mods,
   main.dir = getwd(),
   use.n.years = 10,
-  base.mod = 4,
+  base.mod = 1,
   short.term = NULL,
   dpi = 150,
   out.type = "png"
