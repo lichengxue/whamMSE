@@ -38,7 +38,7 @@
 #' @examples
 #' \dontrun{
 #' data <- generate_basic_info()
-#' data <- generate_move(data, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant")
+#' data <- generate_move(data, move.type = 2, move.rate = c(0.3,0.2), move.re = "constant")
 #' }
 generate_move <- function(basic_info, 
                           move.type = 2,
@@ -89,7 +89,7 @@ generate_move <- function(basic_info,
     move$can_move[1, spawntime - 1, setdiff(1:n_regions, 1), ] <- 1
     
     move$mean_vals <- array(move_mu, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-    cat(paste0("Only stock 1 'can' move (default)\nMovement rate is ", move.rate, "\n"))
+    cat(paste0("Only stock 1 'can' move (default)\nMovement rate is ", move.rate[1], "\n"))
     
     move <- configure_move.re(move, move.type, move.re, move.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions)
     
