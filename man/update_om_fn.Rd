@@ -25,13 +25,6 @@ An operating model with simulated data and updated F time series.
 \description{
 Function to update F in the operating model (see \code{\link{update_om_F}}) and generate data given the updated F.
 }
-\examples{
-\dontrun{
-om <- initialize_operating_model()
-interval.info <- list(years = 2023:2025, catch = matrix(runif(6), nrow = 2))
-updated_om <- update_om_fn(om, interval.info, seed = 123)
-}
-}
 \seealso{
 \code{\link{get_F_from_Catch_region}}
 }
