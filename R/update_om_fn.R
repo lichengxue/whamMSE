@@ -17,12 +17,6 @@
 #'
 #' @seealso \code{\link{get_F_from_Catch_region}}
 #' 
-#' @examples
-#' \dontrun{
-#' om <- initialize_operating_model()
-#' interval.info <- list(years = 2023:2025, catch = matrix(runif(6), nrow = 2))
-#' updated_om <- update_om_fn(om, interval.info, seed = 123)
-#' }
 update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA") {
   if(!is.null(interval.info)){
     # Iterative update F in the OM using get_F_from_Catch_region function
