@@ -19,8 +19,8 @@ generate_basic_info(
   F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time =
     0.5),
   catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.875, q = 0.2),
-  fracyr_spawn = 0.875,
+  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.75, q = 0.2),
+  fracyr_spawn = 0.75,
   bias.correct.process = FALSE,
   bias.correct.observation = FALSE,
   bias.correct.BRPs = FALSE,
