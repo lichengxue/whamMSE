@@ -4,7 +4,8 @@
 #' refit the estimation model, and generate catch advice.
 #'
 #' @param om Operating model including pseudo data
-#' @param random A vector of processes that are treated as random effects in the operating model
+#' @param em_info A list of information used to generate the estimation model (default = NULL)
+#' @param random A vector of processes that are treated as random effects in the operating model (default = "log_NAA")
 #' @param M_em Natural mortality configuration in the assessment model
 #' @param sel_em Selectivity configuration in the assessment model
 #' @param NAA_re_em Numbers-at-age (NAA) configuration in the assessment model
@@ -65,7 +66,7 @@
 #' @export
 #' @seealso \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}
 
-loop_through_fn <- function(om, random, M_em, sel_em, NAA_re_em, move_em, 
+loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em, NAA_re_em, move_em, 
                             age_comp_em = "multinomial",em.opt = NULL, 
                             assess_years = NULL, assess_interval = NULL, base_years = NULL,
                             year.use = 30, hcr.type = 1, hcr.opts = NULL, do.retro = FALSE,
@@ -103,7 +104,7 @@ loop_through_fn <- function(om, random, M_em, sel_em, NAA_re_em, move_em,
       
       em.years <- base_years[1]:y
       
-      em_input <- make_em_input(om = om, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
                                 move_em = move_em, em.opt = em.opt, em_years = em.years,
                                 year.use = year.use, age_comp = age_comp_em)
       
@@ -239,7 +240,7 @@ loop_through_fn <- function(om, random, M_em, sel_em, NAA_re_em, move_em,
           adrep.est[[i]][[s]] <- as.list(em[[s]]$sdrep, "Estimate", report = TRUE)
           adrep.se[[i]][[s]] <- as.list(em[[s]]$sdrep, "Std. Error", report = TRUE)
           opt_list[[i]][[s]] <- em[[s]]$opt
-          converge_list[[i]][[s]] <- sum(conv, pdHess)
+          converge_list[[i]] <- sum(conv, pdHess)
           catch_advice[[i]] <- advice
           
           if (save.sdrep) {
@@ -264,7 +265,7 @@ loop_through_fn <- function(om, random, M_em, sel_em, NAA_re_em, move_em,
       
       em.years <- base_years[1]:y
       
-      em_input <- make_em_input(om = om, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
                                 move_em = move_em, em.opt = em.opt, em_years = em.years,
                                 year.use = year.use, age_comp = age_comp_em)
       

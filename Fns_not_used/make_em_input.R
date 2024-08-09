@@ -3,12 +3,12 @@
 #' A function to generate the input for the estimation model for management strategy evaluation. 
 #' 
 #' @param om Operating model 
-#' @param em_info A list of information used to generate the operating model
+#' @param info A list of information used to generate the operating model
 #' @param M_em Natural mortality random effects
 #' @param sel_em Selectivity random effects   
 #' @param NAA_re_em Numbers-at-age random effects 
 #' @param move_em Movement random effects
-#' @param em.opt Movement random effects options
+#' @param em.opt Movement random effects
 #'   \itemize{
 #'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
 #'     \item \code{$separate.em.type} only if separate.em = TRUE \cr
@@ -51,7 +51,7 @@
 #' }
 
 make_em_input <- function(om, 
-                          em_info,
+                          info,
                           M_em, 
                           sel_em, 
                           NAA_re_em, 
@@ -62,22 +62,13 @@ make_em_input <- function(om,
                           age_comp_em = "multinomial") {
   
   if (is.null(em.opt)) stop("em.opt must be specified!")
-  
-  # Determine movement type based on options
-  if (em.opt$separate.em) {
-    em.opt$do.move <- FALSE
-    move.type <- NULL
-  } else if (!em.opt$do.move) {
-    move.type <- 3 # no movement
-  } else if (all(move_em$stock_move)) {
-    move.type <- 2 # bidirectional
-  } else {
-    move.type <- 1 # unidirectional
-  }
+  if (em.opt$separate.em) em.opt$do.move <- FALSE 
+  if (!em.opt$separate.em & !em.opt$do.move) move.type <- 3 # no movement
+  if (!em.opt$separate.em & em.opt$do.move & all(move_em$stock_move)) move.type <- 2 # bidirectional
+  if (!em.opt$separate.em & em.opt$do.move & !all(move_em$stock_move)) move.type <- 1 # unidirectional
   
   data <- om$input$data
   
-  # Determine which years to use in the estimation model
   if (!is.null(year.use)) {
     if (year.use > length(em_years)) {
       cat("year.use must be <= em_years!\nyear.use is set to the length of em_years\n")
@@ -91,8 +82,27 @@ make_em_input <- function(om,
   }
   
   if (em.opt$separate.em) {
+    
     if (em.opt$separate.em.type == 1) { 
-      info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = 1, n_indices = 1)
+      
+      info <- generate_basic_info(n_stocks = 1, 
+                                  n_regions = 1, 
+                                  n_indices = 1, 
+                                  n_fleets = 1, 
+                                  base.years = em_years,
+                                  life_history = info$par_inputs$life_history, 
+                                  n_ages= info$par_inputs$n_ages, 
+                                  Fbar_ages = info$par_inputs$Fbar_ages, 
+                                  recruit_model = info$par_inputs$recruit_model, 
+                                  F_info = list(F.year1 = info$par_inputs$F.year1, Fhist = info$par_inputs$Fhist, Fmax = info$par_inputs$Fmax, Fmin = info$par_inputs$Fmin, change_time = info$par_inputs$change_time),
+                                  catch_info = list(catch_cv = info$par_inputs$catch_cv,catch_Neff = info$par_inputs$catch_Neff), 
+                                  index_info = list(index_cv = info$par_inputs$index_cv,index_Neff = info$par_inputs$index_Neff, fracyr_indices = info$par_inputs$fracyr_indices, q = info$par_inputs$q), 
+                                  fracyr_spawn = info$par_inputs$fracyr_spawn, 
+                                  bias.correct.process = info$par_inputs$bias.correct.process, 
+                                  bias.correct.observation = info$par_inputs$bias.correct.observation, 
+                                  bias.correct.BRPs= info$par_inputs$bias.correct.BRPs, 
+                                  mig_type = info$par_inputs$mig_type)
+      
       basic_info <- info$basic_info
       
       # Fill in the data from the operating model simulation
@@ -135,10 +145,28 @@ make_em_input <- function(om,
     }
     
     if (em.opt$separate.em.type == 2) { 
+      
       n_fleets <- data$n_fleets
       n_indices <- data$n_indices
       
-      info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = n_fleets, n_indices = n_indices)
+      info <- generate_basic_info(n_stocks = 1, 
+                                  n_regions = 1, 
+                                  n_indices = n_indices, 
+                                  n_fleets = n_fleets, 
+                                  base.years = em_years,
+                                  life_history = info$par_inputs$life_history, 
+                                  n_ages= info$par_inputs$n_ages, 
+                                  Fbar_ages = info$par_inputs$Fbar_ages, 
+                                  recruit_model = info$par_inputs$recruit_model, 
+                                  F_info = list(F.year1 = info$par_inputs$F.year1, Fhist = info$par_inputs$Fhist, Fmax = info$par_inputs$Fmax, Fmin = info$par_inputs$Fmin, change_time = info$par_inputs$change_time),
+                                  catch_info = list(catch_cv = info$par_inputs$catch_cv,catch_Neff = info$par_inputs$catch_Neff), 
+                                  index_info = list(index_cv = info$par_inputs$index_cv,index_Neff = info$par_inputs$index_Neff, fracyr_indices = info$par_inputs$fracyr_indices, q = info$par_inputs$q), 
+                                  fracyr_spawn = info$par_inputs$fracyr_spawn, 
+                                  bias.correct.process = info$par_inputs$bias.correct.process, 
+                                  bias.correct.observation = info$par_inputs$bias.correct.observation, 
+                                  bias.correct.BRPs= info$par_inputs$bias.correct.BRPs, 
+                                  mig_type = info$par_inputs$mig_type)
+      
       basic_info <- info$basic_info
       
       # Fill in the data from the operating model simulation
@@ -159,13 +187,30 @@ make_em_input <- function(om,
     }
     
     if (em.opt$separate.em.type == 3) {
+      
       n_stocks <- data$n_stocks
-      n_fleets = as.vector(table(data$fleet_regions))
-      n_indices = as.vector(table(data$index_regions))
       em_input <- list()
       
       for (s in 1:n_stocks) {
-        info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = n_fleets[s], n_indices = n_indices[s])
+        
+        info <- generate_basic_info(n_stocks = 1, 
+                                    n_regions = 1, 
+                                    n_indices = 1, 
+                                    n_fleets = 1, 
+                                    base.years = em_years,
+                                    life_history = info$par_inputs$life_history, 
+                                    n_ages= info$par_inputs$n_ages, 
+                                    Fbar_ages = info$par_inputs$Fbar_ages, 
+                                    recruit_model = info$par_inputs$recruit_model, 
+                                    F_info = list(F.year1 = info$par_inputs$F.year1, Fhist = info$par_inputs$Fhist, Fmax = info$par_inputs$Fmax, Fmin = info$par_inputs$Fmin, change_time = info$par_inputs$change_time),
+                                    catch_info = list(catch_cv = info$par_inputs$catch_cv,catch_Neff = info$par_inputs$catch_Neff), 
+                                    index_info = list(index_cv = info$par_inputs$index_cv,index_Neff = info$par_inputs$index_Neff, fracyr_indices = info$par_inputs$fracyr_indices, q = info$par_inputs$q), 
+                                    fracyr_spawn = info$par_inputs$fracyr_spawn, 
+                                    bias.correct.process = info$par_inputs$bias.correct.process, 
+                                    bias.correct.observation = info$par_inputs$bias.correct.observation, 
+                                    bias.correct.BRPs= info$par_inputs$bias.correct.BRPs, 
+                                    mig_type = info$par_inputs$mig_type)
+        
         basic_info <- info$basic_info
         
         # Fill in the data from the operating model simulation
@@ -187,8 +232,28 @@ make_em_input <- function(om,
     }
     
   } else {
-    info <- generate_basic_info_em(em_info, em_years)
-    basic_info <- generate_NAA_where(basic_info = info$basic_info, move.type = move.type)
+    
+    info <- generate_basic_info(n_stocks = info$par_inputs$n_stocks, 
+                                n_regions = info$par_inputs$n_regions, 
+                                n_indices = info$par_inputs$n_indices, 
+                                n_fleets = info$par_inputs$n_fleets, 
+                                base.years = em_years,
+                                life_history = info$par_inputs$life_history, 
+                                n_ages= info$par_inputs$n_ages, 
+                                Fbar_ages = info$par_inputs$Fbar_ages, 
+                                recruit_model = info$par_inputs$recruit_model, 
+                                F_info = list(F.year1 = info$par_inputs$F.year1, Fhist = info$par_inputs$Fhist, Fmax = info$par_inputs$Fmax, Fmin = info$par_inputs$Fmin, change_time = info$par_inputs$change_time),
+                                catch_info = list(catch_cv = info$par_inputs$catch_cv,catch_Neff = info$par_inputs$catch_Neff), 
+                                index_info = list(index_cv = info$par_inputs$index_cv,index_Neff = info$par_inputs$index_Neff, fracyr_indices = info$par_inputs$fracyr_indices, q = info$par_inputs$q), 
+                                fracyr_spawn = info$par_inputs$fracyr_spawn, 
+                                bias.correct.process = info$par_inputs$bias.correct.process, 
+                                bias.correct.observation = info$par_inputs$bias.correct.observation, 
+                                bias.correct.BRPs= info$par_inputs$bias.correct.BRPs, 
+                                mig_type = info$par_inputs$mig_type)
+    
+    basic_info <- info$basic_info
+    
+    basic_info <- generate_NAA_where(basic_info = basic_info, move.type = move.type)
     
     # Fill in the data from the operating model simulation
     info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
@@ -197,7 +262,10 @@ make_em_input <- function(om,
     info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
     
     if (em.opt$do.move) {
+      
       NAA_re_em$NAA_where = basic_info$NAA_where
+      # basic_info$NAA_where = NULL
+      
       em_input <- prepare_wham_input(basic_info = basic_info,
                                      selectivity = sel_em,
                                      M = M_em,
@@ -207,7 +275,17 @@ make_em_input <- function(om,
                                      catch_info = info$catch_info,
                                      index_info = info$index_info,
                                      F = info$F)
+      
+      # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages) stop("NAA_where is not specified correctly!")
+      
+      # if (!em.opt$est.move) em_input <- fix_move(em_input)
+      
     } else {
+      
+      basic_info$NAA_where = NULL
+      
+      NAA_re_em$NAA_where = NULL
+      
       em_input <- prepare_wham_input(basic_info = basic_info, 
                                      selectivity = sel_em, 
                                      M = M_em, 
@@ -217,37 +295,11 @@ make_em_input <- function(om,
                                      catch_info = info$catch_info, 
                                      index_info = info$index_info,
                                      F = info$F)
+      
+      # if (sum(em_input$data$NAA_where) == basic_info$n_stocks*basic_info$n_ages)  stop("NAA_where is not specified correctly!")
+      
     }
   }
   
   return(em_input)
-}
-
-# Helper function to generate basic info with multiple parameters
-generate_basic_info_em <- function(em_info, em_years, n_stocks = NULL, n_regions = NULL, n_fleets = NULL, n_indices = NULL) {
-  
-  if(is.null(n_stocks)) n_stocks = em_info$par_inputs$n_stocks
-  if(is.null(n_regions)) n_regions = em_info$par_inputs$n_regions
-  if(is.null(n_fleets)) n_fleets = em_info$par_inputs$n_fleets
-  if(is.null(n_indices)) n_indices = em_info$par_inputs$n_indices
-  
-  generate_basic_info(
-    n_stocks = n_stocks, 
-    n_regions = n_regions, 
-    n_indices = n_indices, 
-    n_fleets = n_fleets, 
-    base.years = em_years,
-    life_history = em_info$par_inputs$life_history, 
-    n_ages = em_info$par_inputs$n_ages, 
-    Fbar_ages = em_info$par_inputs$Fbar_ages, 
-    recruit_model = em_info$par_inputs$recruit_model, 
-    F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 1, Fmin = 1, change_time = 0.5),
-    catch_info = list(catch_cv = em_info$par_inputs$catch_cv, catch_Neff = em_info$par_inputs$catch_Neff), 
-    index_info = list(index_cv = em_info$par_inputs$index_cv, index_Neff = em_info$par_inputs$index_Neff, fracyr_indices = em_info$par_inputs$fracyr_indices, q = em_info$par_inputs$q), 
-    fracyr_spawn = em_info$par_inputs$fracyr_spawn, 
-    bias.correct.process = em_info$par_inputs$bias.correct.process, 
-    bias.correct.observation = em_info$par_inputs$bias.correct.observation, 
-    bias.correct.BRPs = em_info$par_inputs$bias.correct.BRPs, 
-    mig_type = em_info$par_inputs$mig_type
-  )
 }

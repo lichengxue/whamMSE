@@ -103,7 +103,7 @@ Below are some examples:
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
 # Note: the default is "bidirectional" movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
 
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
 
 ```
 
@@ -112,7 +112,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
-move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3,0.1), move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
+move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3, 0), move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
 ```
 
 #### 3c. Specify movement type and movement rate (iid_y)
@@ -120,7 +120,7 @@ move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
 ```
 
 #### 3d. Specify movement type and movement rate (iid_a)
@@ -128,7 +128,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
 ```
 
 #### 3e. Specify movement type and movement rate (ar1_y)
@@ -136,7 +136,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "ar1_y",move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_y", move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
 ```
 
 #### 3f. Specify movement type and movement rate (ar1_a)
@@ -144,7 +144,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = "ar1_a",move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_a", move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
 ```
 
 ### 4. Configure selecitvity and natural mortality

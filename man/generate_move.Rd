@@ -7,11 +7,13 @@
 generate_move(
   basic_info,
   move.type = 2,
-  move.rate = c(0.3, 0.2),
+  move.rate = c(0.3, 0.1),
   move.re = "constant",
-  move.sigma = 0.5,
+  move.sigma = 0.2,
+  prior.sigma = 0.2,
   move.rho_a = 0.5,
-  move.rho_y = 0.5
+  move.rho_y = 0.5,
+  use.prior = TRUE
 )
 }
 \arguments{
@@ -20,8 +22,8 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
 
 \item{move.type}{Movement type
 \itemize{
-  \item \code{1} unidirectional movement, stock-specific (e.g. black sea bass)
-  \item \code{2} bidirectional movement, region-specific (default)
+  \item \code{1} unidirectional movement (i.e. only 1 stock can move), region-specific movement rate
+  \item \code{2} bidirectional movement (i.e. all stocks can move), region-specific movement rate (default)
   \item \code{3} no movement
 }}
 
@@ -36,11 +38,15 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
   \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
 }}
 
-\item{move.sigma}{Sigma for movement random effects (default = 0.5)}
+\item{move.sigma}{Sigma for movement random effects (default = 0.2)}
+
+\item{prior.sigma}{Standard deviation for normal priors on mean movement (default = 0.2)}
 
 \item{move.rho_a}{Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)}
 
 \item{move.rho_y}{Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)}
+
+\item{use.prior}{Logical, whether to use priors (default = TRUE)}
 }
 \value{
 A named list with the following components:
@@ -49,10 +55,15 @@ A named list with the following components:
     \item{$separable}{Length = n_stocks, TRUE/FALSE whether movement should be modeled separably from mortality or both occurring simultaneously.}
     \item{$must_move}{Array (n_stocks x n_seasons x n_regions) 0/1 indicator whether movement from a region must occur.}
     \item{$can_move}{Array (n_stocks x n_seasons x n_regions x n_regions) 0/1 indicator whether movement can occur from one region to another.}
+    \item{$mean_vals}{Array (n_stocks x n_seasons x n_regions x n_regions - 1) of initial movement rate parameters from each region.}
+    \item{$sigma_vals}{Array (n_stocks x n_seasons x n_regions x n_regions - 1) of initial standard deviations for random effects.}
+    \item{$cor_vals}{Array (n_stocks x n_seasons x n_regions x n_regions - 1 x 2) of initial correlation values for random effects.}
+    \item{$use_prior}{Array (n_stocks x n_seasons x n_regions x n_regions - 1) 0/1 indicator whether to include prior for mean movement parameters in joint log-likelihood.}
+    \item{$prior_sigma}{Array (n_stocks x n_seasons x n_regions x n_regions - 1) of standard deviation parameters for normal priors on mean movement parameters on transformed scale (-Inf,Inf).}
   }
 }
 \description{
-The generate_move() function is used to configure movement random effects.
+The `generate_move()` function is used to configure movement random effects.
 }
 \examples{
 \dontrun{

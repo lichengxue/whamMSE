@@ -184,6 +184,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em,
@@ -196,6 +197,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE)
   
@@ -229,6 +231,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em, 
@@ -241,6 +244,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20,
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE)
   
@@ -273,6 +277,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em, 
@@ -285,6 +290,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE)
   saveRDS(mod, file.path(sub.dir,sprintf("Mod3_%03d.RDS",i)))
@@ -318,6 +324,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em, 
@@ -330,6 +337,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20,
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE)
   
@@ -364,6 +372,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em,
@@ -376,6 +385,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE)
   
@@ -410,6 +420,7 @@ foreach (i = 1:10) %dopar% {
   M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
   
   mod <- loop_through_fn(om = om_with_data, 
+                         em_info = info,
                          random = random,
                          M_em = M_em, 
                          sel_em = sel_em,
@@ -422,6 +433,7 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
+                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE,
                          save.last.em = TRUE)

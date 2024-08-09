@@ -6,7 +6,8 @@
 \usage{
 loop_through_fn(
   om,
-  random,
+  em_info = NULL,
+  random = "log_NAA",
   M_em,
   sel_em,
   NAA_re_em,
@@ -29,7 +30,9 @@ loop_through_fn(
 \arguments{
 \item{om}{Operating model including pseudo data}
 
-\item{random}{A vector of processes that are treated as random effects in the operating model}
+\item{em_info}{A list of information used to generate the estimation model (default = NULL)}
+
+\item{random}{A vector of processes that are treated as random effects in the operating model (default = "log_NAA")}
 
 \item{M_em}{Natural mortality configuration in the assessment model}
 

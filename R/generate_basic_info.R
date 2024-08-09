@@ -86,8 +86,8 @@ generate_basic_info <- function(n_stocks = 2,
                                 recruit_model = 2, 
                                 F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time = 0.5),
                                 catch_info = list(catch_cv = 0.1,catch_Neff = 100),
-                                index_info = list(index_cv = 0.1,index_Neff = 100, fracyr_indices = 0.75, q = 0.2),
-                                fracyr_spawn = 0.75,
+                                index_info = list(index_cv = 0.1,index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
+                                fracyr_spawn = 0.625,
                                 bias.correct.process = FALSE,
                                 bias.correct.observation = FALSE,
                                 bias.correct.BRPs = FALSE,
@@ -101,7 +101,6 @@ generate_basic_info <- function(n_stocks = 2,
   if (!check_dimensions(n_stocks, n_regions, n_indices, n_fleets)) cat("\nn_stocks, n_regions, n_fleets, n_indices are not the same!")
   
   basic_info = list()
-  
   basic_info$bias_correct_process = bias.correct.process
   basic_info$bias_correct_observation = bias.correct.observation
   basic_info$bias_correct_BRPs = bias.correct.BRPs
@@ -128,6 +127,8 @@ generate_basic_info <- function(n_stocks = 2,
   basic_info$fracyr_SSB <- matrix(0, ny, n_stocks) # Assume fish is recruited at the beginning of the year
   basic_info$fracyr_spawn = rep(fracyr_spawn, n_stocks)
   # basic_info$spawn_regions = 1:n_stocks
+  
+  F_info_list <- list2env(F_info, envir = .GlobalEnv)
   
   # Fishing mortality 
   nby = length(base.years)
@@ -193,6 +194,14 @@ generate_basic_info <- function(n_stocks = 2,
   # Catch information
   # catch_info_list <- catch_info
   catch_info_list <- list2env(catch_info, envir = .GlobalEnv)
+  
+  if (is.null(catch_info)) {
+    catch_cv.input = 0.1
+    catch_Neff.input = 100
+  } else {
+    catch_cv.input = catch_info$catch_cv
+    catch_Neff.input = catch_info$catch_Neff
+  }
   
   catch_info <- list()
   catch_info$n_fleets = n_fleets
@@ -260,7 +269,22 @@ generate_basic_info <- function(n_stocks = 2,
     basic_info$fracyr_SSB[, s] = fracyr_spawn - int_starts[ind] 
   }
   
-  return(list(basic_info = basic_info, catch_info = catch_info, index_info = index_info, F = F_info))
+  par_inputs = list(n_stocks = n_stocks, n_regions = n_regions, 
+                    n_indices = n_indices, n_fleets = n_fleets, 
+                    n_seasons = n_seasons, life_history = life_history,
+                    n_ages = n_ages, Fbar_ages = Fbar_ages, 
+                    recruit_model = recruit_model, 
+                    F.year1 = F_info_list$F.year1, Fhist = F_info_list$Fhist, Fmax = F_info_list$Fmax, 
+                    Fmin = F_info_list$Fmin, change_time = F_info_list$change_time,
+                    catch_cv = catch_info_list$catch_cv, catch_Neff = catch_Neff.input,
+                    index_cv = index_info_list$index_cv, index_Neff = index_info_list$index_Neff, fracyr_indices = index_info_list$fracyr_indices, q = index_info_list$q,
+                    fracyr_spawn = fracyr_spawn,
+                    bias.correct.process = bias.correct.process,
+                    bias.correct.observation = bias.correct.observation,
+                    bias.correct.BRPs = bias.correct.BRPs,
+                    mig_type = mig_type, XSPR_R_opt = XSPR_R_opt)
+  
+  return(list(basic_info = basic_info, catch_info = catch_info, index_info = index_info, F = F_info, par_inputs = par_inputs))
 }
 
 Generate_Maturity <- function(life_history = NULL, na) {

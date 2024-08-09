@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Self-test and Cross-test</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-08-07</h4>
+<h4 class="date">Last update: 2024-08-09</h4>
 
 </div>
 
@@ -1650,37 +1650,37 @@ bidirectional)</h4>
 <pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
 # Note: the default is &quot;bidirectional&quot; movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
 
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;) # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;constant&quot;) # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks</code></pre>
 </div>
 <div id="b.-specify-movement-type-and-movement-rate-unidirectional" class="section level4">
 <h4>3b. Specify movement type and movement rate (unidirectional)</h4>
 <pre class="r"><code># DO NOT RUN #
 basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
-move &lt;- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;) # Note: default is 0.3 for stock1 and 0 for the rest of stocks</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3, 0), move.re = &quot;constant&quot;) # Note: default is 0.3 for stock1 and 0 for the rest of stocks</code></pre>
 </div>
 <div id="c.-specify-movement-type-and-movement-rate-iid_y" class="section level4">
 <h4>3c. Specify movement type and movement rate (iid_y)</h4>
 <pre class="r"><code># DO NOT RUN #
 basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;iid_y&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;iid_y&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years</code></pre>
 </div>
 <div id="d.-specify-movement-type-and-movement-rate-iid_a" class="section level4">
 <h4>3d. Specify movement type and movement rate (iid_a)</h4>
 <pre class="r"><code># DO NOT RUN #
 basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;iid_a&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;iid_a&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages</code></pre>
 </div>
 <div id="e.-specify-movement-type-and-movement-rate-ar1_y" class="section level4">
 <h4>3e. Specify movement type and movement rate (ar1_y)</h4>
 <pre class="r"><code># DO NOT RUN #
 basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;ar1_y&quot;,move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;ar1_y&quot;, move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years</code></pre>
 </div>
 <div id="f.-specify-movement-type-and-movement-rate-ar1_a" class="section level4">
 <h4>3f. Specify movement type and movement rate (ar1_a)</h4>
 <pre class="r"><code># DO NOT RUN #
 basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;ar1_a&quot;,move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;ar1_a&quot;, move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages</code></pre>
 </div>
 </div>
 <div id="configure-selecitvity-and-natural-mortality" class="section level3">

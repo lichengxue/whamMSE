@@ -6,6 +6,7 @@
 \usage{
 make_em_input(
   om,
+  em_info,
   M_em,
   sel_em,
   NAA_re_em,
@@ -19,6 +20,8 @@ make_em_input(
 \arguments{
 \item{om}{Operating model}
 
+\item{em_info}{A list of information used to generate the operating model}
+
 \item{M_em}{Natural mortality random effects}
 
 \item{sel_em}{Selectivity random effects}
@@ -27,7 +30,7 @@ make_em_input(
 
 \item{move_em}{Movement random effects}
 
-\item{em.opt}{Movement random effects
+\item{em.opt}{Movement random effects options
 \itemize{
   \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
   \item \code{$separate.em.type} only if separate.em = TRUE \cr
