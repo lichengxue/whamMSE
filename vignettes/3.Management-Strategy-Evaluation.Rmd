@@ -213,7 +213,7 @@ it into the operating model.
 #### EM1:
 
 ![Figure
-1](EM_figures/One_Area_Model_with_Catch_Aggregated_and_with_NAA_Random_Effects.png){width="600"}
+1](EM_figures/EM1_Panmictic_Catch_Aggregated.png){width="600"}
 
 ```{r, eval = FALSE}
 
@@ -249,7 +249,7 @@ mods[[1]] = loop_through_fn(om = om_with_data,
 #### EM2:
 
 ![Figure
-2](EM_figures/One_Area_Model_with_Spatially_Implicit_Fleets_as_Areas_and_with_NAA_Random_Effects.png){width="600"}
+2](EM_figures/EM2_Spatially_Implicit_Fleets_as_Areas.png){width="600"}
 
 ```{r, eval = FALSE}
 
@@ -284,7 +284,7 @@ mods[[2]] = loop_through_fn(om = om_with_data,
 #### EM3:
 
 ![Figure
-3](EM_figures/Separate_Assessment_Models_with_NAA_Random_Effects.png){width="600"}
+3](EM_figures/EM3_Separate_Panmictic.png){width="600"}
 
 ```{r, eval = FALSE}
 n_stocks = n_regions = n_fleets = n_indices = 1
@@ -320,7 +320,7 @@ mods[[3]] = loop_through_fn(om = om_with_data,
 #### EM4:
 
 ![Figure
-4](EM_figures/Two_Area_Model_with_No_Movement_and_with_NAA_Random_Effects.png){width="600"}
+4](EM_figures/EM4_Spatially_Disaggregated_No_Movement.png){width="600"}
 
 ```{r, eval = FALSE}
 
@@ -361,7 +361,7 @@ mods[[4]] = loop_through_fn(om = om_with_data,
 #### EM5:
 
 ![Figure
-5](EM_figures/Two_Area_Model_with_Fixed_Movement_and_with_NAA_Random_Effects_with_Movement_Arrows.png){width="600"}
+5](EM_figures/EM5_Spatially_Explicit_Fixed_Movement.png){width="600"}
 
 ```{r, eval = FALSE}
 
