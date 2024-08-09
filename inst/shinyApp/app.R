@@ -1,4 +1,5 @@
 library(shiny)
+library(DiagrammeR)
 
 # Define global variable
 mean_vals <- NULL
@@ -22,6 +23,7 @@ ui <- fluidPage(
     mainPanel(
       textOutput("instructions"),
       textOutput("warning"),
+      grVizOutput("movementDiagram"), # Move the diagram here
       verbatimTextOutput("meanValsArray")
     )
   )
@@ -38,9 +40,9 @@ server <- function(input, output, session) {
       for (k in 1:(n_regions - 1)) {
         rr <- if (k < r) k else k + 1
         movement_inputs <- append(movement_inputs, list(
-          numericInput(paste0("move_", r, "_", k), 
-                       paste0("Movement rate from region ", r, " to region ", rr, ":"), 
-                       value = 0.1, min = 0, max = 1, step = 0.01)
+          numericInput(paste0("move_", r, "_", k),
+                       paste0("Movement rate from region ", r, " to region ", rr, ":"),
+                       value = 0, min = 0, max = 1, step = 0.01)
         ))
       }
     }
@@ -53,6 +55,9 @@ server <- function(input, output, session) {
   output$instructions <- renderText({
     n_stocks <- input$n_stocks
     n_regions <- input$n_regions
+    if (is.null(n_stocks) || is.null(n_regions)) {
+      return("")  # Return an empty string to avoid evaluating missing values
+    }
     required_values <- n_stocks * (n_regions * (n_regions - 1))
     paste("You need to specify", required_values, "movement values for", n_stocks, "stocks and", n_regions, "regions.")
   })
@@ -60,6 +65,9 @@ server <- function(input, output, session) {
   output$warning <- renderText({
     n_stocks <- input$n_stocks
     n_regions <- input$n_regions
+    if (is.null(n_stocks) || is.null(n_regions)) {
+      return("")  # Avoid rendering warning if inputs are not yet initialized
+    }
     if (n_stocks != n_regions) {
       paste("Warning: The number of stocks (", n_stocks, ") is not equal to the number of regions (", n_regions, ").")
     } else {
@@ -82,6 +90,9 @@ server <- function(input, output, session) {
       for (rr in 1:n_regions) {
         if (r != rr) {
           input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
+          if (is.na(input_value)) {
+            input_value <- 0 # Set a default value in case input is NA
+          }
           mean_vals_array[,,r,k_index] <- input_value
           k_index <- k_index + 1
         }
@@ -91,6 +102,33 @@ server <- function(input, output, session) {
     mean_vals(mean_vals_array)
     
     output$meanValsArray <- renderPrint({ mean_vals_array })
+    
+    # Create the movement diagram using DiagrammeR
+    diagram <- create_graph() %>%
+      add_global_graph_attrs(attr = "layout", value = "dot", attr_type = "graph") %>%
+      add_global_graph_attrs(attr = "rankdir", value = "LR", attr_type = "graph")
+    
+    for (r in 1:n_regions) {
+      diagram <- diagram %>% add_node(label = paste("Region", r))
+    }
+    
+    for (r in 1:n_regions) {
+      k_index <- 1
+      for (rr in 1:n_regions) {
+        if (r != rr) {
+          input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
+          if (input_value > 0) {  # Only add arrows where movement is greater than 0
+            diagram <- diagram %>%
+              add_edge(from = r, to = rr, edge_aes = edge_aes(label = paste0(input_value)))
+          }
+          k_index <- k_index + 1
+        }
+      }
+    }
+    
+    output$movementDiagram <- renderGrViz({
+      grViz(DiagrammeR::generate_dot(diagram))
+    })
     
     # Save to global environment
     isolate({
