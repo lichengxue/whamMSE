@@ -42,7 +42,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
         mig_type = om$input$data$mig_type, 
         waacatch = om$input$data$waa[(om$input$data$n_fleets + 1):(om$input$data$n_fleets + om$input$data$n_regions), year,], 
         trace = TRUE, 
-        F_init = rep(0.5, length(om$input$data$n_fleets))
+        F_init = rep(0.5, om$input$data$n_fleets)
       )
       
       cat(paste0("\nFsolve: ", round(Fsolve, 3), " in Year ", y, "\n"))

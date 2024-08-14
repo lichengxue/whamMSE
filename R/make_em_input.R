@@ -224,18 +224,20 @@ make_em_input <- function(om,
 }
 
 # Helper function to generate basic info with multiple parameters
-generate_basic_info_em <- function(em_info, em_years, n_stocks = NULL, n_regions = NULL, n_fleets = NULL, n_indices = NULL) {
+generate_basic_info_em <- function(em_info, em_years, n_stocks = NULL, n_regions = NULL, n_fleets = NULL, n_indices = NULL, n_seasons = NULL) {
   
   if(is.null(n_stocks)) n_stocks = em_info$par_inputs$n_stocks
   if(is.null(n_regions)) n_regions = em_info$par_inputs$n_regions
   if(is.null(n_fleets)) n_fleets = em_info$par_inputs$n_fleets
   if(is.null(n_indices)) n_indices = em_info$par_inputs$n_indices
+  if(is.null(n_seasons)) n_seasons = em_info$par_inputs$n_seasons
   
   generate_basic_info(
     n_stocks = n_stocks, 
     n_regions = n_regions, 
     n_indices = n_indices, 
     n_fleets = n_fleets, 
+    n_seasons = n_seasons,
     base.years = em_years,
     life_history = em_info$par_inputs$life_history, 
     n_ages = em_info$par_inputs$n_ages, 

@@ -7,15 +7,18 @@
 #' @param hcr.type Type of harvest control rule
 #'   \itemize{
 #'     \item \code{"1"} Annual projected catch based on 75% of F40% (default)
-#'     \item \code{"2"} Constant catch based on 75% of F40%
+#'     \item \code{"2"} Constant catch based on 75% of F40% (default)
 #'     \item \code{"3"} "Hockey stick" catch based on stock status
 #'     }
-#' @param hcr.opts only used if hcr.type = 3
+#' @param hcr.opts 
 #'   \itemize{
-#'     \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
-#'     \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
-#'     \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5) 
-#'     \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
+#'     \item \code{"percentFXSPR"} percent of F_XSPR to use for calculating catch in projections, default = 75
+#'     \item \code{"percentSPR"} X\% SPR used to calculate reference points, default = 40
+#'     \item \code{"avg.yrs"} controls which years the MAA, WAA, M, F will be averaged over in the projections, default = 5
+#'     \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections, default = 75
+#'     \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections, default = 0.01
+#'     \item \code{"BThresh_up"} Upper bound of overfished level, default = 0.5
+#'     \item \code{"BThresh_low"} Lower bound of overfished level, default = 0.1
 #'     }
 #'     
 #' @return a list of catch advice
@@ -38,12 +41,28 @@
 advice_fn <- function(em, pro.yr = assess.interval, hcr.type = 1, hcr.opts = NULL) {
   cat(paste0("----------------\nHarvest Control Rule type ", hcr.type, " is in use!\n----------------\n"))
   
+  if(is.null(hcr.opts$percentFXSPR)) {
+    percentFXSPR = 75
+  } else {
+    percentFXSPR = hcr.opts$percentFXSPR
+  }
+  
+  if(is.null(hcr.opts$percentSPR)) {
+    percentSPR = 40
+  } else {
+    percentSPR = hcr.opts$percentSPR
+  }
+  
+  if(!is.null(hcr.opts$avg.yrs) & length(hcr.opts$avg.yrs) > length(em$years)) avg.yrs = length(em$years)
+  
+  if(is.null(hcr.opts$avg.yrs)) avg.yrs = 5
+
   proj_opts <- list(
     n.yrs = pro.yr,
     use.FXSPR = TRUE,
-    avg.yrs = tail(em$years, 5),
-    percentFXSPR = 75,
-    percentSPR = 40
+    avg.yrs = tail(em$years, avg.yrs),
+    percentFXSPR = percentFXSPR,
+    percentSPR = percentSPR
   )
   
   em_proj <- project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) # Projected version of the em
@@ -59,16 +78,29 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr.type = 1, hcr.opts = NUL
     advice <- matrix(rep(advice, pro.yr), ncol = length(advice), byrow = TRUE)
   } 
   if (hcr.type == 3) {
-    if (is.null(hcr.opts)) {
-      max_percent <- 75
-      min_percent <- 0.01
-      BThresh_up <- 0.5
-      BThresh_low <- 0.1
+    
+    if (is.null(hcr.opts$max_percent)) {
+      max_percent = 75
     } else {
-      max_percent <- hcr.opts$max_percent
-      min_percent <- hcr.opts$min_percent
-      BThresh_up <- hcr.opts$BThresh_up
-      BThresh_low <- hcr.opts$BThresh_low
+      max_percent = hcr.opts$max_percent
+    }
+    
+    if (is.null(hcr.opts$min_percent)) {
+      min_percent = 0.01
+    } else {
+      min_percent = hcr.opts$min_percent
+    }
+    
+    if (is.null(hcr.opts$BThresh_up)) {
+      BThresh_up = 0.5
+    } else {
+      BThresh_up = hcr.opts$BThresh_up
+    }
+    
+    if (is.null(hcr.opts$BThresh_low)) {
+      BThresh_low = 0.1
+    } else {
+      BThresh_low = hcr.opts$BThresh_low
     }
     
     if (ncol(em$rep$log_SSB_FXSPR) == ncol(em$rep$SSB) + 1) {
