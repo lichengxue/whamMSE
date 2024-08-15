@@ -10,6 +10,7 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2024-08-15", title = "Improve Shiny App for movement", content = "Users can use Specify_move Shiny app to configure movement without using the generate_move() function"),
   list(date = "2024-08-15", title = "Add Shiny App Vignettes", content = "Description for Shiny App Specify_move()"),
   list(date = "2024-08-15", title = "Add options for movement configuration", content = "Add more options in generate_move()"),
   list(date = "2024-08-14", title = "Add options for HCR", content = "Add more options in advice_fn()"),
