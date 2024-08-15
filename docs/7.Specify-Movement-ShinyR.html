@@ -1624,11 +1624,12 @@ move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0
 <div id="mannually-specify-stock--or-region-specific-movement-rate-using-shiny-app" class="section level3">
 <h3>4. Mannually specify stock- or region-specific movement rate using
 Shiny APP</h3>
-<pre class="r"><code>Specify_move()</code></pre>
+<pre class="r"><code>Specify_move()
+# Note: for more information please also check the generate_move() function</code></pre>
 </div>
 <div id="load-defined-movement-rate-array" class="section level3">
 <h3>5. Load defined movement rate array</h3>
-<pre class="r"><code>move$mean_vals &lt;- readRDS(&quot;mean_vals.rds&quot;)</code></pre>
+<pre class="r"><code>move &lt;- readRDS(&quot;move.rds&quot;)</code></pre>
 </div>
 <div id="configure-selecitvity-and-natural-mortality" class="section level3">
 <h3>6. Configure selecitvity and natural mortality</h3>

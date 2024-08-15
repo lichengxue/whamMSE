@@ -1,37 +1,95 @@
 library(shiny)
 library(DiagrammeR)
 
-# Define global variable
-mean_vals <- NULL
-
 # Define UI for the app
 ui <- fluidPage(
   titlePanel("Specify Movement Rates for Fish"),
   
   sidebarLayout(
     sidebarPanel(
-      numericInput("n_stocks", "Number of Stocks:", min = 1, max = 10, value = 2),
-      numericInput("n_seasons", "Number of Seasons:", min = 1, max = 4, value = 4),
-      numericInput("n_regions", "Number of Regions:", min = 2, max = 10, value = 2),
+      numericInput("n_stocks", "Number of Stocks:", min = 1, max = 100, value = 2),
+      numericInput("n_seasons", "Number of Seasons:", min = 1, max = 100, value = 4),
+      numericInput("n_regions", "Number of Regions:", min = 2, max = 100, value = 2),
+      numericInput("fracyr_spawn", "Fraction of Year for Spawning:", min = 0, max = 1, value = 0.5, step = 0.1),
       
+      checkboxGroupInput("canMoveCheckbox", "Can Move in Seasons:", choices = c(1, 2, 3, 4), selected = c(1, 2, 3, 4)),
+      checkboxGroupInput("mustMoveCheckbox", "Must Move in Seasons:", choices = c(1, 2, 3, 4), selected = 1),
+      
+      uiOutput("moveEffectOptions"),
+      uiOutput("moveSigmaInput"),
+      uiOutput("moveRhoAInput"),
+      uiOutput("moveRhoYInput"),
+      checkboxInput("use_prior", "Use Prior?", value = FALSE),
+      uiOutput("priorSigmaInput"),
       uiOutput("movementInputs"),
       
       actionButton("generate", "Generate Movement Matrix"),
-      downloadButton("downloadData", "Download Movement Matrix")
+      downloadButton("downloadData", "Download Movement Matrix"),
+      actionButton("demoButton", "Demo"),
+      actionButton("restartButton", "Restart"),
+      actionButton("exitButton", "Exit")
     ),
     
     mainPanel(
       textOutput("instructions"),
       textOutput("warning"),
-      grVizOutput("movementDiagram"), # Move the diagram here
-      verbatimTextOutput("meanValsArray")
+      grVizOutput("movementDiagram"),
+      plotOutput("seasonDiagram"),
+      verbatimTextOutput("outputList")
     )
   )
 )
 
 # Define server logic for the app
 server <- function(input, output, session) {
+  
   observe({
+    n_seasons <- input$n_seasons
+    fracyr_spawn <- input$fracyr_spawn
+    
+    # Calculate spawning season
+    spawn_season <- ceiling(fracyr_spawn * n_seasons)
+    
+    # Update Can Move and Must Move checkboxes
+    updateCheckboxGroupInput(session, "canMoveCheckbox", choices = 1:n_seasons, selected = setdiff(1:n_seasons, spawn_season))
+    updateCheckboxGroupInput(session, "mustMoveCheckbox", choices = 1:n_seasons, selected = spawn_season)
+    
+    # Generate movement effect options
+    output$moveEffectOptions <- renderUI({
+      selectInput("movementEffect", "Select Movement Random Effect",
+                  choices = list("Constant" = "constant", "IID (Age)" = "iid_a", 
+                                 "IID (Year)" = "iid_y", "AR1 (Age)" = "ar1_a", 
+                                 "AR1 (Year)" = "ar1_y"), selected = "constant")
+    })
+    
+    # Conditionally show move.sigma input
+    output$moveSigmaInput <- renderUI({
+      if (!is.null(input$movementEffect) && input$movementEffect %in% c("iid_a", "iid_y", "ar1_a", "ar1_y")) {
+        numericInput("moveSigma", "Movement Sigma:", value = 0.5, step = 0.1)
+      }
+    })
+    
+    # Conditionally show move.rho.a input
+    output$moveRhoAInput <- renderUI({
+      if (!is.null(input$movementEffect) && input$movementEffect == "ar1_a") {
+        numericInput("moveRhoA", "Movement Rho (Age):", value = 0.5, step = 0.1)
+      }
+    })
+    
+    # Conditionally show move.rho.y input
+    output$moveRhoYInput <- renderUI({
+      if (!is.null(input$movementEffect) && input$movementEffect == "ar1_y") {
+        numericInput("moveRhoY", "Movement Rho (Year):", value = 0.5, step = 0.1)
+      }
+    })
+    
+    # Conditionally show prior.sigma input
+    output$priorSigmaInput <- renderUI({
+      if (input$use_prior) {
+        numericInput("priorSigma", "Prior Sigma:", value = 0.2, step = 0.1)
+      }
+    })
+    
     # Generate dynamic UI inputs for movement rates
     n_regions <- input$n_regions
     movement_inputs <- list()
@@ -50,101 +108,174 @@ server <- function(input, output, session) {
     output$movementInputs <- renderUI({
       do.call(tagList, movement_inputs)
     })
-  })
-  
-  output$instructions <- renderText({
-    n_stocks <- input$n_stocks
-    n_regions <- input$n_regions
-    if (is.null(n_stocks) || is.null(n_regions)) {
-      return("")  # Return an empty string to avoid evaluating missing values
-    }
-    required_values <- n_stocks * (n_regions * (n_regions - 1))
-    paste("You need to specify", required_values, "movement values for", n_stocks, "stocks and", n_regions, "regions.")
-  })
-  
-  output$warning <- renderText({
-    n_stocks <- input$n_stocks
-    n_regions <- input$n_regions
-    if (is.null(n_stocks) || is.null(n_regions)) {
-      return("")  # Avoid rendering warning if inputs are not yet initialized
-    }
-    if (n_stocks != n_regions) {
-      paste("Warning: The number of stocks (", n_stocks, ") is not equal to the number of regions (", n_regions, ").")
-    } else {
-      ""
-    }
-  })
-  
-  mean_vals <- reactiveVal(NULL)
-  
-  observeEvent(input$generate, {
-    # Generate the mean_vals array
-    n_stocks <- input$n_stocks
-    n_seasons <- input$n_seasons
-    n_regions <- input$n_regions
     
-    mean_vals_array <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-    
-    for (r in 1:n_regions) {
-      k_index <- 1
-      for (rr in 1:n_regions) {
-        if (r != rr) {
-          input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
-          if (is.na(input_value)) {
-            input_value <- 0 # Set a default value in case input is NA
-          }
-          mean_vals_array[,,r,k_index] <- input_value
-          k_index <- k_index + 1
-        }
-      }
-    }
-    
-    mean_vals(mean_vals_array)
-    
-    output$meanValsArray <- renderPrint({ mean_vals_array })
-    
-    # Create the movement diagram using DiagrammeR
-    diagram <- create_graph() %>%
-      add_global_graph_attrs(attr = "layout", value = "dot", attr_type = "graph") %>%
-      add_global_graph_attrs(attr = "rankdir", value = "LR", attr_type = "graph")
-    
-    for (r in 1:n_regions) {
-      diagram <- diagram %>% add_node(label = paste("Region", r))
-    }
-    
-    for (r in 1:n_regions) {
-      k_index <- 1
-      for (rr in 1:n_regions) {
-        if (r != rr) {
-          input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
-          if (input_value > 0) {  # Only add arrows where movement is greater than 0
-            diagram <- diagram %>%
-              add_edge(from = r, to = rr, edge_aes = edge_aes(label = paste0(input_value)))
-          }
-          k_index <- k_index + 1
-        }
-      }
-    }
-    
-    output$movementDiagram <- renderGrViz({
-      grViz(DiagrammeR::generate_dot(diagram))
+    # Generate season diagram
+    output$seasonDiagram <- renderPlot({
+      plot(1:n_seasons, rep(1, n_seasons), xlim = c(0, n_seasons + 1), ylim = c(0, 2),
+           xaxt = "n", yaxt = "n", xlab = "", ylab = "", type = "n")
+      rect(1:n_seasons - 0.4, 0.5, 1:n_seasons + 0.4, 1.5, col = ifelse(1:n_seasons == spawn_season, "lightgreen", "lightblue"))
+      text(1:n_seasons, rep(1, n_seasons), labels = ifelse(1:n_seasons == spawn_season, "Spawning\n Season", ""), cex = 0.8)
+      axis(1, at = 1:n_seasons, labels = paste("Season", 1:n_seasons))
     })
     
-    # Save to global environment
-    isolate({
-      assign("mean_vals", mean_vals_array, envir = .GlobalEnv)
+    mean_vals <- reactiveVal(NULL)
+    
+    observeEvent(input$generate, {
+      # Generate the mean_vals array and other outputs
+      n_stocks <- input$n_stocks
+      n_seasons <- input$n_seasons
+      n_regions <- input$n_regions
+      use_prior <- input$use_prior
+      prior_sigma <- if (use_prior) input$priorSigma else NULL
+      
+      # Assuming home_region for each stock is stock index (e.g., Stock 1 home in Region 1, Stock 2 home in Region 2, etc.)
+      home_region <- 1:n_stocks
+      
+      mean_vals_array <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+      
+      for (r in 1:n_regions) {
+        k_index <- 1
+        for (rr in 1:n_regions) {
+          if (r != rr) {
+            input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
+            if (is.na(input_value)) {
+              input_value <- 0 # Set a default value in case input is NA
+            }
+            mean_vals_array[,,r,k_index] <- input_value
+            k_index <- k_index + 1
+          }
+        }
+      }
+      
+      mean_vals(mean_vals_array)
+      
+      # Example calculation for other outputs based on selections
+      can_move_array <- array(1, dim = c(n_stocks, n_seasons, n_regions, n_regions))
+      must_move_array <- array(0, dim = c(n_stocks, n_seasons, n_regions))
+      
+      must_move_seasons <- as.integer(input$mustMoveCheckbox)
+      
+      for (stock in 1:n_stocks) {
+        for (season in 1:n_seasons) {
+          for (r in 1:n_regions) {
+            for (rr in 1:n_regions) {
+              if (season == spawn_season) {
+                can_move_array[stock, season, r, rr] <- 0
+              }
+            }
+            if (season == spawn_season && r != home_region[stock]) {
+              must_move_array[stock, season, r] <- 1
+            }
+          }
+        }
+      }
+      
+      mean_model_matrix <- matrix("constant", nrow = n_regions, ncol = n_regions - 1)
+      
+      year_re_matrix <- matrix("none", nrow = n_regions, ncol = n_regions - 1)
+      age_re_matrix <- matrix("none", nrow = n_regions, ncol = n_regions - 1)
+      
+      cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))  # Corrected dimensions
+      if (input$movementEffect == "ar1_a") {
+        cor_vals[, , , , 1] <- input$moveRhoA  # Assign age correlation
+        age_re_matrix <- matrix("ar1", nrow = n_regions, ncol = n_regions - 1)
+      }
+      if (input$movementEffect == "ar1_y") {
+        cor_vals[, , , , 2] <- input$moveRhoY  # Assign year correlation
+        year_re_matrix <- matrix("ar1", nrow = n_regions, ncol = n_regions - 1)
+      }
+      
+      sigma_vals <- if (input$movementEffect %in% c("iid_a", "iid_y", "ar1_a", "ar1_y")) input$moveSigma else NULL
+      
+      use_prior_array <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+      if (use_prior) {
+        use_prior_array[, 1, , ] <- 1  # Set the first season to 1, others remain 0
+      }
+      
+      output_list <- list(stock_move = rep(TRUE, n_regions),
+                          separable = TRUE,
+                          must_move = must_move_array,
+                          can_move = can_move_array,
+                          mean_vals = mean_vals_array,
+                          mean_model = mean_model_matrix,
+                          year_re = year_re_matrix,
+                          age_re = age_re_matrix,
+                          cor_vals = cor_vals,
+                          sigma_vals = sigma_vals,
+                          use_prior = use_prior_array,
+                          prior_sigma = if (!is.null(prior_sigma)) array(prior_sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1)) else NULL)
+      
+      output$outputList <- renderPrint({ output_list })
+      
+      # Create the movement diagram using DiagrammeR
+      diagram <- create_graph() %>%
+        add_global_graph_attrs(attr = "layout", value = "dot", attr_type = "graph") %>%
+        add_global_graph_attrs(attr = "rankdir", value = "LR", attr_type = "graph")
+      
+      for (r in 1:n_regions) {
+        diagram <- diagram %>% add_node(label = paste("Region\n", r))
+      }
+      
+      for (r in 1:n_regions) {
+        k_index <- 1
+        for (rr in 1:n_regions) {
+          if (r != rr) {
+            input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
+            if (input_value > 0) {
+              diagram <- diagram %>%
+                add_edge(from = r, to = rr, edge_aes = edge_aes(label = paste0(input_value)))
+            }
+            k_index <- k_index + 1
+          }
+        }
+      }
+      
+      output$movementDiagram <- renderGrViz({
+        grViz(DiagrammeR::generate_dot(diagram))
+      })
+      
+      # Save to global environment
+      isolate({
+        assign("output_list", output_list, envir = .GlobalEnv)
+      })
+    })
+    
+    # Demo Button: Pre-set values for demo
+    observeEvent(input$demoButton, {
+      updateNumericInput(session, "n_stocks", value = 4)
+      updateNumericInput(session, "n_regions", value = 4)
+      updateNumericInput(session, "n_seasons", value = 4)
+      updateNumericInput(session, "fracyr_spawn", value = 0.5)
+      
+      # Set random movement rates for each region combination
+      for (r in 1:4) {
+        for (k in 1:3) {
+          updateNumericInput(session, paste0("move_", r, "_", k), value = round(runif(1, 0, 1), 2))
+        }
+      }
+    })
+    
+    # Restart Button: Reload the app
+    observeEvent(input$restartButton, {
+      session$reload()
+    })
+    
+    # Exit the app
+    observeEvent(input$exitButton, {
+      stopApp()
     })
   })
   
   output$downloadData <- downloadHandler(
     filename = function() {
-      paste("mean_vals", ".rds", sep = "")
+      paste("movement.rds", sep = "")
     },
     content = function(file) {
-      saveRDS(mean_vals(), file)
+      saveRDS(output_list, file)
     }
   )
 }
 
 # Run the app
 shinyApp(ui = ui, server = server)
+
