@@ -1,0 +1,129 @@
+---
+title: "Specify Movement Using ShinyR"
+author: "Chengxue Li"
+date: "Last update: `r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    includes:
+      in_header: header.html
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+This vignette includes an example of how to specify movement using the Specify_move() Shiny APP when spatial structure is complex (i.e. the number of stocks/regions are high).
+
+### 1. Load "WHAM" and "whamMSE":
+
+```{r, eval=FALSE}
+library(wham)
+library(whamMSE)
+
+main.dir = here::here()
+```
+
+### 2. Generate basic information
+
+```{r, eval=FALSE}
+year_start  <- 2003  # starting year in the burn-in period
+year_end    <- 2022  # end year in the burn-in period
+MSE_years   <- 3     # number of years in the feedback loop
+# Note: no need to include MSE_years in simulation-estimation 
+
+info <- generate_basic_info(n_stocks   = 4, # Note: now change to 4 stocks
+                            n_regions  = 4, # Note: now change to 4 regions
+                            n_indices  = 4, 
+                            n_fleets   = 4, 
+                            n_seasons  = 4, 
+                            base.years = year_start:year_end, 
+                            n_feedback_years = MSE_years, 
+                            life_history  = "medium", 
+                            n_ages        = 12, 
+                            Fbar_ages     = 12, 
+                            recruit_model = 2, 
+                            F_info     = list(F.year1 = 0.2, Fhist = "updown",
+                                              Fmax = 1, Fmin = 0.2,change_time = 0.5),
+                            catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
+                            index_info = list(index_cv = 0.1, index_Neff = 200, 
+                                              fracyr_indices = 0.5, q = 0.2), 
+                            fracyr_spawn = 0.5, 
+                            bias.correct.process     = FALSE, 
+                            bias.correct.observation = FALSE, 
+                            bias.correct.BRPs        = FALSE, 
+                            mig_type = 0) 
+
+basic_info = info$basic_info # collect basic information
+catch_info = info$catch_info # collect fleet catch information
+index_info = info$index_info # collect survey information
+F_info = info$F # collect fishing information
+
+# see more details using ?generate_basic_info
+```
+
+### 3. Specify movement type and movement rate
+
+```{r, eval=FALSE}
+basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2) # "bidirectional" movement
+
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.1,0.1,0.1,0.1), move.re = "constant")
+
+```
+
+### 4. Mannually specify stock- or region-specific movement rate using Shiny APP
+
+```{r, eval=FALSE}
+Specify_move()
+```
+
+### 5. Load defined movement rate array 
+
+```{r, eval=FALSE}
+move$mean_vals <- readRDS("mean_vals.rds")
+```
+
+### 6. Configure selecitvity and natural mortality
+
+```{r, eval=FALSE}
+n_stocks  <- as.integer(basic_info['n_stocks'])
+n_regions <- as.integer(basic_info['n_regions'])
+n_fleets  <- as.integer(basic_info['n_fleets'])
+n_indices <- as.integer(basic_info['n_indices'])
+n_ages    <- as.integer(basic_info['n_ages'])
+
+# Selectivity Configuration
+fleet_pars <- c(5,1)
+index_pars <- c(2,1)
+sel <- list(model=rep("logistic",n_fleets+n_indices),
+            initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
+
+# M Configuration
+M <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
+
+sigma        <- "rec+1"
+re_cor       <- "iid"
+ini.opt      <- "equilibrium" # option <- c("age-specific-fe", "equilibrium")
+
+NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
+               sigma=rep(sigma,n_stocks),
+               cor=rep(re_cor,n_stocks),
+               recruit_model = 2,  # rec random around the mean
+               NAA_where = basic_info$NAA_where) # NAA_where must be specified in basic_info!
+```
+
+### 7. Generate wham input
+
+Here we use `prepare_wham_input()` function to generate a wham input
+using the basic information we set above:
+
+```{r, eval=FALSE}
+input <- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move, catch_info = catch_info, index_info = index_info, F = F_info)
+```
+
+### 8. Generate operating model
+
+```{r, eval=FALSE}
+om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
+# Note: do.fit must be FALSE (no modeling fitting yet)
+```

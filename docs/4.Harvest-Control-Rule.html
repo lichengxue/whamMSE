@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Harvest Control Rule</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-08-14</h4>
+<h4 class="date">Last update: 2024-08-15</h4>
 
 </div>
 
@@ -1725,6 +1725,7 @@ NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma=&quot;rec+1&quot;,co
 M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[1]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 
@@ -1755,6 +1756,7 @@ NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma=&quot;rec+1&quot;,co
 M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[2]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 
@@ -1784,6 +1786,7 @@ NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma = &quot;rec+1&quot;,
 M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[3]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 

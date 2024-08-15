@@ -23,7 +23,7 @@
 #' @param prior.sigma Standard deviation for normal priors on mean movement (default = 0.2) 
 #' @param move.rho_a Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)
 #' @param move.rho_y Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)
-#' @param use.prior Logical, whether to use priors (default = TRUE)
+#' @param use.prior Logical, whether to use priors (default = FALSE)
 #'
 #' @return A named list with the following components:
 #'   \describe{
@@ -55,7 +55,7 @@ generate_move <- function(basic_info,
                           prior.sigma = 0.2,
                           move.rho_a = 0.5,
                           move.rho_y = 0.5,
-                          use.prior = TRUE) {
+                          use.prior = FALSE) {
   
   if (is.null(basic_info)) stop("basic_info must be provided.")
   
@@ -81,7 +81,9 @@ generate_move <- function(basic_info,
   if (move.type == 1) { # Unidirectional movement
     if(sum(move.rate[2:n_stocks]) != 0) {
       move.rate[2:n_stocks] = 0
+      cat("--------Warning--------\n")
       cat("Only stock 1 'can' move so movement rate for other stocks is set to be 0!\n")
+      cat("--------Warning--------\n")
     }
     move_mu <- move.rate[1]
     move$stock_move <- c(TRUE, rep(FALSE, n_stocks - 1))
@@ -96,7 +98,7 @@ generate_move <- function(basic_info,
     move$can_move[1, spawntime - 1, setdiff(1:n_regions, 1), ] <- 1
     
     move$mean_vals <- array(move_mu, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-    cat(paste0("Only stock 1 'can' move (default)\nMovement rate is ", move.rate[1], "\n"))
+    cat(paste0("\nOnly stock 1 'can' move and movement rate is ", move.rate[1], "\n"))
     
     move <- configure_move.re(move, move.type, move.re, move.sigma, prior.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions, use.prior)
     
@@ -105,7 +107,7 @@ generate_move <- function(basic_info,
     move$stock_move <- rep(TRUE, n_stocks)
     move$must_move <- array(0, dim = c(n_stocks, n_seasons, n_regions))
     move$can_move <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions))
-    
+    cat("\nAll stocks 'can' move\n")
     for (s in 1:n_stocks) {
       move$must_move[s, spawntime - 1, setdiff(1:n_regions, s)] <- 1
       move$can_move[s, movetime, , ] <- 1
@@ -116,10 +118,9 @@ generate_move <- function(basic_info,
     
     for (r in 1:n_regions) {
       move$mean_vals[, , r, ] <- move_mu[r]
+      
+      cat(paste0("\nMovement rate for stocks in region ",r," is ", move.rate[r],"\n"))
     }
-    
-    cat(paste0("All stocks 'can' move (default)\nMovement rate for stocks in region 1 is ", move.rate[1], 
-               "\nMovement rate for stocks in other regions is ",move.rate[-1],"\n"))
     
     move <- configure_move.re(move, move.type, move.re, move.sigma, prior.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions, use.prior)
     
@@ -139,9 +140,12 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
     move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     
     if (use.prior) {
+      cat("\nWarning: Prior for mean movement rate is used!\n")
+      cat("\nMean movement rate, although it's still 'constant' across years and ages, \nis now randomly drawn from a prior distribution with a mean and a standard deviation\n")
       move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
       move$use_prior[1, 1, , ] <- 1
       move$prior_sigma <- array(prior.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+      cat(paste0("\nSigma for the prior for the movement is ",prior.sigma,"\n"))
     } else {
       move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
       move$prior_sigma <- NULL
@@ -153,9 +157,12 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
     move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     
     if (use.prior) {
+      cat("\nWarning: Prior for mean movement rate is used!\n")
+      cat("\nMean movement rate, although it's still 'constant' across years and ages, \nis now randomly drawn from a prior distribution with a mean and a standard deviation\n")
       move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
       move$use_prior[1, 1, , ] <- 1
       move$prior_sigma <- array(prior.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+      cat(paste0("\nSigma for the prior for the movement is ",prior.sigma,"\n"))
     } else {
       move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
       move$prior_sigma <- NULL
@@ -171,6 +178,9 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
       } else if (move.re == "iid_y") {
         move$year_re <- matrix("iid", n_regions, n_regions - 1)
       }
+      if(move.type == 1) {
+        move$year_re[2:n_regions] = "none"
+      }
     }
     
     if (move.re %in% c("ar1_a", "iid_a")) {
@@ -183,10 +193,13 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
       } else if (move.re == "iid_a") {
         move$age_re <- matrix("iid", n_regions, n_regions - 1)
       }
+      if(move.type == 1) {
+        move$age_re[2:n_regions] = "none"
+      }
     }
     
     move$sigma_vals = move.sigma
-    cat(paste0("\nsigma for movement is set to ", move.sigma, "\n"))
+    cat(paste0("\nSigma for the varying movement rate is set to ", move.sigma, "\n"))
   }
   return(move)
 }

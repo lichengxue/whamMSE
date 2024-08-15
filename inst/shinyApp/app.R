@@ -138,13 +138,10 @@ server <- function(input, output, session) {
   
   output$downloadData <- downloadHandler(
     filename = function() {
-      paste("mean_vals", Sys.Date(), ".csv", sep = "")
+      paste("mean_vals", ".rds", sep = "")
     },
     content = function(file) {
-      mean_vals_array <- mean_vals()
-      mean_vals_flattened <- as.data.frame.table(mean_vals_array)
-      colnames(mean_vals_flattened) <- c("Stock", "Season", "From_Region", "To_Region_Index", "Value")
-      write.csv(mean_vals_flattened, file, row.names = FALSE)
+      saveRDS(mean_vals(), file)
     }
   )
 }

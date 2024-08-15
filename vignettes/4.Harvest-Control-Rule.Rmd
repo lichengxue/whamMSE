@@ -192,6 +192,7 @@ NAA_re_em <- list(N1_model="equilibrium",sigma="rec+1",cor="iid")
 M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[1]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 
@@ -223,6 +224,7 @@ NAA_re_em <- list(N1_model="equilibrium",sigma="rec+1",cor="iid")
 M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[2]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 
@@ -254,6 +256,7 @@ NAA_re_em <- list(N1_model="equilibrium",sigma = "rec+1", cor="iid")
 M_em <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 
 mods[[3]] = loop_through_fn(om = om_with_data, 
+                            em_info = info,
                             random = random,
                             M_em = M_em, 
                             sel_em = sel_em, 

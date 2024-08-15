@@ -13,7 +13,7 @@ generate_move(
   prior.sigma = 0.2,
   move.rho_a = 0.5,
   move.rho_y = 0.5,
-  use.prior = TRUE
+  use.prior = FALSE
 )
 }
 \arguments{
@@ -46,7 +46,7 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
 
 \item{move.rho_y}{Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)}
 
-\item{use.prior}{Logical, whether to use priors (default = TRUE)}
+\item{use.prior}{Logical, whether to use priors (default = FALSE)}
 }
 \value{
 A named list with the following components:
