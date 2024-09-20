@@ -1,0 +1,64 @@
+\begin{center}
+\begin{longtable}{p{2cm} p{10cm} p{2cm}}
+\caption{Biological and fishery parameters values used in the operating models 1 and 2 (OMs 1 and 2). For parameters where only one value is provided, the value applies to both stocks/regions. For parameters where two values are provided, the first value corresponds to stock 1/region 1 and the second value corresponds to stock 2/region 2. Information of Management Strategy Evaluation is also provided.} \\
+\label{para_tab} \\
+\hline
+\multicolumn{1}{c}{\textbf{Parameters}} & \multicolumn{1}{c}{\textbf{Description}} & \multicolumn{1}{c}{\textbf{Value}} \tabularnewline
+\hline
+
+\multicolumn{3}{l}{\textbf{Biological information}} \tabularnewline
+$\alpha_{SR}$ & Productivity parameter & 7, 5.5 \tabularnewline
+$\beta_{SR}$ & Density-dependent recruitment parameter & $1 \times 10^{-4}$ \tabularnewline
+$R_0$ & Virgin recruitment & 63053, 43053 \tabularnewline
+$h$ & Stock-recruit steepness & 0.72, 0.85 \tabularnewline
+$\sigma_R$ & Standard deviation of recruitment random effects (age 1) & 0.5 \tabularnewline
+$\sigma_{NAA}$ & Standard deviation of numbers-at-age (age 2+) random effects & 0.2 \tabularnewline
+$a_{max}$ & Maximum age (yr) & 12 \tabularnewline
+$M$ & Instantaneous natural mortality & 0.2 \tabularnewline
+$a_0$ & Age at length = 0 & 0 \tabularnewline
+$L_\infty$ & Maximum length (cm) & 90 \tabularnewline
+$k$ & Growth rate (yr$^{-1}$) & 0.13 \tabularnewline
+$b_1$ & L – W scalar (kg cm$^{-1}$) & $3 \times 10^{-6}$ \tabularnewline
+$b_2$ & L – W exponent & 3 \tabularnewline
+$m_{50}$ & Age at 50\% maturity & 3.5 \tabularnewline
+$m_{slope}$ & Slope of maturity & 1 \tabularnewline
+$F_{40\%}$ & Fully selected fishing mortality that reduces the SSB to 40\% of its unfished level & 0.4 \tabularnewline
+$F_{MSY}$ & Fully selected fishing mortality that produces the maximum sustainable yield (MSY) & 0.4 \tabularnewline
+
+\multicolumn{3}{l}{\textbf{Spatial structure and movement dynamics}} \tabularnewline
+$n_{R}$ & Number of regions & 2 \tabularnewline
+$n_{season}$ & Number of seasons & 4 \tabularnewline
+$f_{SSB}$ & Fraction of the year that passes before spawning occurs & 0.625 \tabularnewline
+$\mu_1$ & Movement rate during the spawning season & 1 \tabularnewline
+$\mu_2$ & Movement rate outside the spawning season & 0.3,0.1; 0.1,0.0\tabularnewline
+$\sigma_\mu$ & Standard deviation of movement rate & 0.1 \tabularnewline
+$\rho_\mu$ & Autocorrelation in movement & 0.5 \tabularnewline
+
+\multicolumn{3}{l}{\textbf{Fishery information}} \tabularnewline
+$n_{F}$ & Number of fleets in each region & 1 \tabularnewline
+$\gamma_{50}$ & Age at 50\% selectivity in fishery & 5.5, 5 \tabularnewline
+$\gamma_{slope} $ & Slope of logistic selectivity for fishery & 1 \tabularnewline
+$ESS_{C}$ & Effective sample size for fleet catch & 100 \tabularnewline
+$CV_{C}$ & Coefficient of variation for fleet catch & 0.1 \tabularnewline
+$LL_{C}$ & Likelihood for age compositional data & Multinomial \tabularnewline
+
+\multicolumn{3}{l}{\textbf{Survey information}} \tabularnewline
+$n_{I}$ & Number of indices in each region & 1 \tabularnewline
+$\zeta_{50}$ & Age at 50\% selectivity in survey & 2 \tabularnewline
+$\zeta_{slope}$ & Slope of logistic selectivity for survey & 1 \tabularnewline
+$ESS_{I}$ & Effective sample size for survey index & 100 \tabularnewline
+$CV_{I}$ & Coefficient of variation for survey index & 0.1 \tabularnewline
+$q$ & Survey catchability & 0.2 \tabularnewline
+$f_{I}$ & Proportion of the year elapsed when index is observing the population & 0.625 \tabularnewline
+$LL_{I}$ & Likelihood for age compositional data & Multinomial \tabularnewline
+
+\multicolumn{3}{l}{\textbf{MSE Information}} \tabularnewline
+$\tau_{burn-in}$ & Number of years in the burn-in period & 30 \tabularnewline
+$\tau_{feedback}$ & Number of years in the feedback period & 30 \tabularnewline
+$\Delta t$ & Assessment interval & 3 \tabularnewline
+$A_{total}$ & Number of total assessments & 10 \tabularnewline
+$\Phi F_{40\%}$ & A fraction of $F_{40\%}$ used as the harvest control rule & 75\% \tabularnewline
+
+\hline
+\end{longtable}
+\end{center}
