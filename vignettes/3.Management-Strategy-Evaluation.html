@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Management Strategy Evaluation</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-08-09</h4>
+<h4 class="date">Last update: 2024-12-02</h4>
 
 </div>
 
@@ -1595,32 +1595,26 @@ in each region. 4 seasons are used, and there is natal homing movement
 during the spawning season. To save time, the burn-in period is set to
 be 10 years, and feedback period is set to be 3 years. More details can
 be found using <code>?generate_basic_info()</code>.</p>
-<pre class="r"><code>year_start  &lt;- 2003  # starting year in the burn-in period
-year_end    &lt;- 2022  # end year in the burn-in period
+<pre class="r"><code>year_start  &lt;- 1  # starting year in the burn-in period
+year_end    &lt;- 20  # end year in the burn-in period
 MSE_years   &lt;- 3     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
-info &lt;- generate_basic_info(n_stocks   = 2, 
-                            n_regions  = 2, 
-                            n_indices  = 2, 
-                            n_fleets   = 2, 
-                            n_seasons  = 4, 
-                            base.years = year_start:year_end, 
-                            n_feedback_years = MSE_years, 
-                            life_history  = &quot;medium&quot;, 
-                            n_ages        = 12, 
-                            Fbar_ages     = 12, 
-                            recruit_model = 2, 
-                            F_info     = list(F.year1 = 0.2, Fhist = &quot;F-H-L&quot;, 
-                                              Fmax = 2, Fmin = 1, change_time = 0.5),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
-                            index_info = list(index_cv = 0.1, index_Neff = 200, 
-                                              fracyr_indices = 0.5, q = 0.2), 
-                            fracyr_spawn = 0.5, 
-                            bias.correct.process     = FALSE, 
-                            bias.correct.observation = FALSE, 
-                            bias.correct.BRPs        = FALSE, 
-                            mig_type = 0) 
+info &lt;- generate_basic_info(n_stocks = 2,
+                            n_regions = 2,
+                            n_indices = 2,
+                            n_fleets = 2,
+                            n_seasons = 4,
+                            base.years = year_start:year_end,
+                            n_feedback_years = MSE_years,
+                            life_history = &quot;medium&quot;,
+                            n_ages = 12,
+                            Fbar_ages = 12,
+                            recruit_model = 2,
+                            F_info = list(F.year1 = 0.2, Fhist = &quot;F-H-L&quot;, Fmax = 2, Fmin = 1, change_time = 0.5, user_F = NULL),
+                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
+                            index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
+                            fracyr_spawn = 0.625) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -1666,7 +1660,7 @@ alpha &lt;- 12
 beta  &lt;- 1.5e-4
 
 # Set sigma for NAA
-NAA_sig &lt;- 0.5
+NAA_sig &lt;- 0.2
 sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages&quot;
 
 # Set initial NAA for each stock
@@ -1698,8 +1692,14 @@ NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
 <h3>6. Generate wham input</h3>
 <p>Here we use <code>prepare_wham_input()</code> function to generate a
 wham input using the basic information we set above:</p>
-<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,
-                            catch_info = catch_info, index_info = index_info, F = F_info)</code></pre>
+<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, 
+                            selectivity = sel, 
+                            M = M, 
+                            NAA_re = NAA_re, 
+                            move = move,
+                            catch_info = catch_info, 
+                            index_info = index_info, 
+                            F = F_info)</code></pre>
 </div>
 <div id="generate-operating-model" class="section level3">
 <h3>7. Generate operating model</h3>
@@ -1729,19 +1729,17 @@ mods &lt;- list() # Create a list to save MSE outputs</code></pre>
 this example:</p>
 <table style="width:100%;">
 <colgroup>
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
-<col width="14%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
 </colgroup>
 <thead>
 <tr class="header">
 <th align="left">Model</th>
 <th align="left">Type</th>
-<th align="left">Number of models</th>
 <th align="left">Move</th>
 <th align="left">Random effects</th>
 <th align="left">Reference point</th>
@@ -1752,59 +1750,52 @@ this example:</p>
 <tr class="odd">
 <td align="left">EM1</td>
 <td align="left">Panmictic (catch aggregated)</td>
-<td align="left">One</td>
 <td align="left">No</td>
-<td align="left">NAA</td>
+<td align="left">NAA, Rec</td>
 <td align="left">No global SPR-based</td>
 <td align="left">Fleet aggregated across regions</td>
 </tr>
 <tr class="even">
 <td align="left">EM2</td>
 <td align="left">Spatially implicit (fleets-as-areas)</td>
-<td align="left">One</td>
 <td align="left">No</td>
-<td align="left">NAA</td>
+<td align="left">NAA, Rec</td>
 <td align="left">No global SPR-based</td>
 <td align="left">Multiple fleets account for spatial difference in fleet
 structure</td>
 </tr>
 <tr class="odd">
 <td align="left">EM3</td>
-<td align="left">Separate panmictic</td>
-<td align="left">Number of regions</td>
+<td align="left">Separate</td>
 <td align="left">No</td>
-<td align="left">NAA</td>
+<td align="left">NAA, Rec</td>
 <td align="left">No global SPR-based</td>
 <td align="left">Separate single stock assessment model</td>
 </tr>
 <tr class="even">
 <td align="left">EM4</td>
 <td align="left">Spatially disaggregated</td>
-<td align="left">Number of regions</td>
 <td align="left">No</td>
-<td align="left">NAA</td>
+<td align="left">NAA, Rec</td>
 <td align="left">Global SPR-based</td>
 <td align="left">Spatially disaggregated without movement</td>
 </tr>
 <tr class="odd">
 <td align="left">EM5</td>
 <td align="left">Spatially explicit</td>
-<td align="left">Number of regions</td>
 <td align="left">Yes (fix.)</td>
-<td align="left">NAA, movement</td>
+<td align="left">NAA, Rec</td>
 <td align="left">Global SPR-based</td>
-<td align="left">Spatially disaggregated with movement fixed as
-known</td>
+<td align="left">Spatially explicit with movement fixed as known</td>
 </tr>
 <tr class="even">
 <td align="left">EM6</td>
 <td align="left">Spatially explicit</td>
-<td align="left">Number of regions</td>
-<td align="left">Yes (est.)</td>
-<td align="left">NAA, movement</td>
+<td align="left">Yes (Est.)</td>
+<td align="left">NAA, Rec, Movement</td>
 <td align="left">Global SPR-based</td>
-<td align="left">Spatially disaggregated with movement estimated given a
-prior and sd</td>
+<td align="left">Spatially explicit with movement estimated using a
+prior</td>
 </tr>
 </tbody>
 </table>
@@ -1837,7 +1828,7 @@ mods[[1]] = loop_through_fn(om = om_with_data,
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = &quot;multinomial&quot;,
-                            em.opt = list(separate.em = TRUE, separate.em.type = 3, 
+                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                           do.move = FALSE, est.move = FALSE),
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 

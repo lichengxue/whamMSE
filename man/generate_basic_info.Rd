@@ -9,23 +9,36 @@ generate_basic_info(
   n_regions = 2,
   n_indices = 2,
   n_fleets = 2,
-  n_seasons = 4,
-  base.years = 1993:2022,
+  n_seasons = 5,
+  base.years = 1:20,
   n_feedback_years = 0,
   life_history = "medium",
   n_ages = 12,
   Fbar_ages = 12,
   recruit_model = 2,
   F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time =
-    0.5),
+    0.5, user_F = NULL),
   catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
-  fracyr_spawn = 0.625,
+  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2),
+  fracyr_spawn = 0.5,
+  fracyr_seasons = NULL,
+  fleet_pointer = NULL,
+  index_pointer = NULL,
+  user_waa = NULL,
+  user_maturity = NULL,
   bias.correct.process = FALSE,
   bias.correct.observation = FALSE,
   bias.correct.BRPs = FALSE,
   mig_type = 0,
-  XSPR_R_opt = 2
+  XSPR_R_opt = 2,
+  move_dyn = 0,
+  onto_move = 0,
+  onto_move_pars = NULL,
+  apply_re_trend = 0,
+  trend_re_rate = NULL,
+  apply_mu_trend = 0,
+  trend_mu_rate = NULL,
+  age_mu_devs = NULL
 )
 }
 \arguments{
@@ -62,7 +75,7 @@ generate_basic_info(
   \item \code{4} {Ricker}
 }}
 
-\item{F_info}{Historical fishing pressure
+\item{F_info}{Historical fishing pressure or user-specified F values
 \itemize{
   \item \code{$F.year1} fishing mortality in the first year
   \item \code{$Fhist}: \cr
@@ -73,22 +86,34 @@ generate_basic_info(
   \item \code{$Fmax} maximum F (or a multiplier when Fhist = "F-H-L")
   \item \code{$Fmin} minimum F (or a multiplier when Fhist = "F-H-L")
   \item \code{$change_time} a ratio that determines the change point
+  \item \code{$user_F} (optional) user-specified fishing mortality matrix (n_years x n_fleets)
   }}
 
 \item{catch_info}{Fleet information
 \itemize{
-  \item \code{$catch_cv} cv for the catch
-  \item \code{$catch_Neff} effective sample size for the catch
+  \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
+  \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
   }}
 
 \item{index_info}{Survey information (see details)
 \itemize{
-  \item \code{$index_cv} cv for the indices
-  \item \code{$index_Neff} effective sample size for the indices
-  \item \code{$fracyr_indices} fraction of the year when survey is conducted
+  \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
+  \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
   }}
 
 \item{fracyr_spawn}{Fraction of the year when spawning occurs}
+
+\item{fracyr_seasons}{(optional) User-defined fraction of the year for each season. Should sum to 1.}
+
+\item{fleet_pointer}{(optional) User-defined vector specifying the region allocation for each fleet. Default is every region has 1 fleet.}
+
+\item{index_pointer}{(optional) User-defined vector specifying the region allocation for each index. Default is every region has 1 index.}
+
+\item{user_waa}{(optional) User-defined weight-at-age vector to override default WAA values.}
+
+\item{user_maturity}{(optional) User-defined maturity-at-age vector to override default maturity values.}
 
 \item{bias.correct.process}{T/F process error is bias corrected}
 
@@ -106,6 +131,22 @@ generate_basic_info(
 \item \code{5} use bias-corrected expected recruitment
 }}
 
+\item{move_dyn}{Movement dynamics. 0 = natal homing, 1 = meta-population}
+
+\item{onto_move}{Matrix for type of age-specific movement (default is all 0), with dims = n_stocks x n_regions}
+
+\item{onto_move_pars}{Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4) (only used if onto_move = 1)}
+
+\item{apply_re_trend}{Indicator to apply recruitment trend (default is 0)}
+
+\item{trend_re_rate}{Rate for recruitment trend (required if apply_re_trend = 1)}
+
+\item{apply_mu_trend}{Indicator to apply movement trend (default is 0)}
+
+\item{trend_mu_rate}{Rate for movement trend (required if apply_mu_trend = 1)}
+
+\item{age_mu_devs}{movement deviations used when onto_move = 5 (user specified age-specific movement rate)}
+
 \item{q}{Survey catchability}
 }
 \value{
@@ -113,7 +154,7 @@ A list of information that will be used to prepare wham input
 }
 \description{
 The generate_basic_info() function is used to generate biological and fishery information for 
-simulation-estimation and management strategy evaluation. 
+simulation-estimation and management strategy evaluation.  
 Note that not all information is included here. More details can be found in \code{\link{prepare_wham_input}}
 }
 \examples{

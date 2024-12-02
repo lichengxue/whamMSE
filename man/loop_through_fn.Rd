@@ -14,12 +14,17 @@ loop_through_fn(
   move_em,
   age_comp_em = "multinomial",
   em.opt = NULL,
+  aggregate_catch_info = NULL,
+  aggregate_index_info = NULL,
   assess_years = NULL,
   assess_interval = NULL,
   base_years = NULL,
   year.use = 30,
   hcr.type = 1,
   hcr.opts = NULL,
+  weight_type = 1,
+  weight_years = 1,
+  user_weights = NULL,
   do.retro = FALSE,
   do.osa = FALSE,
   seed = 123,
@@ -49,15 +54,14 @@ loop_through_fn(
   \item \code{"dirichlet-miss0"}
   \item \code{"dirichlet-pool0"}
   \item \code{"dir-mult"}
-  \item \code{"logistic-normal-miss0"}    
+  \item \code{"logistic-normal-miss0"}
   \item \code{"logistic-normal-ar1-miss0"}
   \item \code{"logistic-normal-pool0"}
   \item \code{"logistic-normal-01-infl"}
-  \item \code{"logistic-normal-pool0"}
   \item \code{"logistic-normal-01-infl-2par"}
   \item \code{"mvtweedie"}
   \item \code{"dir-mult-linear"}
-  }}
+}}
 
 \item{em.opt}{List of options for the assessment model
 \itemize{
@@ -68,6 +72,20 @@ loop_through_fn(
   {=3} n single assessment models (n = n_regions) \cr
   \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
   \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+}}
+
+\item{aggregate_catch_info}{(optional) User specified list of infomation for aggregate catch (default=NULL: using the infomation from the first fleet). Only when pamictic model with aggregate catch is used
+\itemize{
+  \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
+  \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+  }}
+
+\item{aggregate_index_info}{(optional) User specified list of infomation for aggregate index (default=NULL: using the infomation from the first index). Only when pamictic model with aggregate index is used
+\itemize{
+  \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
+  \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
   }}
 
 \item{assess_years}{Year in which the assessment is conducted}
@@ -83,15 +101,28 @@ loop_through_fn(
   \item \code{"1"} Annual projected catch based on 75% of F40% (default)
   \item \code{"2"} Constant catch based on 75% of F40%
   \item \code{"3"} "Hockey stick" catch based on stock status
-  }}
+}}
 
 \item{hcr.opts}{only used if hcr.type = 3
 \itemize{
   \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
   \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
-  \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5) 
+  \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5)  
   \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
-  }}
+}}
+
+\item{weight_type}{Type of weights to use for allocating catch
+\itemize{
+  \item \code{"1"} Uniform: Assign equal weight to all regions
+  \item \code{"2"} User defined: User provides weights (provide weights as \code{user_weights})
+  \item \code{"3"} Catch history: Use catch data averaged over specified number of years (provide years as \code{weight_years})
+  \item \code{"4"} Survey average: Use survey data averaged over specified number of years (provide years as \code{weight_years})
+  \item \code{"5"} Recruitment proportional: Use average recruitment estimates to allocate weights proportionally
+}}
+
+\item{weight_years}{Number of years to average survey or catch data for weights (only if \code{weight_type = 3 or 4})}
+
+\item{user_weights}{User-defined weights for allocating catch (only if \code{weight_type = 2})}
 
 \item{do.retro}{T/F Do retrospective analysis? Default = TRUE}
 
@@ -101,9 +132,9 @@ loop_through_fn(
 
 \item{save.sdrep}{T/F Save every assessment model (memory intensive)
 \itemize{
-  \item \code{"TRUE"} Save every assessment model 
+  \item \code{"TRUE"} Save every assessment model  
   \item \code{"FALSE"} Save the last assessment model (default)
-  }}
+}}
 
 \item{save.last.em}{T/F Save the last assessment model (Default = FALSE) (use if separate.em = FALSE)}
 }

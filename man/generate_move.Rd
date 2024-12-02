@@ -13,7 +13,8 @@ generate_move(
   prior.sigma = 0.2,
   move.rho_a = 0.5,
   move.rho_y = 0.5,
-  use.prior = FALSE
+  use.prior = FALSE,
+  move_dyn = 0
 )
 }
 \arguments{
@@ -22,7 +23,7 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
 
 \item{move.type}{Movement type
 \itemize{
-  \item \code{1} unidirectional movement (i.e. only 1 stock can move), region-specific movement rate
+  \item \code{1} single stock movement (i.e. only stock 1 can move), region-specific movement rate
   \item \code{2} bidirectional movement (i.e. all stocks can move), region-specific movement rate (default)
   \item \code{3} no movement
 }}
@@ -47,6 +48,8 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
 \item{move.rho_y}{Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)}
 
 \item{use.prior}{Logical, whether to use priors (default = FALSE)}
+
+\item{move_dyn}{Movement dynamics. 0 = natal homing, 1 = meta-population}
 }
 \value{
 A named list with the following components:

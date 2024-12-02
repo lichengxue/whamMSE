@@ -6,7 +6,7 @@
 #' Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA_where}}.
 #' @param move.type Movement type
 #'   \itemize{
-#'     \item \code{1} unidirectional movement (i.e. only 1 stock can move), region-specific movement rate
+#'     \item \code{1} single stock movement (i.e. only stock 1 can move), region-specific movement rate
 #'     \item \code{2} bidirectional movement (i.e. all stocks can move), region-specific movement rate (default)
 #'     \item \code{3} no movement
 #'   }
@@ -24,7 +24,8 @@
 #' @param move.rho_a Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)
 #' @param move.rho_y Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)
 #' @param use.prior Logical, whether to use priors (default = FALSE)
-#'
+#' @param move_dyn Movement dynamics. 0 = natal homing, 1 = meta-population
+#' 
 #' @return A named list with the following components:
 #'   \describe{
 #'     \item{$stock_move}{Length = n_stocks, TRUE/FALSE whether each stock can move. If not provided, movement will be defined below for all stocks.}
@@ -55,7 +56,8 @@ generate_move <- function(basic_info,
                           prior.sigma = 0.2,
                           move.rho_a = 0.5,
                           move.rho_y = 0.5,
-                          use.prior = FALSE) {
+                          use.prior = FALSE, 
+                          move_dyn = 0) {
   
   if (is.null(basic_info)) stop("basic_info must be provided.")
   
@@ -70,7 +72,7 @@ generate_move <- function(basic_info,
   if (length(move.rate) != n_regions) stop("length of movement rates must be equal to n_regions") 
   if (!move.re %in% c("constant","iid_a","iid_y","ar1_a","ar1_y")) stop("move.re can only be constant, iid_a, iid_y, ar1_a, ar1_y")
   
-  spawntime <- assign_season(fracyr_spawn, n_seasons)
+  spawntime <- assign_season(fracyr_spawn, basic_info$fracyr_seasons)
   movetime <- setdiff(1:n_seasons, spawntime)
   
   if (move.type != 3 && is.null(move.re)) stop("move.re must be specified unless move.type = 3")
@@ -126,6 +128,11 @@ generate_move <- function(basic_info,
     
   } else if (move.type == 3) { # No movement
     move <- NULL
+  }
+  
+  if (move_dyn == 1) { # here is a placeholder for later development
+    move$can_move[] = 1
+    move$must_move[] = 0
   }
   
   return(move)
@@ -205,8 +212,8 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
 }
 
 # Helper function to assign seasons
-assign_season <- function(fraction, n_seasons) {
-  season_fraction <- 1 / n_seasons
-  season <- ceiling(fraction / season_fraction)
+assign_season <- function(fraction, fracyr_seasons) {
+  cumulative_season_fractions <- cumsum(fracyr_seasons)
+  season <- min(which(fraction <= cumulative_season_fractions))
   return(season)
 }

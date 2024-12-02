@@ -41,30 +41,44 @@ length-at-age, weight-at-age, maturity-at-age. Users can also set fleet
 information, survey information, and fishing history.
 
 ```{r, eval=FALSE}
-year_start  <- 2003  # starting year in the burn-in period
-year_end    <- 2022  # end year in the burn-in period
+year_start  <- 1  # starting year in the burn-in period
+year_end    <- 20  # end year in the burn-in period
 MSE_years   <- 0     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
-info <- generate_basic_info(n_stocks   = 2, 
-                            n_regions  = 2, 
-                            n_indices  = 2, 
-                            n_fleets   = 2, 
-                            n_seasons  = 4, 
-                            base.years = year_start:year_end, 
-                            n_feedback_years = MSE_years, 
-                            life_history  = "medium", 
-                            n_ages        = 12, 
-                            Fbar_ages     = 12, 
-                            recruit_model = 2, 
-                            F_info     = list(F.year1 = 0.2, Fhist = "F-H-L", Fmax = 2, Fmin = 1, change_time = 0.5),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
-                            index_info = list(index_cv = 0.1, index_Neff = 200, fracyr_indices = 0.5, q = 0.2), 
-                            fracyr_spawn = 0.5, 
-                            bias.correct.process     = FALSE, 
-                            bias.correct.observation = FALSE, 
-                            bias.correct.BRPs        = FALSE, 
-                            mig_type = 0) 
+info <- generate_basic_info(n_stocks = 2,
+                            n_regions = 2,
+                            n_indices = 2,
+                            n_fleets = 2,
+                            n_seasons = 4,
+                            base.years = year_start:year_end,
+                            n_feedback_years = MSE_years,
+                            life_history = "medium",
+                            n_ages = 12,
+                            Fbar_ages = 12,
+                            recruit_model = 2,
+                            F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.4, Fmin = 0.2, change_time = 0.5, user_F = NULL),
+                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
+                            index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
+                            fracyr_spawn = 0.625,
+                            fracyr_seasons = NULL,
+                            fleet_pointer = NULL,
+                            index_pointer = NULL,
+                            user_waa = NULL,
+                            user_maturity = NULL,
+                            bias.correct.process = FALSE,
+                            bias.correct.observation = FALSE,
+                            bias.correct.BRPs = FALSE,
+                            mig_type = 0,
+                            XSPR_R_opt = 2,
+                            move_dyn = 0, # natal homing is assumed
+                            onto_move = 0,
+                            onto_move_pars = NULL,
+                            apply_re_trend = 0,
+                            trend_re_rate = NULL,
+                            apply_mu_trend = 0,
+                            trend_mu_rate = NULL, 
+                            age_mu_devs = NULL) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -76,18 +90,13 @@ F_info = info$F # collect fishing information
 
 ### 3. Specify movement type and movement rate
 
-The current version of WHAM is designed only for the scenario of "natal
-homing", meaning that fish in different regions outside their natal home
-must go back during their spawning season. But for the seasons outside
-their spawning season, they can have probability (i.e. movement rate) to
-move from their natal home to another region and from other region to
-their natal home.
+Natal homing movement dynamics is assumed. That means, all fish must go back to their natal home before the spawning season.
+But they can move between regions outside their spawning season.
 
 Users have options to choose different types of movement by using the
 `generate_NAA_where()` function:
 
--   1: unidirectional (only stock 1 can move while the other stocks
-    can't
+-   1: single stock movement (only stock 1 can move)
 -   2: bidirectional (all stocks can move)
 -   3: no movement
 
@@ -104,7 +113,6 @@ basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
 # Note: the default is "bidirectional" movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
 
 move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
-
 ```
 
 #### 3b. Specify movement type and movement rate (unidirectional)
@@ -112,6 +120,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
+
 move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3, 0), move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
 ```
 
@@ -120,6 +129,7 @@ move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
+
 move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
 ```
 
@@ -128,6 +138,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
+
 move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
 ```
 
@@ -136,6 +147,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
+
 move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_y", move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
 ```
 
@@ -144,6 +156,7 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,
 ```{r, eval=FALSE}
 # DO NOT RUN #
 basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
+
 move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_a", move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
 ```
 
@@ -213,8 +226,14 @@ Here we use `prepare_wham_input()` function to generate a wham input
 using the basic information we set above:
 
 ```{r, eval=FALSE}
-input <- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,
-                            catch_info = catch_info, index_info = index_info, F = F_info)
+input <- prepare_wham_input(basic_info = basic_info, 
+                            selectivity = sel, 
+                            M = M, 
+                            NAA_re = NAA_re, 
+                            move = move,
+                            catch_info = catch_info, 
+                            index_info = index_info, 
+                            F = F_info)
 ```
 
 ### 7. Generate operating model

@@ -14,7 +14,9 @@ make_em_input(
   em.opt,
   em_years,
   year.use,
-  age_comp_em = "multinomial"
+  age_comp_em = "multinomial",
+  aggregate_catch_info = NULL,
+  aggregate_index_info = NULL
 )
 }
 \arguments{
@@ -39,7 +41,7 @@ make_em_input(
   {=3} n single assessment models (n = n_regions) \cr
   \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
   \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
-  }}
+}}
 
 \item{em_years}{Years used in the assessment model}
 
@@ -51,15 +53,27 @@ make_em_input(
   \item \code{"dir-mult"}
   \item \code{"dirichlet-miss0"}
   \item \code{"dirichlet-pool0"}
-  \item \code{"dir-mult"}
-  \item \code{"logistic-normal-miss0"}    
+  \item \code{"logistic-normal-miss0"}
   \item \code{"logistic-normal-ar1-miss0"}
   \item \code{"logistic-normal-pool0"}
   \item \code{"logistic-normal-01-infl"}
-  \item \code{"logistic-normal-pool0"}
   \item \code{"logistic-normal-01-infl-2par"}
   \item \code{"mvtweedie"}
   \item \code{"dir-mult-linear"}
+}}
+
+\item{aggregate_catch_info}{(optional) User specified list of infomation for aggregate catch (default=NULL: using the infomation from the first fleet). Only when pamictic model with aggregate catch is used
+\itemize{
+  \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
+  \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+  }}
+
+\item{aggregate_index_info}{(optional) User specified list of infomation for aggregate index (default=NULL: using the infomation from the first index). Only when pamictic model with aggregate index is used
+\itemize{
+  \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
+  \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
+  \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
   }}
 }
 \value{

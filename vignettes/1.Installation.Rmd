@@ -28,11 +28,11 @@ stocks with different life-history traits across different regions.
 
 ## 1. Install "whamMSE" package
 
-Users must install wham first with all required dependencies:
+Users must install the **meta-population** wham first with all required dependencies:
 
 ``` r
 install.packages("devtools") 
-devtools::install_github("timjmiller/wham", dependencies=TRUE, ref="devel") # "multi-stock" version of wham
+devtools::install_github("lichengxue/wham-devel", dependencies=TRUE) # "meta-population" version of wham
 ```
 
 Now users can install "whamMSE":

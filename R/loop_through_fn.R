@@ -17,15 +17,14 @@
 #'     \item \code{"dirichlet-miss0"}
 #'     \item \code{"dirichlet-pool0"}
 #'     \item \code{"dir-mult"}
-#'     \item \code{"logistic-normal-miss0"}    
+#'     \item \code{"logistic-normal-miss0"}
 #'     \item \code{"logistic-normal-ar1-miss0"}
 #'     \item \code{"logistic-normal-pool0"}
 #'     \item \code{"logistic-normal-01-infl"}
-#'     \item \code{"logistic-normal-pool0"}
 #'     \item \code{"logistic-normal-01-infl-2par"}
 #'     \item \code{"mvtweedie"}
 #'     \item \code{"dir-mult-linear"}
-#'     }
+#'   }
 #' @param em.opt List of options for the assessment model
 #'   \itemize{
 #'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
@@ -35,6 +34,18 @@
 #'     {=3} n single assessment models (n = n_regions) \cr
 #'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
 #'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+#'   }
+#' @param aggregate_catch_info (optional) User specified list of infomation for aggregate catch (default=NULL: using the infomation from the first fleet). Only when pamictic model with aggregate catch is used
+#'   \itemize{
+#'     \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
+#'     \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+#'     }
+#' @param aggregate_index_info (optional) User specified list of infomation for aggregate index (default=NULL: using the infomation from the first index). Only when pamictic model with aggregate index is used
+#'   \itemize{
+#'     \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
+#'     \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
+#'     \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
+#'     \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
 #'     }
 #' @param assess_years Year in which the assessment is conducted
 #' @param assess_interval Assessment interval used in the MSE feedback loop
@@ -45,32 +56,48 @@
 #'     \item \code{"1"} Annual projected catch based on 75% of F40% (default)
 #'     \item \code{"2"} Constant catch based on 75% of F40%
 #'     \item \code{"3"} "Hockey stick" catch based on stock status
-#'     }
+#'   }
 #' @param hcr.opts only used if hcr.type = 3
 #'   \itemize{
 #'     \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
 #'     \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
-#'     \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5) 
+#'     \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5)  
 #'     \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
-#'     }
+#'   }
+#' @param weight_type Type of weights to use for allocating catch
+#'   \itemize{
+#'     \item \code{"1"} Uniform: Assign equal weight to all regions
+#'     \item \code{"2"} User defined: User provides weights (provide weights as \code{user_weights})
+#'     \item \code{"3"} Catch history: Use catch data averaged over specified number of years (provide years as \code{weight_years})
+#'     \item \code{"4"} Survey average: Use survey data averaged over specified number of years (provide years as \code{weight_years})
+#'     \item \code{"5"} Recruitment proportional: Use average recruitment estimates to allocate weights proportionally
+#'   }
+#' @param weight_years Number of years to average survey or catch data for weights (only if \code{weight_type = 3 or 4})
+#' @param user_weights User-defined weights for allocating catch (only if \code{weight_type = 2})
 #' @param do.retro T/F Do retrospective analysis? Default = TRUE
 #' @param do.osa T/F Calculate one-step-ahead (OSA) residuals? Default = TRUE
 #' @param seed Seed used for generating data
 #' @param save.sdrep T/F Save every assessment model (memory intensive)
 #'   \itemize{
-#'     \item \code{"TRUE"} Save every assessment model 
+#'     \item \code{"TRUE"} Save every assessment model  
 #'     \item \code{"FALSE"} Save the last assessment model (default)
-#'     }
+#'   }
 #' @param save.last.em T/F Save the last assessment model (Default = FALSE) (use if separate.em = FALSE)
 #' @return a list of model output
 #' @export
 #' @seealso \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}
 
-loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em, NAA_re_em, move_em, 
-                            age_comp_em = "multinomial",em.opt = NULL, 
-                            assess_years = NULL, assess_interval = NULL, base_years = NULL,
-                            year.use = 30, hcr.type = 1, hcr.opts = NULL, do.retro = FALSE,
-                            do.osa = FALSE, seed = 123, save.sdrep = FALSE, save.last.em = FALSE) {
+loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", 
+                            M_em, sel_em, NAA_re_em, move_em, 
+                            age_comp_em = "multinomial", em.opt = NULL, 
+                            aggregate_catch_info = NULL,
+                            aggregate_index_info = NULL,
+                            assess_years = NULL, assess_interval = NULL, 
+                            base_years = NULL, year.use = 30, hcr.type = 1, 
+                            hcr.opts = NULL, weight_type = 1, weight_years = 1, user_weights = NULL,
+                            do.retro = FALSE, do.osa = FALSE, seed = 123, 
+                            save.sdrep = FALSE, 
+                            save.last.em = FALSE) {
   
   # Helper function to check convergence
   check_conv <- function(em) {
@@ -95,39 +122,51 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em
   em_full <- list()
   
   if (em.opt$separate.em) {
-    
     for (y in assess_years) {
-      
       cat(paste0("\n-----\nStock Assessment in Year ", y, "\n"))
-      
       i <- which(assess_years == y)
-      
       em.years <- base_years[1]:y
-      
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
-                                move_em = move_em, em.opt = em.opt, em_years = em.years,
-                                year.use = year.use, age_comp = age_comp_em)
-      
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, 
+                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt, 
+                                em_years = em.years, year.use = year.use, age_comp = age_comp_em,
+                                aggregate_catch_info = aggregate_catch_info,
+                                aggregate_index_info = aggregate_index_info)
       n_stocks <- om$input$data$n_stocks
       
       if (em.opt$separate.em.type == 1) {
-        
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-        
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         
         advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
         
-        # Weights are calculated based on the survey catch from the previous year
-        weights <- om$input$data$agg_indices[which(om$years == y),]/sum(om$input$data$agg_indices[which(om$years == y),])
-        
-        catch_matrix <- matrix(advice, ncol = 1)
-        
-        apply_weights <- function(advice) {
-          advice*weights
+        # Determine weights
+        if (weight_type == 1) {
+          weights <- rep(1 / om$input$data$n_fleets, om$input$data$n_fleets)
+        } else if (weight_type == 2) {
+          if (is.null(user_weights)) stop("User-defined weights must be provided when weight_type = 2")
+          weights <- user_weights
+        } else if (weight_type == 3) {
+          avg_years <- (y - weight_years + 1):y
+          weights <- colMeans(om$input$data$agg_catch[which(om$years %in% avg_years), , drop = FALSE])
+          weights <- weights / sum(weights)
+        } else if (weight_type == 4) {
+          avg_years <- (y - weight_years + 1):y
+          weights <- colMeans(om$input$data$agg_indices[which(om$years %in% avg_years), , drop = FALSE])
+          weights <- weights / sum(weights)
+        } else if (weight_type == 5) {
+          avg_years <- (y - weight_years + 1):y
+          avg_rec <- sapply(1:n_stocks, function(a) mean(om$rep$NAA[a, a, which(om$years %in% avg_years), 1]))
+          weights <- avg_rec / sum(avg_rec)
+        } else {
+          stop("Invalid weight_type specified")
         }
         
+        # Apply weights to calculate advice
+        catch_matrix <- matrix(advice, ncol = 1)
+        apply_weights <- function(advice) {
+          advice * weights
+        }
         advice <- t(apply(catch_matrix, 1, apply_weights))
         
         colnames(advice) <- paste0("Region_", 1:om$input$data$n_fleets)
@@ -155,14 +194,10 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em
           if (y == assess_years[length(assess_years)]) {
             em_full[[1]] <- em
           }
-          if(!save.last.em) em_full[[1]] <- list()
+          if (!save.last.em) em_full[[1]] <- list()
         }
-      }
-      
-      if (em.opt$separate.em.type == 2) {
-        
+      } else if (em.opt$separate.em.type == 2) {
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-        
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         
@@ -193,12 +228,9 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em
           if (y == assess_years[length(assess_years)]) {
             em_full[[1]] <- em
           }
-          if(!save.last.em) em_full[[1]] <- list()
+          if (!save.last.em) em_full[[1]] <- list()
         }
-        
-      } 
-      
-      if (em.opt$separate.em.type == 3) {
+      } else if (em.opt$separate.em.type == 3) {
         em_list[[i]] <- list()
         par.est[[i]] <- list()
         par.se[[i]] <- list()
@@ -249,44 +281,29 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em
             if (y == assess_years[length(assess_years)]) {
               em_full[[1]][[s]] <- em[[s]]
             }
-            if(!save.last.em) em_full[[1]][[s]] <- list()
+            if (!save.last.em) em_full[[1]][[s]] <- list()
           }
         }
-      } 
-      
+      }
     }
   } else {
-    
     for (y in assess_years) {
-      
       cat(paste0("\n-----\nStock Assessment in Year ", y, "\n"))
-      
       i <- which(assess_years == y)
-      
       em.years <- base_years[1]:y
-      
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, NAA_re_em = NAA_re_em,
-                                move_em = move_em, em.opt = em.opt, em_years = em.years,
-                                year.use = year.use, age_comp = age_comp_em)
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, 
+                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt, 
+                                em_years = em.years, year.use = year.use, age_comp = age_comp_em)
       
       if (em.opt$do.move) {
-        
         if (em.opt$est.move) {
-          
           em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-          
         } else {
-          
           em_input <- fix_move(em_input)
-          
           em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-          
         }
-        
       } else {
-        
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-        
       }
       
       conv <- check_conv(em)$conv
@@ -319,12 +336,12 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", M_em, sel_em
         if (y == assess_years[length(assess_years)]) {
           em_full[[1]] <- em
         }
-        if(!save.last.em) em_full[[1]] <- list()
+        if (!save.last.em) em_full[[1]] <- list()
       }
     }
   }
   
-  return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se,
-              adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list,
+  return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 
+              adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
               converge_list = converge_list, catch_advice = catch_advice, em_full = em_full))
 }
