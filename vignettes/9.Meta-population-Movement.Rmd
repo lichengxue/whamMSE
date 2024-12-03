@@ -1,0 +1,101 @@
+---
+title: "Metapopulation Movement"
+author: "Chengxue Li"
+date: "Last update: `r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    includes:
+      in_header: header.html
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+This vignette includes an example of how to specify metapopulation dynamics in multi-wham. Now the stocks are able to move to another region and contribute to the SSB during the spawning season (i.e. reproductive mixing).
+
+### 1. Load "WHAM" and "whamMSE":
+
+```{r, eval=FALSE}
+library(wham)
+library(whamMSE)
+
+main.dir = here::here()
+```
+
+### 2. Generate basic information
+
+```{r, eval=FALSE}
+info <- generate_basic_info(base.years = 1:50, move_dyn = 1) # now stocks don't need to move back during the spawning season
+
+basic_info = info$basic_info # collect basic information
+catch_info = info$catch_info # collect fleet catch information
+index_info = info$index_info # collect survey information
+F_info = info$F # collect fishing information
+
+# see more details using ?generate_basic_info
+```
+
+### 3. Specify movement type and movement rate
+
+```{r, eval=FALSE}
+basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2) # "bidirectional" movement
+
+move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.2,0.1), move.re = "constant")
+
+```
+
+### 4. Configure numbers-at-age (NAA)
+
+```{r, eval=FALSE}
+sigma        <- "rec+1"
+re_cor       <- "iid"
+ini.opt      <- "equilibrium" 
+sigma_vals   <-  array(0.05, dim = c(n_stocks, n_regions, n_ages)) # Assume a low NAA sigma
+
+# Set para. for B-H function
+alpha <- 12
+beta  <- 1.5e-4
+
+NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
+               sigma=rep(sigma,n_stocks),
+               cor=rep(re_cor,n_stocks),
+               recruit_model = 3,
+               recruit_pars = rep(list(c(alpha,beta)),n_stocks), # assume same B-H s-r functions for all stocks
+               sigma_vals = sigma_vals) # NAA_where must be specified in basic_info!
+```
+
+### 5. Generate operating model and one realization
+
+```{r, eval=FALSE}
+
+input <- prepare_wham_input(basic_info = basic_info, NAA_re = NAA_re, move = move, 
+                            catch_info = catch_info, index_info = index_info, F = F_info)
+random = input$random # check what processes are random effects
+input$random = NULL # so inner optimization won't change simulated RE
+om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
+# Note: do.fit must be FALSE (no modeling fitting yet)
+set.seed(123)
+input <- om$input
+input$data <- om$simulate(complete=TRUE)
+```
+
+### 6. Visualize SSB time series
+```{r, eval=FALSE}
+plot(input$data$SSB[,1], type = "l", col = "red", 
+     ylab = "SSB", xlab = "Years", 
+     main = "SSB", ylim = c(0,max(input$data$SSB)))
+lines(input$data$SSB[,2], type = "l", col = "blue")
+```
+![Figure 1](Example_plots/SSB_time_series.png){width="600"}
+
+# 7. Recruitment time series
+```{r, eval=FALSE}
+plot(input$data$NAA[1,1,,1], type = "l", col = "red", 
+     ylab = "Recruitment", xlab = "Years", 
+     main = "Recruitment", ylim = c(0,max(input$data$NAA)))
+lines(input$data$NAA[2,2,,1], type = "l", col = "blue")
+```
+
+![Figure 2](Example_plots/Rec_time_series.png){width="600"}

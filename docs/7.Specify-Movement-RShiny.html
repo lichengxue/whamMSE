@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Specify Movement Using R Shiny App</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-12-02</h4>
+<h4 class="date">Last update: 2024-12-03</h4>
 
 </div>
 
@@ -1581,8 +1581,8 @@ main.dir = here::here()</code></pre>
 </div>
 <div id="section-generate-basic-information" class="section level3">
 <h3>2. Generate basic information</h3>
-<pre class="r"><code>year_start  &lt;- 2003  # starting year in the burn-in period
-year_end    &lt;- 2022  # end year in the burn-in period
+<pre class="r"><code>year_start  &lt;- 1  # starting year in the burn-in period
+year_end    &lt;- 20  # end year in the burn-in period
 MSE_years   &lt;- 3     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
@@ -1598,11 +1598,11 @@ info &lt;- generate_basic_info(n_stocks   = 4, # Note: now change to 4 stocks
                             Fbar_ages     = 12, 
                             recruit_model = 2, 
                             F_info     = list(F.year1 = 0.2, Fhist = &quot;updown&quot;,
-                                              Fmax = 1, Fmin = 0.2,change_time = 0.5),
+                                              Fmax = 1, Fmin = 0.2, change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
                             index_info = list(index_cv = 0.1, index_Neff = 200, 
-                                              fracyr_indices = 0.5, q = 0.2), 
-                            fracyr_spawn = 0.5, 
+                                              fracyr_indices = 0.625, q = 0.2), 
+                            fracyr_spawn = 0.625, 
                             bias.correct.process     = FALSE, 
                             bias.correct.observation = FALSE, 
                             bias.correct.BRPs        = FALSE, 

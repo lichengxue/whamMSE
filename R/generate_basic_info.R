@@ -71,8 +71,17 @@
 #'     \item \code{5} use bias-corrected expected recruitment
 #'     }
 #' @param move_dyn Movement dynamics. 0 = natal homing, 1 = meta-population
-#' @param onto_move Matrix for type of age-specific movement (default is all 0), with dims = n_stocks x n_regions
-#' @param onto_move_pars Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4) (only used if onto_move = 1)
+#' @param onto_move Matrix of age-specific movement type with dims = n_stocks x n_regions
+#'   \itemize{
+#'     \item \code{0} same mean movement rate across ages (default)
+#'     \item \code{1} increasing logistic (2 parameters)
+#'     \item \code{2} decreasing logistic (2 parameters)
+#'     \item \code{3} double-logistic (4 parameters)
+#'     \item \code{4} double-normal (4 parameters)
+#'     \item \code{5} user specified age-specific movement rate
+#'     }
+#' 
+#' @param onto_move_pars Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4) 
 #' @param apply_re_trend Indicator to apply recruitment trend (default is 0)
 #' @param trend_re_rate Rate for recruitment trend (required if apply_re_trend = 1)
 #' @param apply_mu_trend Indicator to apply movement trend (default is 0)
@@ -452,13 +461,15 @@ generate_basic_info <- function(n_stocks = 2,
   }
   
   # Movement-related parameters
-  basic_info$onto_move <- if (onto_move == 1) {
-    matrix(1, n_stocks, n_regions)
-  } else {
+  basic_info$onto_move <- if (onto_move == 0 | is.null(onto_move)) {
     matrix(0, n_stocks, n_regions)
+  } else {
+    matrix(onto_move, n_stocks, n_regions)
   }
   
-  basic_info$onto_move_pars <- if (onto_move == 1) {
+  basic_info$onto_move_pars <- if (onto_move == 0 | is.null(onto_move)) {
+    array(0, dim = c(n_stocks, n_regions, 4))  # No movement parameters needed if onto_move != 1
+  } else {
     if (is.null(onto_move_pars)) {
       # Default: set to ones if not provided
       array(1, dim = c(n_stocks, n_regions, 4))
@@ -478,10 +489,8 @@ generate_basic_info <- function(n_stocks = 2,
     } else {
       stop("onto_move_pars must be either a vector of length 4 or an array with dimensions (n_stocks, n_regions, 4).")
     }
-  } else {
-    array(0, dim = c(n_stocks, n_regions, 4))  # No movement parameters needed if onto_move != 1
-  }
-  
+  } 
+    
   # Handling age_mu_devs
   basic_info$age_mu_devs <- if (onto_move == 5) {
     if (!is.null(basic_info$age_mu_devs)) {

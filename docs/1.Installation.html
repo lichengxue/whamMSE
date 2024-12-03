@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Installtion</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-12-02</h4>
+<h4 class="date">Last update: 2024-12-03</h4>
 
 </div>
 
@@ -1583,10 +1583,15 @@ and their impacts on estimation and management performance for fish
 stocks with different life-history traits across different regions.</p>
 <div id="install-whammse-package" class="section level2">
 <h2>1. Install “whamMSE” package</h2>
-<p>Users must install the <strong>meta-population</strong> wham first
-with all required dependencies:</p>
+<p>Users must install the <strong>meta-population</strong> wham
+(including natal homing functionality) first with all required
+dependencies:</p>
 <pre class="r"><code>install.packages(&quot;devtools&quot;) 
 devtools::install_github(&quot;lichengxue/wham-devel&quot;, dependencies=TRUE) # &quot;meta-population&quot; version of wham</code></pre>
+<p>Users can also download wham (only natal homing functionality) from
+Tim Miller’s github:</p>
+<pre class="r"><code>install.packages(&quot;devtools&quot;) 
+devtools::install_github(&quot;timjmiller/wham&quot;, dependencies=TRUE, ref=&quot;devel&quot;)</code></pre>
 <p>Now users can install “whamMSE”:</p>
 <pre class="r"><code>devtools::install_github(&quot;lichengxue/whamMSE&quot;, dependencies=TRUE)</code></pre>
 <p>Note: If you have “single-wham” installed before, it’s recommended to

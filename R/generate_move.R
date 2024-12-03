@@ -130,9 +130,13 @@ generate_move <- function(basic_info,
     move <- NULL
   }
   
-  if (move_dyn == 1) { # here is a placeholder for later development
+  if (basic_info$move_dyn == 1) { # here is a placeholder for later development
     move$can_move[] = 1
     move$must_move[] = 0
+    cat("\nMetapopulation is assumed in the model!\n")
+    cat("\nFish are not required to go back during the spawning season.\n")
+    cat("\nFish are allowed to move between regions in every season (default).\n")
+    cat("\nUsers may specify specific seasons for fish to move externally by changing the move$can_move array.\n")
   }
   
   return(move)

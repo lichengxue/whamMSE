@@ -10,6 +10,10 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2024-12-03", title = "Vignettes Updated", content = "Vignettes have been updated"),
+  list(date = "2024-11-29", title = "Catch apportionment", content = "Options for catch apportionment have been updated"),
+  list(date = "2024-11-22", title = "Metapopulation beta version", content = "Metapopulation beta version has been uploaded"),
+  list(date = "2024-11-15", title = "Ontogenetic functionality", content = "Ontogenetic functionality has been added"),
   list(date = "2024-08-15", title = "Improve Shiny App for movement", content = "Users can use Specify_move Shiny app to configure movement without using the generate_move() function"),
   list(date = "2024-08-15", title = "Add Shiny App Vignettes", content = "Description for Shiny App Specify_move()"),
   list(date = "2024-08-15", title = "Add options for movement configuration", content = "Add more options in generate_move()"),

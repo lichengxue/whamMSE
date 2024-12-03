@@ -28,8 +28,8 @@ main.dir = here::here()
 ### 2. Generate basic information
 
 ```{r, eval=FALSE}
-year_start  <- 2003  # starting year in the burn-in period
-year_end    <- 2022  # end year in the burn-in period
+year_start  <- 1  # starting year in the burn-in period
+year_end    <- 20  # end year in the burn-in period
 MSE_years   <- 3     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
@@ -45,11 +45,11 @@ info <- generate_basic_info(n_stocks   = 4, # Note: now change to 4 stocks
                             Fbar_ages     = 12, 
                             recruit_model = 2, 
                             F_info     = list(F.year1 = 0.2, Fhist = "updown",
-                                              Fmax = 1, Fmin = 0.2,change_time = 0.5),
+                                              Fmax = 1, Fmin = 0.2, change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 200), 
                             index_info = list(index_cv = 0.1, index_Neff = 200, 
-                                              fracyr_indices = 0.5, q = 0.2), 
-                            fracyr_spawn = 0.5, 
+                                              fracyr_indices = 0.625, q = 0.2), 
+                            fracyr_spawn = 0.625, 
                             bias.correct.process     = FALSE, 
                             bias.correct.observation = FALSE, 
                             bias.correct.BRPs        = FALSE, 

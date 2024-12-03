@@ -12,7 +12,7 @@
 <meta name="author" content="Chengxue Li" />
 
 
-<title>Parallel Computing</title>
+<title>Metapopulation Movement</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1562,15 +1562,17 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Parallel Computing</h1>
+<h1 class="title toc-ignore">Metapopulation Movement</h1>
 <h4 class="author">Chengxue Li</h4>
 <h4 class="date">Last update: 2024-12-03</h4>
 
 </div>
 
 
-<p>This vignette includes an example of how to use parallel computing to
-conduct management strategy evaluation.</p>
+<p>This vignette includes an example of how to specify metapopulation
+dynamics in multi-wham. Now the stocks are able to move to another
+region and contribute to the SSB during the spawning season
+(i.e. reproductive mixing).</p>
 <div id="load-wham-and-whammse" class="section level3">
 <h3>1. Load “WHAM” and “whamMSE”:</h3>
 <pre class="r"><code>library(wham)
@@ -1580,28 +1582,7 @@ main.dir = here::here()</code></pre>
 </div>
 <div id="generate-basic-information" class="section level3">
 <h3>2. Generate basic information</h3>
-<pre class="r"><code>year_start  &lt;- 1  # starting year in the burn-in period
-year_end    &lt;- 20  # end year in the burn-in period
-MSE_years   &lt;- 3     # number of years in the feedback loop
-# Note: no need to include MSE_years in simulation-estimation 
-
-info &lt;- generate_basic_info(n_stocks = 2,
-                            n_regions = 2,
-                            n_indices = 2,
-                            n_fleets = 2,
-                            n_seasons = 4,
-                            base.years = year_start:year_end,
-                            n_feedback_years = MSE_years,
-                            life_history = &quot;medium&quot;,
-                            n_ages = 12,
-                            Fbar_ages = 12,
-                            recruit_model = 2,
-                            F_info = list(F.year1 = 0.2, Fhist = &quot;F-H-L&quot;, 
-                                          Fmax = 2, Fmin = 1, change_time = 0.5, user_F = NULL),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-                            index_info = list(index_cv = 0.1, index_Neff = 100, 
-                                              fracyr_indices = 0.625, q = 0.2),
-                            fracyr_spawn = 0.625) 
+<pre class="r"><code>info &lt;- generate_basic_info(base.years = 1:50, move_dyn = 1) # now stocks don&#39;t need to move back during the spawning season
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -1614,384 +1595,59 @@ F_info = info$F # collect fishing information
 <h3>3. Specify movement type and movement rate</h3>
 <pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2) # &quot;bidirectional&quot; movement
 
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;)</code></pre>
-</div>
-<div id="configure-selecitvity-and-natural-mortality" class="section level3">
-<h3>4. Configure selecitvity and natural mortality</h3>
-<pre class="r"><code>n_stocks  &lt;- as.integer(basic_info[&#39;n_stocks&#39;])
-n_regions &lt;- as.integer(basic_info[&#39;n_regions&#39;])
-n_fleets  &lt;- as.integer(basic_info[&#39;n_fleets&#39;])
-n_indices &lt;- as.integer(basic_info[&#39;n_indices&#39;])
-n_ages    &lt;- as.integer(basic_info[&#39;n_ages&#39;])
-
-# Selectivity Configuration
-fleet_pars &lt;- c(5,1)
-index_pars &lt;- c(2,1)
-sel &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-            initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-
-# M Configuration
-M &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.2,0.1), move.re = &quot;constant&quot;)</code></pre>
 </div>
 <div id="configure-numbers-at-age-naa" class="section level3">
-<h3>5. Configure numbers-at-age (NAA)</h3>
+<h3>4. Configure numbers-at-age (NAA)</h3>
 <pre class="r"><code>sigma        &lt;- &quot;rec+1&quot;
 re_cor       &lt;- &quot;iid&quot;
-ini.opt      &lt;- &quot;equilibrium&quot; # option &lt;- c(&quot;age-specific-fe&quot;, &quot;equilibrium&quot;)
-Rec_sig      &lt;- 0.5 # (sigma for recruitment)
-NAA_sig      &lt;- 0.5 # (sigma for NAA)
+ini.opt      &lt;- &quot;equilibrium&quot; 
+sigma_vals   &lt;-  array(0.05, dim = c(n_stocks, n_regions, n_ages)) # Assume a low NAA sigma
 
-sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages
-sigma_vals[,,1] = Rec_sig
-
-# Set initial NAA for each stock
-log_N1    &lt;- rep(10,n_stocks)
-log_N1[1] &lt;- log(exp(10)*2) # N1_stock1 is 2 times higher than N1_stock2
-N1_pars   &lt;- generate_ini_N1(log_N1,basic_info,ini.opt)
-
-# Set mean recruitment para. for each stock
-mean_rec_par &lt;- list()
-for (i in 1:n_stocks) mean_rec_par[[i]] &lt;- exp(log_N1[i])
+# Set para. for B-H function
+alpha &lt;- 12
+beta  &lt;- 1.5e-4
 
 NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
                sigma=rep(sigma,n_stocks),
                cor=rep(re_cor,n_stocks),
-               recruit_model = 2,  # rec random around the mean
-               recruit_pars = mean_rec_par, 
-               sigma_vals = sigma_vals,  
-               N1_pars = N1_pars,
-               NAA_where = basic_info$NAA_where) # NAA_where must be specified in basic_info!</code></pre>
+               recruit_model = 3,
+               recruit_pars = rep(list(c(alpha,beta)),n_stocks), # assume same B-H s-r functions for all stocks
+               sigma_vals = sigma_vals) # NAA_where must be specified in basic_info!</code></pre>
 </div>
-<div id="generate-wham-input" class="section level3">
-<h3>6. Generate wham input</h3>
-<p>Here we use <code>prepare_wham_input()</code> function to generate a
-wham input using the basic information we set above:</p>
-<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, 
-                            selectivity = sel, 
-                            M = M, 
-                            NAA_re = NAA_re, 
-                            move = move, 
-                            catch_info = catch_info, 
-                            index_info = index_info, 
-                            F = F_info)</code></pre>
-</div>
-<div id="generate-operating-model" class="section level3">
-<h3>7. Generate operating model</h3>
-<pre class="r"><code>random = input$random # check what processes are random effects
+<div id="generate-operating-model-and-one-realization" class="section level3">
+<h3>5. Generate operating model and one realization</h3>
+<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, NAA_re = NAA_re, move = move, 
+                            catch_info = catch_info, index_info = index_info, F = F_info)
+random = input$random # check what processes are random effects
 input$random = NULL # so inner optimization won&#39;t change simulated RE
 om &lt;- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
-# Note: do.fit must be FALSE (no modeling fitting yet)</code></pre>
+# Note: do.fit must be FALSE (no modeling fitting yet)
+set.seed(123)
+input &lt;- om$input
+input$data &lt;- om$simulate(complete=TRUE)</code></pre>
 </div>
-<div id="specify-assessment-interval-and-assessment-year-in-the-feedback-loop" class="section level3">
-<h3>8. Specify assessment interval and assessment year in the feedback
-loop</h3>
-<pre class="r"><code>assess.interval &lt;- 3 # Note: assessment interval is 3 years, given the feedback period is 3 years, there will be only 1 assessment
-base.years      &lt;- year_start:year_end # Burn-in period
-first.year      &lt;- head(base.years,1)
-terminal.year   &lt;- tail(base.years,1)
-assess.years    &lt;- seq(terminal.year, tail(om$years,1)-assess.interval,by = assess.interval)
-
-mods &lt;- list() # Create a list to save MSE outputs</code></pre>
+<div id="visualize-ssb-time-series" class="section level3">
+<h3>6. Visualize SSB time series</h3>
+<pre class="r"><code>plot(input$data$SSB[,1], type = &quot;l&quot;, col = &quot;red&quot;, 
+     ylab = &quot;SSB&quot;, xlab = &quot;Years&quot;, 
+     main = &quot;SSB&quot;, ylim = c(0,max(input$data$SSB)))
+lines(input$data$SSB[,2], type = &quot;l&quot;, col = &quot;blue&quot;)</code></pre>
+<div class="float">
+<img src="data:image/png;base64,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" width="600" alt="Figure 1" />
+<div class="figcaption">Figure 1</div>
 </div>
-<div id="create-a-folder-to-save-the-results" class="section level3">
-<h3>9. Create a folder to save the results</h3>
-<pre class="r"><code>sub.dir = &quot;Results&quot;
-dir.create(file.path(getwd(), sub.dir), recursive = TRUE)
-
-library(doParallel)
-library(foreach)
-
-detectCores() # check how many cores available</code></pre>
 </div>
-<div id="em1" class="section level3">
-<h3>10. EM1</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 1
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma=&quot;rec+1&quot;,cor=&quot;iid&quot;)
-  
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em,
-                         NAA_re_em = NAA_re_em, 
-                         move_em = NULL,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = TRUE, separate.em.type = 1, 
-                                       do.move = FALSE, est.move = FALSE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20, 
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod1_%03d.RDS&quot;,i)))
-
-}
-
-stopCluster(cluster)</code></pre>
+<div id="recruitment-time-series" class="section level1">
+<h1>7. Recruitment time series</h1>
+<pre class="r"><code>plot(input$data$NAA[1,1,,1], type = &quot;l&quot;, col = &quot;red&quot;, 
+     ylab = &quot;Recruitment&quot;, xlab = &quot;Years&quot;, 
+     main = &quot;Recruitment&quot;, ylim = c(0,max(input$data$NAA)))
+lines(input$data$NAA[2,2,,1], type = &quot;l&quot;, col = &quot;blue&quot;)</code></pre>
+<div class="float">
+<img src="data:image/png;base64,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" width="600" alt="Figure 2" />
+<div class="figcaption">Figure 2</div>
 </div>
-<div id="em2" class="section level3">
-<h3>11. EM2</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = 1
-  n_fleets = n_indices = 2
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-
-  NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma=&quot;rec+1&quot;,cor=&quot;iid&quot;)
-
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em, 
-                         NAA_re_em = NAA_re_em, 
-                         move_em = NULL,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = TRUE, separate.em.type = 2, 
-                                       do.move = FALSE, est.move = FALSE),
-                         assess_years = assess.years,
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20,
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod2_%03d.RDS&quot;,i)))
-  
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="em3" class="section level3">
-<h3>12. EM3</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 1
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-                 initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em &lt;- list(N1_model=&quot;equilibrium&quot;,sigma=&quot;rec+1&quot;,cor=&quot;iid&quot;)
-  
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em, 
-                         NAA_re_em = NAA_re_em, 
-                         move_em = NULL,
-                         age_comp_em = &quot;multinomial&quot;, 
-                         em.opt = list(separate.em = TRUE, separate.em.type = 3, 
-                                       do.move = FALSE, est.move = FALSE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20, 
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE)
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod3_%03d.RDS&quot;,i)))
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="em4" class="section level3">
-<h3>13. EM4</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 2
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-
-  NAA_re_em &lt;- list(N1_model=rep(&quot;equilibrium&quot;,n_stocks),
-                  sigma=rep(&quot;rec+1&quot;,n_stocks),
-                  cor=rep(&quot;iid&quot;,n_stocks),
-                  recruit_model = 2)
-
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em, 
-                         NAA_re_em = NAA_re_em, 
-                         move_em = NULL,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
-                                       do.move = FALSE,  est.move = FALSE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20,
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod4_%03d.RDS&quot;,i)))
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="em5" class="section level3">
-<h3>14. EM5</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 2
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em &lt;- list(N1_model=rep(&quot;equilibrium&quot;,n_stocks),
-                  sigma=rep(&quot;rec+1&quot;,n_stocks),
-                  cor=rep(&quot;iid&quot;,n_stocks),
-                  NAA_where = om$input$data$NAA_where)
-  
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em,
-                         NAA_re_em = NAA_re_em,
-                         move_em = move,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
-                                       do.move = TRUE, est.move = FALSE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20, 
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod5_%03d.RDS&quot;,i)))
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="em6" class="section level3">
-<h3>15. EM6</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 2
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em &lt;- list(N1_model=rep(&quot;equilibrium&quot;,n_stocks),
-                  sigma=rep(&quot;rec+1&quot;,n_stocks),
-                  cor=rep(&quot;iid&quot;,n_stocks),
-                  NAA_where = om$input$data$NAA_where)
-  
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em,
-                         NAA_re_em = NAA_re_em,
-                         move_em = move,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
-                                       do.move = TRUE, est.move = TRUE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20, 
-                         hcr.type = 1,
-                         seed = 123+i,
-                         save.sdrep = FALSE,
-                         save.last.em = TRUE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod6_%03d.RDS&quot;,i)))
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="collect-simulation-results" class="section level3">
-<h3>16. Collect simulation results</h3>
-<pre class="r"><code>mods = list()
-
-for (nsim in 1:10) {
-  file.names &lt;- file.path(sub.dir,paste0(&quot;Mod&quot;,1:6,sprintf(&quot;_%03d.RDS&quot;,nsim)))
-  mods[[nsim]] &lt;- lapply(file.names, readRDS)
-}
-# Please save the results for Ex6:6.Performance-Analysis-Tools
-
-plot_mse_output(mods, base.mod = 6, out.type = &quot;pdf&quot;) # base.mod = correct EM
-# plot_mse_output(mods,  base.mod = 6, out.type = &quot;png&quot;) # Alternative
-# plot_mse_output(mods,  base.mod = 6, out.type = &quot;html&quot;) # Alternative</code></pre>
 </div>
 
 

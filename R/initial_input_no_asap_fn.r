@@ -49,41 +49,39 @@ initial_input_no_asap_fn <- function(input, basic_info) {
   }
   
   # Handling movement-related parameters
-  if (!is.null(basic_info$onto_move)) {
-    data$onto_move <- if (basic_info$onto_move == 1) {
-      matrix(1, data$n_stocks, data$n_regions)
-    } else {
-      matrix(0, data$n_stocks, data$n_regions)
-    }
-    
-    # Handling onto_move_pars
-    data$onto_move_pars <- if (basic_info$onto_move == 1) {
-      if (is.null(basic_info$onto_move_pars)) {
-        # Default: set to ones if not provided
-        array(1, dim = c(data$n_stocks, data$n_regions, 4))
-      } else if (is.vector(basic_info$onto_move_pars)) {
-        # If it's a vector, expand it to an array with the correct dimensions
-        if (length(basic_info$onto_move_pars) == 4) {
-          array(rep(basic_info$onto_move_pars, each = data$n_stocks * data$n_regions), dim = c(data$n_stocks, data$n_regions, 4))
-        } else {
-          stop("onto_move_pars must be a vector of length 4 or an array with dimensions (n_stocks, n_regions, 4).")
-        }
-      } else if (is.array(basic_info$onto_move_pars)) {
-        # Check if the provided array matches the expected dimensions
-        if (!all(dim(basic_info$onto_move_pars) == c(data$n_stocks, data$n_regions, 4))) {
-          stop("onto_move_pars array must have dimensions (n_stocks, n_regions, 4).")
-        }
-        basic_info$onto_move_pars
+  if (basic_info$onto_move == 0 | is.null(basic_info$onto_move)) {
+    matrix(0, data$n_stocks, data$n_regions)
+  } else {
+    matrix(1, n_stocks, n_regions)
+  }
+  
+  # Handling onto_move_pars
+  data$onto_move_pars <- if (basic_info$onto_move == 0 | is.null(basic_info$onto_move)) {
+    array(0, dim = c(n_stocks, n_regions, 4))  # No movement parameters needed if onto_move != 1
+  } else {
+    if (is.null(basic_info$onto_move_pars)) {
+      # Default: set to ones if not provided
+      array(1, dim = c(data$n_stocks, data$n_regions, 4))
+    } else if (is.vector(basic_info$onto_move_pars)) {
+      # If it's a vector, expand it to an array with the correct dimensions
+      if (length(basic_info$onto_move_pars) == 4) {
+        array(rep(basic_info$onto_move_pars, each = data$n_stocks * data$n_regions), dim = c(data$n_stocks, data$n_regions, 4))
       } else {
-        stop("onto_move_pars must be either a vector of length 4 or an array with dimensions (n_stocks, n_regions, 4).")
+        stop("onto_move_pars must be a vector of length 4 or an array with dimensions (n_stocks, n_regions, 4).")
       }
+    } else if (is.array(basic_info$onto_move_pars)) {
+      # Check if the provided array matches the expected dimensions
+      if (!all(dim(basic_info$onto_move_pars) == c(data$n_stocks, data$n_regions, 4))) {
+        stop("onto_move_pars array must have dimensions (n_stocks, n_regions, 4).")
+      }
+      basic_info$onto_move_pars
     } else {
-      NULL  # No movement parameters needed if onto_move != 1
+      stop("onto_move_pars must be either a vector of length 4 or an array with dimensions (n_stocks, n_regions, 4).")
     }
   }
   
   # Handling meta-population indicator
-  data$move_dyn <- if (!is.null(basic_info$move_dyn)) {
+  data$move_dyn <- if (!is.null(basic_info$move_dyn) && basic_info$move_dyn != 0) {
     basic_info$move_dyn
   } else {
     0 # Default to no meta-population if not specified
