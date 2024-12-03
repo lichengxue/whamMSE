@@ -81,7 +81,7 @@ input <- om$input
 input$data <- om$simulate(complete=TRUE)
 ```
 
-### 6. Visualize SSB time series
+### 6. SSB time series
 ```{r, eval=FALSE}
 plot(input$data$SSB[,1], type = "l", col = "red", 
      ylab = "SSB", xlab = "Years", 
@@ -90,7 +90,7 @@ lines(input$data$SSB[,2], type = "l", col = "blue")
 ```
 ![Figure 1](Example_plots/SSB_time_series.png){width="600"}
 
-# 7. Recruitment time series
+### 7. Recruitment time series
 ```{r, eval=FALSE}
 plot(input$data$NAA[1,1,,1], type = "l", col = "red", 
      ylab = "Recruitment", xlab = "Years", 
