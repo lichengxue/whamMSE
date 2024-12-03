@@ -12,7 +12,7 @@
 <meta name="author" content="Chengxue Li" />
 
 
-<title>Self-test and Cross-test</title>
+<title>Installtion</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1562,359 +1562,52 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Self-test and Cross-test</h1>
+<h1 class="title toc-ignore">Installtion</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-12-02</h4>
+<h4 class="date">Last update: 2024-12-03</h4>
 
 </div>
 
 
-<div id="generate-om-and-perform-self--and-cross-test" class="section level2">
-<h2>Generate OM and Perform Self- and Cross-test</h2>
-<p>This vignette includes an example of how to use the
-<code>whamMSE</code> (the Woods Hole Assessment Model Management
-Strategy Evaluation) package to generate an multi-stock multi-region
-operating model and perform self-test and cross-test.</p>
-<div id="load-wham-and-whammse" class="section level3">
-<h3>1. Load “WHAM” and “whamMSE”:</h3>
-<pre class="r"><code>library(wham)
-library(whamMSE)
-
-main.dir = here::here()</code></pre>
-</div>
-<div id="generate-basic-information" class="section level3">
-<h3>2. Generate basic information</h3>
-<p>The operating model is generated based on user-specified biological
-and fishery information. The “generate_basic_info” function is used to
-create a list of biological and fishery information that are used for
-generating a wham input. This function is designed for the users who
-don’t have an ASAP3.dat file (wham is designed to take an ASAP3.dat file
-as input). Users can define the type of fish life history, lifespan,
-length-at-age, weight-at-age, maturity-at-age. Users can also set fleet
-information, survey information, and fishing history.</p>
-<pre class="r"><code>year_start  &lt;- 1  # starting year in the burn-in period
-year_end    &lt;- 20  # end year in the burn-in period
-MSE_years   &lt;- 0     # number of years in the feedback loop
-# Note: no need to include MSE_years in simulation-estimation 
-
-info &lt;- generate_basic_info(n_stocks = 2,
-                            n_regions = 2,
-                            n_indices = 2,
-                            n_fleets = 2,
-                            n_seasons = 4,
-                            base.years = year_start:year_end,
-                            n_feedback_years = MSE_years,
-                            life_history = &quot;medium&quot;,
-                            n_ages = 12,
-                            Fbar_ages = 12,
-                            recruit_model = 2,
-                            F_info = list(F.year1 = 0.2, Fhist = &quot;constant&quot;, Fmax = 0.4, Fmin = 0.2, change_time = 0.5, user_F = NULL),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-                            index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
-                            fracyr_spawn = 0.625,
-                            fracyr_seasons = NULL,
-                            fleet_pointer = NULL,
-                            index_pointer = NULL,
-                            user_waa = NULL,
-                            user_maturity = NULL,
-                            bias.correct.process = FALSE,
-                            bias.correct.observation = FALSE,
-                            bias.correct.BRPs = FALSE,
-                            mig_type = 0,
-                            XSPR_R_opt = 2,
-                            move_dyn = 0, # natal homing is assumed
-                            onto_move = 0,
-                            onto_move_pars = NULL,
-                            apply_re_trend = 0,
-                            trend_re_rate = NULL,
-                            apply_mu_trend = 0,
-                            trend_mu_rate = NULL, 
-                            age_mu_devs = NULL) 
-
-basic_info = info$basic_info # collect basic information
-catch_info = info$catch_info # collect fleet catch information
-index_info = info$index_info # collect survey information
-F_info = info$F # collect fishing information
-
-# see more details using ?generate_basic_info</code></pre>
-</div>
-<div id="specify-movement-type-and-movement-rate" class="section level3">
-<h3>3. Specify movement type and movement rate</h3>
-<p>Natal homing movement dynamics is assumed. That means, all fish must
-go back to their natal home before the spawning season. But they can
-move between regions outside their spawning season.</p>
-<p>Users have options to choose different types of movement by using the
-<code>generate_NAA_where()</code> function:</p>
-<ul>
-<li>1: single stock movement (only stock 1 can move)</li>
-<li>2: bidirectional (all stocks can move)</li>
-<li>3: no movement</li>
-</ul>
-<p>Users can also specify the movement rate for each stock by using the
-<code>generate_move()</code> function. Movement can be either constant
-or years/ages varying (treated as random effects).</p>
-<p>Below are some examples:</p>
-<div id="a.-specify-movement-type-and-movement-rate-default-bidirectional" class="section level4">
-<h4>3a. Specify movement type and movement rate (default:
-bidirectional)</h4>
-<pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-# Note: the default is &quot;bidirectional&quot; movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;constant&quot;) # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks</code></pre>
-</div>
-<div id="b.-specify-movement-type-and-movement-rate-unidirectional" class="section level4">
-<h4>3b. Specify movement type and movement rate (unidirectional)</h4>
-<pre class="r"><code># DO NOT RUN #
-basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3, 0), move.re = &quot;constant&quot;) # Note: default is 0.3 for stock1 and 0 for the rest of stocks</code></pre>
-</div>
-<div id="c.-specify-movement-type-and-movement-rate-iid_y" class="section level4">
-<h4>3c. Specify movement type and movement rate (iid_y)</h4>
-<pre class="r"><code># DO NOT RUN #
-basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;iid_y&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years</code></pre>
-</div>
-<div id="d.-specify-movement-type-and-movement-rate-iid_a" class="section level4">
-<h4>3d. Specify movement type and movement rate (iid_a)</h4>
-<pre class="r"><code># DO NOT RUN #
-basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;iid_a&quot;, move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages</code></pre>
-</div>
-<div id="e.-specify-movement-type-and-movement-rate-ar1_y" class="section level4">
-<h4>3e. Specify movement type and movement rate (ar1_y)</h4>
-<pre class="r"><code># DO NOT RUN #
-basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;ar1_y&quot;, move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years</code></pre>
-</div>
-<div id="f.-specify-movement-type-and-movement-rate-ar1_a" class="section level4">
-<h4>3f. Specify movement type and movement rate (ar1_a)</h4>
-<pre class="r"><code># DO NOT RUN #
-basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = &quot;ar1_a&quot;, move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages</code></pre>
-</div>
-</div>
-<div id="configure-selecitvity-and-natural-mortality" class="section level3">
-<h3>4. Configure selecitvity and natural mortality</h3>
-<p>The default for selectivity and natural mortality is constant.
-Modeling selectivity and natural mortality as time and/or age varying
-(treated as random effects) is optional. More details can be found in
-the vignettes of single-wham (<a href="https://timjmiller.github.io/wham/" class="uri">https://timjmiller.github.io/wham/</a>).</p>
-<pre class="r"><code>n_stocks  &lt;- as.integer(basic_info[&#39;n_stocks&#39;])
-n_regions &lt;- as.integer(basic_info[&#39;n_regions&#39;])
-n_fleets  &lt;- as.integer(basic_info[&#39;n_fleets&#39;])
-n_indices &lt;- as.integer(basic_info[&#39;n_indices&#39;])
-n_ages    &lt;- as.integer(basic_info[&#39;n_ages&#39;])
-
-# Selectivity Configuration
-fleet_pars &lt;- c(5,1)
-index_pars &lt;- c(2,1)
-sel &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-            initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-
-# M Configuration
-M &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))</code></pre>
-</div>
-<div id="configure-numbers-at-age-naa" class="section level3">
-<h3>5. Configure numbers-at-age (NAA)</h3>
-<p>Recruitment is assumed to vary around the mean (default), but users
-are allowed to use “Beverton-Holt” or “Ricker” stock-recruitment
-functions. More details can be found in the vignettes of single-wham (<a href="https://timjmiller.github.io/wham/" class="uri">https://timjmiller.github.io/wham/</a>).</p>
-<pre class="r"><code>sigma        &lt;- &quot;rec+1&quot;
-re_cor       &lt;- &quot;iid&quot;
-ini.opt      &lt;- &quot;equilibrium&quot; # option &lt;- c(&quot;age-specific-fe&quot;, &quot;equilibrium&quot;)
-Rec_sig      &lt;- 0.5 # (sigma for recruitment)
-NAA_sig      &lt;- 0.5 # (sigma for NAA)
-
-sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages
-sigma_vals[,,1] = Rec_sig
-
-# Set initial NAA for each stock
-log_N1    &lt;- rep(10,n_stocks)
-log_N1[1] &lt;- log(exp(10)*2) # N1_stock1 is 2 times higher than N1_stock2
-N1_pars   &lt;- generate_ini_N1(log_N1,basic_info,ini.opt)
-
-# Set mean recruitment para. for each stock
-mean_rec_par &lt;- list()
-for (i in 1:n_stocks) mean_rec_par[[i]] &lt;- exp(log_N1[i])
-
-NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
-               sigma=rep(sigma,n_stocks),
-               cor=rep(re_cor,n_stocks),
-               recruit_model = 2,  # rec random around the mean
-               recruit_pars = mean_rec_par, 
-               sigma_vals = sigma_vals,  
-               N1_pars = N1_pars,
-               NAA_where = basic_info$NAA_where) # NAA_where must be specified in basic_info!</code></pre>
-</div>
-<div id="generate-wham-input" class="section level3">
-<h3>6. Generate wham input</h3>
-<p>Here we use <code>prepare_wham_input()</code> function to generate a
-wham input using the basic information we set above:</p>
-<pre class="r"><code>input &lt;- prepare_wham_input(basic_info = basic_info, 
-                            selectivity = sel, 
-                            M = M, 
-                            NAA_re = NAA_re, 
-                            move = move,
-                            catch_info = catch_info, 
-                            index_info = index_info, 
-                            F = F_info)</code></pre>
-</div>
-<div id="generate-operating-model" class="section level3">
-<h3>7. Generate operating model</h3>
-<pre class="r"><code>om &lt;- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
-# Note: do.fit must be FALSE (no modeling fitting yet)</code></pre>
-</div>
-<div id="self-test" class="section level3">
-<h3>8. Self-test</h3>
-<p>Create a function to generate data and perform a self-test:</p>
-<pre class="r"><code>sim_fn &lt;- function(om, self.fit = FALSE){
-  input &lt;- om$input
-  input$data &lt;- om$simulate(complete=TRUE)
-  # $simulate() is a function to generate datasets given the parameters defined in the OM
-  # Note: process error and observation error are both turned on when simulating datasets 
-  # To turn them off, use basic_info$simulate_process_error = 0 and basic_info$simulate_observation_error = 0
-  if(self.fit) {
-    fit &lt;- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = FALSE)
-    return(fit)
-  } else return(input) 
-}
-# Note: turn on do.osa to calculate one-step-ahead residuals
-# Note: turn on do.retro to calculate retrospective bias
-set.seed(12345)
-self_sim_fit &lt;- sim_fn(om, self.fit = TRUE)</code></pre>
-<p>We use <code>check_convergence()</code> function to check the model
-convergence:</p>
-<pre class="r"><code>check_convergence(self_sim_fit) # check the model convergence</code></pre>
-</div>
-<div id="create-html-file-to-view-output-plots-in-browser-optional" class="section level3">
-<h3>9. Create HTML file to view output plots in browser (optional)</h3>
-<pre class="r"><code>plot_wham_output(self_sim_fit, out.type = &quot;html&quot;)
-
-# 10. Create a sub directory and saves .png files (optional)
-
-# report.dir &lt;- &quot;report&quot;
-# if (file.exists(main.dir, report.dir)){
-# } else {
-#   dir.create(file.path(main.dir, report.dir))
-# }
-# plot_wham_output(self_sim_fit, dir.main = file.path(main.dir, report.dir),out.type = &#39;png&#39;)</code></pre>
-</div>
-<div id="cross-test" class="section level3">
-<h3>10. Cross-test</h3>
-<p>Different NAA configuration is used in the estimation model:</p>
-<pre class="r"><code># EM with different NAA configuration
-sigma      &lt;- &quot;rec+1&quot;
-re_cor     &lt;- &quot;2dar1&quot; # Misspecification here
-
-ini.opt    &lt;- &quot;equilibrium&quot;
-NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
-               sigma=rep(sigma,n_stocks),
-               cor=rep(re_cor,n_stocks),
-               NAA_where = basic_info$NAA_where)
-               
-# Generate wham input
-input &lt;- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,
-                            catch_info = catch_info, index_info = index_info, F = F_info)
-
-# Generate EM
-em &lt;- fit_wham(input, do.fit = F, do.brps = F, MakeADFun.silent = TRUE)</code></pre>
-<p>Create a function to generate data and perform a cross-test</p>
-<pre class="r"><code>sim_fn2 &lt;- function(om, em, cross.fit = FALSE){
-  input &lt;- em$input
-  input$data &lt;- om$simulate(complete=TRUE)
-  if(cross.fit) {
-    fit &lt;- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = FALSE)
-    return(fit)
-  } else return(input) 
+<p>The “whamMSE” package is a comprehensive toolbox designed to conduct
+management strategy evaluation (MSE) for supporting spatial management
+for complex, heterogeneous populations. The package is built upon a
+state-space age-structured stock assessment model - Woods Hole
+Assessment Model (WHAM). WHAM can incorporate time- and/or age-varying
+process errors (treated as random effects) on population processes, and
+can also incorporate environmental effects on population processes. This
+package provides tools to simulate and evaluate management strategies
+(combination of data collection methods, stock assessment models, and
+harvest control rules) by allowing users to explore various scenarios
+and their impacts on estimation and management performance for fish
+stocks with different life-history traits across different regions.</p>
+<div id="install-whammse-package" class="section level2">
+<h2>1. Install “whamMSE” package</h2>
+<p>Users must install the <strong>meta-population</strong> wham
+(including natal homing functionality) first with all required
+dependencies:</p>
+<pre class="r"><code>install.packages(&quot;devtools&quot;) 
+devtools::install_github(&quot;lichengxue/wham-devel&quot;, dependencies=TRUE) # &quot;meta-population&quot; version of wham</code></pre>
+<p>Users can also download wham (only natal homing functionality) from
+Tim Miller’s github:</p>
+<pre class="r"><code>install.packages(&quot;devtools&quot;) 
+devtools::install_github(&quot;timjmiller/wham&quot;, dependencies=TRUE, ref=&quot;devel&quot;)</code></pre>
+<p>Now users can install “whamMSE”:</p>
+<pre class="r"><code>devtools::install_github(&quot;lichengxue/whamMSE&quot;, dependencies=TRUE)</code></pre>
+<p>Note: If you have “single-wham” installed before, it’s recommended to
+install “multi-wham” package in a different directory to avoid one
+overwriting the other:</p>
+<pre class="r"><code>library_paths &lt;- .libPaths()[1]
+new_folder &lt;- &quot;wham_old&quot;
+if (file.exists(file.path(library_paths,new_folder))){
+} else {
+  dir.create(file.path(library_paths,new_folder))
 }
 
-set.seed(12345)
-cross_sim_fit &lt;- sim_fn2(om, em, cross.fit = TRUE)</code></pre>
-<p>Check model convergence:</p>
-<pre class="r"><code>check_convergence(cross_sim_fit)</code></pre>
-</div>
-<div id="create-html-file-to-view-output-plots-in-browser-optional-1" class="section level3">
-<h3>11. Create HTML file to view output plots in browser (optional)</h3>
-<pre class="r"><code>plot_wham_output(cross_sim_fit, out.type = &quot;html&quot;)</code></pre>
-</div>
-<div id="generate-100-replicates-for-self-tests-optional" class="section level3">
-<h3>12. Generate 100 replicates for self-tests (optional)</h3>
-<p>Parameters (including random effects parameters) associated with
-population dynamics are now defined in the operating model. Users can
-generate pseudo observational data from the operating model with process
-and observation errors randomly drawn from their corresponding
-likelihood distribution. Generating 100 pseudo data is common when
-performing a self test.</p>
-<pre class="r"><code>nsim &lt;- 100 
-set.seed(8675309) 
-sim_input &lt;- list()
-sim_input &lt;- lapply(1:nsim, function(x) {
-  input_i &lt;- om$input
-  sim &lt;- om$simulate(complete=TRUE)
-  input_i$data &lt;- sim
-  return(input_i)
-})
+file.copy(from = file.path(library_paths,&quot;wham&quot;), to = file.path(library_paths,new_folder), 
+          overwrite = TRUE,  recursive = TRUE, copy.mode = TRUE)
 
-# Self test
-sim_fits &lt;- list()
-sim_fits &lt;- lapply(1:nsim, function(x){
-  cat(paste(&quot;model_fit:&quot;, x, &quot;start \n&quot;))
-  out &lt;- fit_wham(sim_input[[x]], do.osa = FALSE, MakeADFun.silent = TRUE, retro.silent = TRUE, save.sdrep = FALSE)
-  cat(paste(&quot;model_fit:&quot;, x, &quot;done \n&quot;))
-  return(out)
-})
-
-# Summarize results 
-conv &lt;- sapply(1:nsim, function(x){
-  if (length(sim_fits[[x]]) != 0) {
-    if (sim_fits[[x]]$is_sdrep &amp; !sim_fits[[x]]$na_sdrep &amp; !sim_fits[[x]]$hessian) {
-      conv = TRUE } else conv = FALSE
-  } else conv = FALSE
-  return(conv)
-})
-cat(paste(&quot;Convergence rate:&quot;, sum(conv)/nsim))
-
-mean_rec_par &lt;- lapply(1:nsim, function(x){
-  mean_rec_par_est &lt;- sim_fits[[x]]$parList$mean_rec_pars[,1]
-  mean_rec_par_true &lt;- sim_fits[[x]]$input$par$mean_rec_pars[,1]
-  mean_rec_par &lt;- cbind(mean_rec_par_est,mean_rec_par_true)
-  return(mean_rec_par)
-})
-print(mean_rec_par)
-
-SSB &lt;- lapply(1:nsim, function(x){
-  SSB_est &lt;- sim_fits[[x]]$rep$SSB
-  SSB_true &lt;- sim_fits[[x]]$input$data$SSB
-  SSB &lt;- cbind(SSB_est, SSB_true)
-  return(SSB)
-})
-print(SSB)</code></pre>
-</div>
-<div id="generate-100-replicates-for-cross-tests-optional" class="section level3">
-<h3>13. Generate 100 replicates for cross-tests (optional)</h3>
-<pre class="r"><code>nsim &lt;- 100
-set.seed(8675309) 
-sim_input &lt;- list()
-sim_input &lt;- lapply(1:nsim, function(x) {
-  input_i &lt;- em$input
-  sim &lt;- om$simulate(complete=TRUE)
-  input_i$data &lt;- sim
-  return(input_i)
-})
-
-cross_sim_fit &lt;- list()
-cross_sim_fit &lt;- lapply(1:nsim, function(x){
-  cat(paste(&quot;model_fit:&quot;, x, &quot;start \n&quot;))
-  out &lt;- fit_wham(sim_input[[x]], do.osa = FALSE, MakeADFun.silent = TRUE, retro.silent = TRUE, save.sdrep = FALSE)
-  cat(paste(&quot;model_fit:&quot;, x, &quot;done \n&quot;))
-  return(out)
-})</code></pre>
-</div>
+library(wham, lib.loc = file.path(library_paths,new_folder)) # Load the single wham package</code></pre>
 </div>
 
 
