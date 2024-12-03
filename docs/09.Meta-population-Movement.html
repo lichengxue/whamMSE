@@ -1627,8 +1627,8 @@ set.seed(123)
 input &lt;- om$input
 input$data &lt;- om$simulate(complete=TRUE)</code></pre>
 </div>
-<div id="visualize-ssb-time-series" class="section level3">
-<h3>6. Visualize SSB time series</h3>
+<div id="ssb-time-series" class="section level3">
+<h3>6. SSB time series</h3>
 <pre class="r"><code>plot(input$data$SSB[,1], type = &quot;l&quot;, col = &quot;red&quot;, 
      ylab = &quot;SSB&quot;, xlab = &quot;Years&quot;, 
      main = &quot;SSB&quot;, ylim = c(0,max(input$data$SSB)))
@@ -1638,8 +1638,8 @@ lines(input$data$SSB[,2], type = &quot;l&quot;, col = &quot;blue&quot;)</code></
 <div class="figcaption">Figure 1</div>
 </div>
 </div>
-<div id="recruitment-time-series" class="section level1">
-<h1>7. Recruitment time series</h1>
+<div id="recruitment-time-series" class="section level3">
+<h3>7. Recruitment time series</h3>
 <pre class="r"><code>plot(input$data$NAA[1,1,,1], type = &quot;l&quot;, col = &quot;red&quot;, 
      ylab = &quot;Recruitment&quot;, xlab = &quot;Years&quot;, 
      main = &quot;Recruitment&quot;, ylim = c(0,max(input$data$NAA)))
