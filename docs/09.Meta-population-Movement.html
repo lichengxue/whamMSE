@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Metapopulation Movement</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-12-03</h4>
+<h4 class="date">Last update: 2025-01-16</h4>
 
 </div>
 
@@ -1599,7 +1599,13 @@ move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0
 </div>
 <div id="configure-numbers-at-age-naa" class="section level3">
 <h3>4. Configure numbers-at-age (NAA)</h3>
-<pre class="r"><code>sigma        &lt;- &quot;rec+1&quot;
+<pre class="r"><code>n_stocks  &lt;- as.integer(basic_info[&#39;n_stocks&#39;])
+n_regions &lt;- as.integer(basic_info[&#39;n_regions&#39;])
+n_fleets  &lt;- as.integer(basic_info[&#39;n_fleets&#39;])
+n_indices &lt;- as.integer(basic_info[&#39;n_indices&#39;])
+n_ages    &lt;- as.integer(basic_info[&#39;n_ages&#39;])
+
+sigma        &lt;- &quot;rec+1&quot;
 re_cor       &lt;- &quot;iid&quot;
 ini.opt      &lt;- &quot;equilibrium&quot; 
 sigma_vals   &lt;-  array(0.05, dim = c(n_stocks, n_regions, n_ages)) # Assume a low NAA sigma

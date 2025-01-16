@@ -65,8 +65,8 @@ server <- function(input, output, session) {
     # Generate movement effect options
     output$moveEffectOptions <- renderUI({
       selectInput("movementEffect", "Select Movement Random Effect",
-                  choices = list("Constant" = "constant", "IID (Age)" = "iid_a", 
-                                 "IID (Year)" = "iid_y", "AR1 (Age)" = "ar1_a", 
+                  choices = list("Constant" = "constant", "IID (Age)" = "iid_a",
+                                 "IID (Year)" = "iid_y", "AR1 (Age)" = "ar1_a",
                                  "AR1 (Year)" = "ar1_y"), selected = "constant")
     })
     
@@ -121,7 +121,7 @@ server <- function(input, output, session) {
     output$seasonDiagram <- renderPlot({
       plot(1:n_seasons, rep(1, n_seasons), xlim = c(0, n_seasons + 1), ylim = c(0, 2),
            xaxt = "n", yaxt = "n", xlab = "", ylab = "", type = "n")
-      rect(1:n_seasons - 0.4, 0.5, 1:n_seasons + 0.4, 1.5, 
+      rect(1:n_seasons - 0.4, 0.5, 1:n_seasons + 0.4, 1.5,
            col = ifelse(1:n_seasons == spawn_season, "#35B779FF", "#FDE725FF"))
       text(1:n_seasons, rep(1, n_seasons), labels = ifelse(1:n_seasons == spawn_season, "Spawning\n Season", "Offspawning\n Season"), cex = 0.8)
       axis(1, at = 1:n_seasons, labels = paste("Season", 1:n_seasons))
@@ -153,26 +153,30 @@ server <- function(input, output, session) {
       
       for (r in 1:n_regions) {
         k_index <- 1
-        remaining_sum <- 1
         sum_of_movements <- 0  # Initialize the sum for each region
+        
         for (rr in 1:n_regions) {
           if (r != rr) {
-            input_value <- as.numeric(input[[paste0("move_", r, "_", k_index)]])
+            input_id <- paste0("move_", r, "_", k_index)
+            input_value <- as.numeric(input[[input_id]])
+            
             if (is.na(input_value)) {
-              input_value <- 0  # Set a default value in case input is NA
+              input_value <- 0  # Default to zero if input is missing
             }
+            
+            # Assign input_value to mean_vals_array
+            mean_vals_array[, , r, k_index] <- input_value
+            
             sum_of_movements <- sum_of_movements + input_value
-            if(sum_of_movements > 1) error_r = r
             k_index <- k_index + 1
           }
         }
         
+        # Display an error if the sum exceeds 1
         if (sum_of_movements > 1) {
           output$warning <- renderUI({
-            HTML(paste0("<span style='color: red; font-size: 40px;'>Error: The sum of movement rates from Region ", error_r, " exceeds 1! Please adjust the rates.</span>"))
+            HTML(paste0("<span style='color: red; font-size: 20px;'>Warning: The sum of movement rates for Region ", r, " exceeds 1. Please adjust the values.</span>"))
           })
-          error_detected <- TRUE
-          break  # Break out of the loop since an error was detected
         }
       }
       

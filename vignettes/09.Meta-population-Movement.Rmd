@@ -49,6 +49,13 @@ move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.2,
 ### 4. Configure numbers-at-age (NAA)
 
 ```{r, eval=FALSE}
+
+n_stocks  <- as.integer(basic_info['n_stocks'])
+n_regions <- as.integer(basic_info['n_regions'])
+n_fleets  <- as.integer(basic_info['n_fleets'])
+n_indices <- as.integer(basic_info['n_indices'])
+n_ages    <- as.integer(basic_info['n_ages'])
+
 sigma        <- "rec+1"
 re_cor       <- "iid"
 ini.opt      <- "equilibrium" 
