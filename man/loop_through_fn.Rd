@@ -113,7 +113,7 @@ loop_through_fn(
 
 \item{weight_type}{Type of weights to use for allocating catch
 \itemize{
-  \item \code{"1"} Uniform: Assign equal weight to all regions
+  \item \code{"1"} Uniform: Assign equal weights to all regions
   \item \code{"2"} User defined: User provides weights (provide weights as \code{user_weights})
   \item \code{"3"} Catch history: Use catch data averaged over specified number of years (provide years as \code{weight_years})
   \item \code{"4"} Survey average: Use survey data averaged over specified number of years (provide years as \code{weight_years})

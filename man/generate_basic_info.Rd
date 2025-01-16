@@ -133,9 +133,17 @@ generate_basic_info(
 
 \item{move_dyn}{Movement dynamics. 0 = natal homing, 1 = meta-population}
 
-\item{onto_move}{Matrix for type of age-specific movement (default is all 0), with dims = n_stocks x n_regions}
+\item{onto_move}{Matrix of age-specific movement type with dims = n_stocks x n_regions
+\itemize{
+  \item \code{0} same mean movement rate across ages (default)
+  \item \code{1} increasing logistic (2 parameters)
+  \item \code{2} decreasing logistic (2 parameters)
+  \item \code{3} double-logistic (4 parameters)
+  \item \code{4} double-normal (4 parameters)
+  \item \code{5} user specified age-specific movement rate
+  }}
 
-\item{onto_move_pars}{Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4) (only used if onto_move = 1)}
+\item{onto_move_pars}{Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4)}
 
 \item{apply_re_trend}{Indicator to apply recruitment trend (default is 0)}
 
