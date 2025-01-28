@@ -133,7 +133,7 @@ generate_basic_info(
 
 \item{move_dyn}{Movement dynamics. 0 = natal homing, 1 = meta-population}
 
-\item{onto_move}{Matrix of age-specific movement type with dims = n_stocks x n_regions
+\item{onto_move}{Array of age-specific movement type with dims = n_stocks x n_regions (from region x) x n_regions-1 (to region y)
 \itemize{
   \item \code{0} same mean movement rate across ages (default)
   \item \code{1} increasing logistic (2 parameters)
@@ -153,7 +153,7 @@ generate_basic_info(
 
 \item{trend_mu_rate}{Rate for movement trend (required if apply_mu_trend = 1)}
 
-\item{age_mu_devs}{movement deviations used when onto_move = 5 (user specified age-specific movement rate)}
+\item{age_mu_devs}{Movement deviations used when onto_move = 5 (user specified age-specific movement rate), array of dim = c(n_stocks, n_regions, n_regions-1, n_ages)}
 
 \item{q}{Survey catchability}
 }

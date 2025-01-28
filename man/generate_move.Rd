@@ -37,6 +37,8 @@ Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA
   \item \code{"iid_a"} movement rate deviations vary by age, but uncorrelated.
   \item \code{"ar1_y"} movement rate deviations correlated by year (AR1).
   \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
+  \item \code{"iid_y","iid_a"} vector, movement rate deviations vary by year and ages, but uncorrelated (2D-IID).
+  \item \code{"ar1_y","ar1_a"} vector, movement rate deviations vary by year and ages (2D-AR1).
 }}
 
 \item{move.sigma}{Sigma for movement random effects (default = 0.2)}

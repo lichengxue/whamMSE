@@ -18,6 +18,8 @@
 #'     \item \code{"iid_a"} movement rate deviations vary by age, but uncorrelated.
 #'     \item \code{"ar1_y"} movement rate deviations correlated by year (AR1).
 #'     \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
+#'     \item \code{"iid_y","iid_a"} vector, movement rate deviations vary by year and ages, but uncorrelated (2D-IID).
+#'     \item \code{"ar1_y","ar1_a"} vector, movement rate deviations vary by year and ages (2D-AR1).
 #'   }
 #' @param move.sigma Sigma for movement random effects (default = 0.2)
 #' @param prior.sigma Standard deviation for normal priors on mean movement (default = 0.2) 
@@ -70,7 +72,8 @@ generate_move <- function(basic_info,
   
   if (n_stocks != n_regions) stop("The current version only allows n_stocks = n_regions") 
   if (length(move.rate) != n_regions) stop("length of movement rates must be equal to n_regions") 
-  if (!move.re %in% c("constant","iid_a","iid_y","ar1_a","ar1_y")) stop("move.re can only be constant, iid_a, iid_y, ar1_a, ar1_y")
+  
+  if (!all(move.re %in% c("constant","iid_a","iid_y","ar1_a","ar1_y"))) stop("move.re can only be constant, iid_a, iid_y, ar1_a, ar1_y")
   
   spawntime <- assign_season(fracyr_spawn, basic_info$fracyr_seasons)
   movetime <- setdiff(1:n_seasons, spawntime)
@@ -102,9 +105,22 @@ generate_move <- function(basic_info,
     move$mean_vals <- array(move_mu, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
     cat(paste0("\nOnly stock 1 'can' move and movement rate is ", move.rate[1], "\n"))
     
+    # If n_seasons = 1 (i.e., annual time step)
+    if (n_seasons == 1) {
+      warnings(paste0("\nn_seasons = 1 will not work for natal homing dynamics!"))
+      move$can_move[,1,,] = 1
+      diag(move$can_move[1,1,,]) = 0
+      move$can_move[-1,1,,] = 0
+    }
+    
     move <- configure_move.re(move, move.type, move.re, move.sigma, prior.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions, use.prior)
     
-  } else if (move.type == 2) { # Bidirectional movement
+  } 
+  
+  if (move.type == 2) { # Bidirectional movement
+    
+    cat(paste0("\nNote: Movement rate is assumed to be region-specific regardless of stock!\n"))
+    
     move_mu <- move.rate
     move$stock_move <- rep(TRUE, n_stocks)
     move$must_move <- array(0, dim = c(n_stocks, n_seasons, n_regions))
@@ -124,9 +140,26 @@ generate_move <- function(basic_info,
       cat(paste0("\nMovement rate for stocks in region ",r," is ", move.rate[r],"\n"))
     }
     
+    for (r in 1:n_regions) {
+      if (move_mu[r] == 0) {
+        cat(paste0("\nMovement rate for all stocks in region ",r," to other regions is 0!\n"))
+        cat(paste0("\nMake sure elements in the can_move array for region ", r, " are all set 0!\n"))
+        move$can_move[,,r,] = 0
+      }
+    }
+    
+    # If n_seasons = 1 (i.e., annual time step)
+    if (n_seasons == 1) {
+      warnings(paste0("\nn_seasons = 1 will not work for natal homing dynamics!"))
+      move$can_move[,1,,] = 1
+      for (s in 1:n_stocks) diag(move$can_move[s,1,,]) = 0
+    }
+    
     move <- configure_move.re(move, move.type, move.re, move.sigma, prior.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions, use.prior)
     
-  } else if (move.type == 3) { # No movement
+  } 
+  
+  if (move.type == 3) { # No movement
     move <- NULL
   }
   
@@ -145,9 +178,81 @@ generate_move <- function(basic_info,
 # Helper function to configure movement random effects
 configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma, move.rho_a, move.rho_y, n_stocks, n_seasons, n_regions, use.prior) {
   
-  if (move.re == "constant") {
+  if(length(move.re) == 1) {
     
-    cat("\nMovement is assumed at a constant rate without random effects\n")
+    if (move.re == "constant") {
+      
+      cat("\nMovement is assumed at a constant rate without random effects\n")
+      move$mean_model <- matrix("constant", n_regions, n_regions - 1)
+      
+      if (use.prior) {
+        cat("\nWarning: Prior for mean movement rate is used!\n")
+        cat("\nMean movement rate, although it's still 'constant' across years and ages, \nis now randomly drawn from a prior distribution with a mean and a standard deviation\n")
+        move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        move$use_prior[1, 1, , ] <- 1
+        move$prior_sigma <- array(prior.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        cat(paste0("\nSigma for the prior for the movement is ",prior.sigma,"\n"))
+      } else {
+        move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        move$prior_sigma <- NULL
+      }
+      
+    } else {
+      
+      cat("\nMovement is treated as random effects\n")
+      move$mean_model <- matrix("constant", n_regions, n_regions - 1)
+      
+      if (use.prior) {
+        cat("\nWarning: Prior for mean movement rate is used!\n")
+        cat("\nMean movement rate, although it's still 'constant' across years and ages, \nis now randomly drawn from a prior distribution with a mean and a standard deviation\n")
+        move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        move$use_prior[1, 1, , ] <- 1
+        move$prior_sigma <- array(prior.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        cat(paste0("\nSigma for the prior for the movement is ",prior.sigma,"\n"))
+      } else {
+        move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+        move$prior_sigma <- NULL
+      }
+      
+      if (move.re %in% c("ar1_y", "iid_y")) {
+        cat("\nMovement is treated as varying by years\n")
+        if (move.re == "ar1_y") {
+          move$year_re <- matrix("ar1", n_regions, n_regions - 1)
+          move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
+          move$cor_vals[, , , , 2] <- move.rho_y
+          cat(paste0("\nar1_y rho for movement is set to ", move.rho_y, "\n"))
+        } else if (move.re == "iid_y") {
+          move$year_re <- matrix("iid", n_regions, n_regions - 1)
+        }
+        if(move.type == 1) {
+          move$year_re[2:n_regions] = "none"
+        }
+      }
+      
+      if (move.re %in% c("ar1_a", "iid_a")) {
+        cat("\nMovement is treated as varying by ages\n")
+        if (move.re == "ar1_a") {
+          move$age_re <- matrix("ar1", n_regions, n_regions - 1)
+          move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
+          move$cor_vals[, , , , 1] <- move.rho_a
+          cat(paste0("\nar1_a rho for movement is set to ", move.rho_a, "\n"))
+        } else if (move.re == "iid_a") {
+          move$age_re <- matrix("iid", n_regions, n_regions - 1)
+        }
+        if(move.type == 1) {
+          move$age_re[2:n_regions] = "none"
+        }
+      }
+      
+      move$sigma_vals = move.sigma
+      cat(paste0("\nSigma for the varying movement rate is set to ", move.sigma, "\n"))
+    }
+  }
+  
+  if (length(move.re) == 2 && any(move.re %in% c("ar1_y", "iid_y")) && any(move.re %in% c("ar1_a", "iid_a"))) {
+    
+    cat("\nMovement is treated as 2D random effects\n")
+    
     move$mean_model <- matrix("constant", n_regions, n_regions - 1)
     
     if (use.prior) {
@@ -162,56 +267,47 @@ configure_move.re <- function(move, move.type, move.re, move.sigma, prior.sigma,
       move$prior_sigma <- NULL
     }
     
-  } else {
-    
-    cat("\nMovement is treated as random effects\n")
-    move$mean_model <- matrix("constant", n_regions, n_regions - 1)
-    
-    if (use.prior) {
-      cat("\nWarning: Prior for mean movement rate is used!\n")
-      cat("\nMean movement rate, although it's still 'constant' across years and ages, \nis now randomly drawn from a prior distribution with a mean and a standard deviation\n")
-      move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-      move$use_prior[1, 1, , ] <- 1
-      move$prior_sigma <- array(prior.sigma, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-      cat(paste0("\nSigma for the prior for the movement is ",prior.sigma,"\n"))
-    } else {
-      move$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-      move$prior_sigma <- NULL
-    }
-    
-    if (move.re %in% c("ar1_y", "iid_y")) {
+    if (any(move.re == "ar1_y")) {
       cat("\nMovement is treated as varying by years\n")
-      if (move.re == "ar1_y") {
-        move$year_re <- matrix("ar1", n_regions, n_regions - 1)
-        move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
-        move$cor_vals[, , , , 2] <- move.rho_y
-        cat(paste0("\nar1_y rho for movement is set to ", move.rho_y, "\n"))
-      } else if (move.re == "iid_y") {
-        move$year_re <- matrix("iid", n_regions, n_regions - 1)
-      }
-      if(move.type == 1) {
-        move$year_re[2:n_regions] = "none"
-      }
+      move$year_re <- matrix("ar1", n_regions, n_regions - 1)
+      move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
+      move$cor_vals[, , , , 2] <- move.rho_y
+      cat(paste0("\nar1_y rho for movement is set to ", move.rho_y, "\n"))
+    } 
+    
+    if (any(move.re == "iid_y")) {
+      cat("\nMovement is treated as varying by years\n")
+      move$year_re <- matrix("iid", n_regions, n_regions - 1)
     }
     
-    if (move.re %in% c("ar1_a", "iid_a")) {
+    if(move.type == 1) {
+      move$year_re[2:n_regions] = "none"
+    }
+    
+    if (any(move.re == "ar1_a")) {
       cat("\nMovement is treated as varying by ages\n")
-      if (move.re == "ar1_a") {
-        move$age_re <- matrix("ar1", n_regions, n_regions - 1)
-        move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
-        move$cor_vals[, , , , 1] <- move.rho_a
-        cat(paste0("\nar1_a rho for movement is set to ", move.rho_a, "\n"))
-      } else if (move.re == "iid_a") {
-        move$age_re <- matrix("iid", n_regions, n_regions - 1)
-      }
-      if(move.type == 1) {
-        move$age_re[2:n_regions] = "none"
-      }
+      move$age_re <- matrix("ar1", n_regions, n_regions - 1)
+      move$cor_vals <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1, 2))
+      move$cor_vals[, , , , 1] <- move.rho_a
+      cat(paste0("\nar1_a rho for movement is set to ", move.rho_a, "\n"))
+    }
+    
+    if (any(move.re == "iid_a")) {
+      cat("\nMovement is treated as varying by ages\n")
+      move$age_re <- matrix("iid", n_regions, n_regions - 1)
+    }
+    
+    if(move.type == 1) {
+      move$age_re[2:n_regions] = "none"
     }
     
     move$sigma_vals = move.sigma
     cat(paste0("\nSigma for the varying movement rate is set to ", move.sigma, "\n"))
+    
+  } else {
+    warnings("Movement random effects are not specified correctly!")
   }
+
   return(move)
 }
 
