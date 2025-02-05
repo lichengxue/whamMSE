@@ -35,17 +35,25 @@
 #'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
 #'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
 #'   }
-#' @param aggregate_catch_info (optional) User specified list of infomation for aggregate catch (default=NULL: using the infomation from the first fleet). Only when pamictic model with aggregate catch is used
+#' @param aggregate_catch_info (optional) User specified list of information for aggregate catch (default: use first fleet). Only when panmictic model with aggregate catch is used.
 #'   \itemize{
-#'     \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
-#'     \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+#'     \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
+#'     \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
+#'     \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
+#'     \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
+#'     \item \code{$fleet_pointer} {vector (n_fleets) of which fleets should be combined. Use 0 to not include that fleet.}
 #'     }
-#' @param aggregate_index_info (optional) User specified list of infomation for aggregate index (default=NULL: using the infomation from the first index). Only when pamictic model with aggregate index is used
+#' @param aggregate_index_info (optional) User specified list of information for aggregate index (default: use first index). Only when panmictic model with aggregate index is used.
 #'   \itemize{
-#'     \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
-#'     \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
+#'     \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
+#'     \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
+#'     \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
+#'     \item \code{$q} {vector (n_indices) of survey catchabilities.}
+#'     \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
+#'     \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
+#'     \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
+#'     \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
+#'     \item \code{$index_pointer} {vector (n_indices) of which indices should be combined. Use 0 to not include that index.}
 #'     }
 #' @param assess_years Year in which the assessment is conducted
 #' @param assess_interval Assessment interval used in the MSE feedback loop

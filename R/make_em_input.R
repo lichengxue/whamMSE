@@ -34,17 +34,25 @@
 #'     \item \code{"mvtweedie"}
 #'     \item \code{"dir-mult-linear"}
 #'   }
-#' @param aggregate_catch_info (optional) User specified list of infomation for aggregate catch (default=NULL: using the infomation from the first fleet). Only when pamictic model with aggregate catch is used
+#' @param aggregate_catch_info (optional) User specified list of information for aggregate catch (default: use first fleet). Only when panmictic model with aggregate catch is used.
 #'   \itemize{
-#'     \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
-#'     \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+#'     \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
+#'     \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
+#'     \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
+#'     \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
+#'     \item \code{$fleet_pointer} {vector (n_fleets) of which fleets should be combined. Use 0 to not include that fleet.}
 #'     }
-#' @param aggregate_index_info (optional) User specified list of infomation for aggregate index (default=NULL: using the infomation from the first index). Only when pamictic model with aggregate index is used
+#' @param aggregate_index_info (optional) User specified list of information for aggregate index (default: use first index). Only when panmictic model with aggregate index is used.
 #'   \itemize{
-#'     \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
-#'     \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
+#'     \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
+#'     \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
+#'     \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
+#'     \item \code{$q} {vector (n_indices) of survey catchabilities.}
+#'     \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
+#'     \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
+#'     \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
+#'     \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
+#'     \item \code{$index_pointer} {vector (n_indices) of which indices should be combined. Use 0 to not include that index.}
 #'     }
 #'     
 #' @return a wham input
@@ -102,24 +110,40 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       if (is.null(aggregate_catch_info)) {
         em_info$par_inputs$catch_cv <- em_info$par_inputs$catch_cv[1]
         em_info$par_inputs$catch_Neff <- em_info$par_inputs$catch_Neff[1]
+        em_info$par_inputs$use_agg_catch <- em_info$par_inputs$use_agg_catch[1]
+        em_info$par_inputs$use_catch_paa <- em_info$par_inputs$use_catch_paa[1]
       } else {
         em_info$par_inputs$catch_cv <- aggregate_catch_info$catch_cv
         em_info$par_inputs$catch_Neff <- aggregate_catch_info$catch_Neff
+        em_info$par_inputs$use_agg_catch <- em_info$par_inputs$use_agg_catch
+        em_info$par_inputs$use_catch_paa <- em_info$par_inputs$use_catch_paa
       }
-      
       if (is.null(aggregate_index_info)) {
         em_info$par_inputs$index_cv <- em_info$par_inputs$index_cv[1]
         em_info$par_inputs$index_Neff <- em_info$par_inputs$index_Neff[1]
         em_info$par_inputs$fracyr_indices <- em_info$par_inputs$fracyr_indices[1]
         em_info$par_inputs$q <- em_info$par_inputs$q[1]
+        em_info$par_inputs$use_indices <- em_info$par_inputs$use_indices[1]
+        em_info$par_inputs$use_index_paa <- em_info$par_inputs$use_index_paa[1]
+        em_info$par_inputs$units_indices <- em_info$par_inputs$units_indices[1]
+        em_info$par_inputs$units_index_paa <- em_info$par_inputs$units_index_paa[1]
       } else {
         em_info$par_inputs$index_cv <- aggregate_index_info$index_cv
         em_info$par_inputs$index_Neff <- aggregate_index_info$index_Neff
         em_info$par_inputs$fracyr_indices <- aggregate_index_info$fracyr_indices
         em_info$par_inputs$q <- aggregate_index_info$q
+        em_info$par_inputs$use_indices <- aggregate_index_info$use_indices
+        em_info$par_inputs$use_index_paa <- aggregate_index_info$use_index_paa
+        em_info$par_inputs$units_indices <- aggregate_index_info$units_indices
+        em_info$par_inputs$units_index_paa <- aggregate_index_info$units_index_paa
       }
       
-      info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = 1, n_indices = 1)
+      n_fleets <- 1
+      n_indices <- 1
+      if(!is.null(aggregate_index_info$n_fleets)) n_fleets <- aggregate_index_info$n_fleets 
+      if(!is.null(aggregate_index_info$n_indices)) n_indices <- aggregate_index_info$n_indices  
+      
+      info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = n_fleets, n_indices = n_indices)
       basic_info <- info$basic_info
       
       # Override any movement or trend information
@@ -129,33 +153,84 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       basic_info$apply_mu_trend <- 0
       
       # Fill in the data from the operating model simulation
-      # Fill in the data from the operating model simulation
-      info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
-      info$catch_info$agg_catch <- matrix(rowSums(info$catch_info$agg_catch), ncol = 1)
-      info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
-      info$index_info$agg_indices <- matrix(rowSums(info$index_info$agg_indices), ncol = 1)
-      
-      info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
-      catch <- data$agg_catch[ind_em, , drop = FALSE]
-      ratio <- data$catch_paa[, ind_em, ]
-      result <- 0
-      for (i in 1:dim(ratio)[1]) {
-        tmp <- ratio[i, , ] * catch[, i]
-        result <- result + tmp
+      if (n_fleets == 1) {
+        info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
+        info$catch_info$agg_catch <- matrix(rowSums(info$catch_info$agg_catch), ncol = 1)
+        info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
+        catch <- data$agg_catch[ind_em, , drop = FALSE]
+        ratio <- data$catch_paa[, ind_em, ]
+        result <- 0
+        for (i in 1:dim(ratio)[1]) {
+          tmp <- ratio[i, , ] * catch[, i]
+          result <- result + tmp
+        }
+        result <- t(apply(result, 1, function(row) ifelse(sum(row) == 0, 0, row / sum(row))))
+        info$catch_info$catch_paa <- array(result, dim = c(1, nrow(result), ncol(result)))
+      } else if (n_fleets > 1) {
+        fleet_pointer <- aggregate_catch_info$fleet_pointer
+        valid_pointer = unique(fleet_pointer[fleet_pointer > 0])
+        
+        info$catch_info$agg_catch = matrix(NA, length(ind_em), length(unique(valid_pointer)))
+        info$catch_info$catch_paa = array(NA, dim = c(length(unique(valid_pointer)), length(ind_em), basic_info$n_ages))
+        
+        for (f in unique(valid_pointer)) {
+          agg_catch.tmp <- data$agg_catch[ind_em, which(fleet_pointer == f), drop = FALSE]
+          agg_catch.tmp <- matrix(rowSums(agg_catch.tmp), ncol = 1)
+          catch_paa.tmp <- data$catch_paa[which(fleet_pointer == f), ind_em, , drop = FALSE]
+          catch <- data$agg_catch[ind_em, which(fleet_pointer == f), drop = FALSE]
+          ratio <- data$catch_paa[which(fleet_pointer == f), ind_em, ,drop = FALSE]
+          result <- 0
+          for (i in 1:dim(ratio)[1]) {
+            tmp <- ratio[i, , ] * catch[, i]
+            result <- result + tmp
+          }
+          result <- t(apply(result, 1, function(row) ifelse(sum(row) == 0, 0, row / sum(row))))
+          catch_paa.tmp <- array(result, dim = c(1, nrow(result), ncol(result)))
+          
+          info$catch_info$agg_catch[,f] = agg_catch.tmp
+          info$catch_info$catch_paa[f,,] = catch_paa.tmp[1,,]
+        }
       }
-      result <- t(apply(result, 1, function(row) row / sum(row)))
-      info$catch_info$catch_paa <- array(result, dim = c(1, nrow(result), ncol(result)))
-      
-      info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
-      catch <- data$agg_indices[ind_em, , drop = FALSE]
-      ratio <- data$index_paa[, ind_em, ]
-      result <- 0
-      for (i in 1:dim(ratio)[1]) {
-        tmp <- ratio[i, , ] * catch[, i]
-        result <- result + tmp
+        
+      if (n_indices == 1) {
+        info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
+        info$index_info$agg_indices <- matrix(rowSums(info$index_info$agg_indices), ncol = 1)
+        info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
+        catch <- data$agg_indices[ind_em, , drop = FALSE]
+        ratio <- data$index_paa[, ind_em, ]
+        result <- 0
+        for (i in 1:dim(ratio)[1]) {
+          tmp <- ratio[i, , ] * catch[, i]
+          result <- result + tmp
+        }
+        result <- t(apply(result, 1, function(row) ifelse(sum(row) == 0, 0, row / sum(row))))
+        info$index_info$index_paa <- array(result, dim = c(1, nrow(result), ncol(result)))
+      } else if (n_indices > 1) {
+        
+        index_pointer <- aggregate_index_info$index_pointer
+        valid_pointer = unique(index_pointer[index_pointer > 0])
+        
+        info$index_info$agg_indices = matrix(NA, length(ind_em), length(unique(index_pointer)))
+        info$index_info$index_paa = array(NA, dim = c(length(unique(index_pointer)), length(ind_em), basic_info$n_ages))
+        
+          for (f in unique(valid_pointer)) {
+            agg_indices.tmp <- data$agg_indices[ind_em, which(index_pointer == f), drop = FALSE]
+            agg_indices.tmp <- matrix(rowSums(agg_indices.tmp), ncol = 1)
+            index_paa.tmp <- data$index_paa[which(index_pointer == f), ind_em, , drop = FALSE]
+            catch <- data$agg_indices[ind_em, which(index_pointer == f), drop = FALSE]
+            ratio <- data$index_paa[which(index_pointer == f), ind_em, , drop = FALSE]
+            result <- 0
+            for (i in 1:dim(ratio)[1]) {
+              tmp <- ratio[i, , ] * catch[, i]
+              result <- result + tmp
+            }
+            result <- t(apply(result, 1, function(row) ifelse(sum(row) == 0, 0, row / sum(row))))
+            index_paa.tmp <- array(result, dim = c(1, nrow(result), ncol(result)))
+            
+            info$index_info$agg_indices[,f] = agg_indices.tmp
+            info$index_info$index_paa[f,,] = index_paa.tmp[1,,]
+          }
       }
-      result <- t(apply(result, 1, function(row) row / sum(row)))
-      info$index_info$index_paa <- array(result, dim = c(1, nrow(result), ncol(result)))
       
       em_input <- prepare_wham_input(
         basic_info = basic_info,
@@ -215,15 +290,22 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         em_info_new <- em_info
         # Extract relevant fleets and indices
         relevant_fleets <- which(fleet_regions == s)
-        relevant_indices <- which(index_regions == s)
         n_fleets <- length(relevant_fleets)
-        n_indices <- length(relevant_indices)
         em_info_new$par_inputs$catch_cv <- em_info$par_inputs$catch_cv[relevant_fleets]
-        em_info_new$par_inputs$index_cv <- em_info$par_inputs$index_cv[relevant_indices]
         em_info_new$par_inputs$catch_Neff <- em_info$par_inputs$catch_Neff[relevant_fleets]
-        em_info_new$par_inputs$index_Neff <- em_info$par_inputs$index_Neff[relevant_fleets]
-        em_info_new$par_inputs$fracyr_indices <- em_info$par_inputs$fracyr_indices[relevant_fleets]
-        em_info_new$par_inputs$q <- em_info$par_inputs$q[relevant_fleets]
+        em_info_new$par_inputs$use_agg_catch <- em_info$par_inputs$use_agg_catch[relevant_fleets]
+        em_info_new$par_inputs$use_catch_paa <- em_info$par_inputs$use_catch_paa[relevant_fleets]
+        
+        relevant_indices <- which(index_regions == s)
+        n_indices <- length(relevant_indices)
+        em_info_new$par_inputs$index_cv <- em_info$par_inputs$index_cv[relevant_indices]
+        em_info_new$par_inputs$index_Neff <- em_info$par_inputs$index_Neff[relevant_indices]
+        em_info_new$par_inputs$fracyr_indices <- em_info$par_inputs$fracyr_indices[relevant_indices]
+        em_info_new$par_inputs$q <- em_info$par_inputs$q[relevant_indices]
+        em_info_new$par_inputs$use_indices <- em_info$par_inputs$use_indices[relevant_indices]
+        em_info_new$par_inputs$use_index_paa <- em_info$par_inputs$use_index_paa[relevant_indices]
+        em_info_new$par_inputs$units_indices <- em_info$par_inputs$units_indices[relevant_indices]
+        em_info_new$par_inputs$units_index_paa <- em_info$par_inputs$units_index_paa[relevant_indices]
         
         # Generate basic info for current stock
         info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = n_fleets, n_indices = n_indices)
@@ -339,7 +421,9 @@ generate_basic_info_em <- function(em_info, em_years, n_stocks = NULL, n_regions
     # Construct catch_info list
     catch_info = list(
       catch_cv = em_info$par_inputs$catch_cv,
-      catch_Neff = em_info$par_inputs$catch_Neff
+      catch_Neff = em_info$par_inputs$catch_Neff,
+      use_agg_catch = em_info$par_inputs$use_agg_catch, 
+      use_catch_paa = em_info$par_inputs$use_catch_paa
     ),
     
     # Construct index_info list
@@ -347,7 +431,11 @@ generate_basic_info_em <- function(em_info, em_years, n_stocks = NULL, n_regions
       index_cv = em_info$par_inputs$index_cv,
       index_Neff = em_info$par_inputs$index_Neff,
       fracyr_indices = em_info$par_inputs$fracyr_indices,
-      q = em_info$par_inputs$q
+      q = em_info$par_inputs$q,
+      use_indices = em_info$par_inputs$use_indices, 
+      use_index_paa = em_info$par_inputs$use_index_paa, 
+      units_indices = em_info$par_inputs$units_indices, 
+      units_index_paa = em_info$par_inputs$units_index_paa
     ),
     
     fracyr_spawn = em_info$par_inputs$fracyr_spawn,

@@ -26,7 +26,6 @@
 #'     \item \code{3} {Beverton-Holt}
 #'     \item \code{4} {Ricker}
 #'   }
-#' @param q Survey catchability
 #' @param F_info Historical fishing pressure or user-specified F values
 #'   \itemize{
 #'     \item \code{$F.year1} fishing mortality in the first year
@@ -38,25 +37,31 @@
 #'     \item \code{$Fmax} maximum F (or a multiplier when Fhist = "F-H-L")
 #'     \item \code{$Fmin} minimum F (or a multiplier when Fhist = "F-H-L")
 #'     \item \code{$change_time} a ratio that determines the change point
-#'     \item \code{$user_F} (optional) user-specified fishing mortality matrix (n_years x n_fleets)
+#'     \item \code{$user_F} (optional) {matrix (n_years x n_fleets) of user-specified fishing mortality.}
 #'     }
 #' @param catch_info Fleet information
 #'   \itemize{
-#'     \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
-#'     \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+#'     \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
+#'     \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
+#'     \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
+#'     \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
 #'     }
 #' @param index_info Survey information (see details)
 #'   \itemize{
-#'     \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
-#'     \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
-#'     \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
+#'     \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
+#'     \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
+#'     \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
+#'     \item \code{$q} {vector (n_indices) of survey catchabilities.}
+#'     \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
+#'     \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
+#'     \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
+#'     \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
 #'     }
 #' @param fracyr_spawn Fraction of the year when spawning occurs
 #' @param fracyr_seasons (optional) User-defined fraction of the year for each season. Should sum to 1.
 #' @param fleet_pointer (optional) User-defined vector specifying the region allocation for each fleet. Default is every region has 1 fleet.
 #' @param index_pointer (optional) User-defined vector specifying the region allocation for each index. Default is every region has 1 index.
-#' @param user_waa (optional) User-defined weight-at-age vector to override default WAA values.
+#' @param user_waa (optional) User-defined weight-at-age vector (length = n_ages) or matrix (c(n_fleets + n_regions + n_indices + n_stocks) x n_ages) to override default WAA values. 
 #' @param user_maturity (optional) User-defined maturity-at-age vector to override default maturity values.
 #' @param bias.correct.process T/F process error is bias corrected
 #' @param bias.correct.observation T/F observation error is bias corrected
@@ -110,8 +115,8 @@ generate_basic_info <- function(n_stocks = 2,
                                 Fbar_ages = 12,
                                 recruit_model = 2,
                                 F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time = 0.5, user_F = NULL),
-                                catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-                                index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2),
+                                catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa = 1),
+                                index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2, use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
                                 fracyr_spawn = 0.5,
                                 fracyr_seasons = NULL,
                                 fleet_pointer = NULL,
@@ -252,19 +257,24 @@ generate_basic_info <- function(n_stocks = 2,
   for (i in 1:n_stocks) basic_info$maturity[i, , ] <- maturity
   
   # Weight at age
-  if (is.null(user_waa)) {
-    W <- Generate_WAA(life_history, na)
-  } else {
-    if (length(user_waa) != na) {
-      stop("user_waa must have length equal to n_ages.")
-    }
-    W <- user_waa
-  }
-  
   nwaa <- n_fleets + n_regions + n_indices + n_stocks
   basic_info$waa <- array(NA, dim = c(nwaa, ny, na))
-  for (i in 1:nwaa) basic_info$waa[i, , ] <- t(matrix(W, na, ny))
   
+  if (is.null(user_waa)) {
+    W <- Generate_WAA(life_history, na)
+    for (i in 1:nwaa) basic_info$waa[i, , ] <- t(matrix(W, na, ny))
+  } else {
+    if (length(user_waa) == na) {
+      W <- user_waa
+      for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W, simplify = FALSE))
+      } else if (is.matrix(user_waa) && dim(user_waa)[1] == nwaa && dim(user_waa)[2] == na) {
+        W <- user_waa
+        for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W[i,], simplify = FALSE))
+      } else {
+        warnings("Dimension of W should be either a vector of n_ages or a matrix with nrow = c(n_fleets + n_regions + n_indices + n_stocks) and ncol = n_ages!")
+      }
+  }
+
   basic_info$waa_pointer_fleets   <- 1:n_fleets
   basic_info$waa_pointer_totcatch <- (n_fleets + 1):(n_fleets + n_regions)
   basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
@@ -272,7 +282,6 @@ generate_basic_info <- function(n_stocks = 2,
   basic_info$waa_pointer_M        <- basic_info$waa_pointer_ssb
   
   # Catch information
-  # Catch Information Handling
   if (is.null(catch_info)) {
     # If catch_info is not provided, set default values
     catch_cv.input <- rep(0.1, n_fleets)
@@ -295,16 +304,32 @@ generate_basic_info <- function(n_stocks = 2,
     } else {
       stop("catch_Neff must be either a single value or a vector of length n_fleets.")
     }
+
+  }
+
+  if (is.null(catch_info$use_agg_catch)) {
+    use_agg_catch <- matrix(1, ny, n_fleets)
+  } else {
+    if(length(catch_info$use_agg_catch) == n_fleets) stop("Length of use_agg_catch should be n_fleets!")
+    use_agg_catch <- matrix(catch_info$use_agg_catch, ny, n_fleets, byrow = TRUE)
+  }
+  
+  if (is.null(catch_info$use_catch_paa)) {
+    use_catch_paa <- matrix(1, ny, n_fleets)
+  } else {
+    if(length(catch_info$use_catch_paa) == n_fleets) stop("Length of use_catch_paa should be n_fleets!")
+    use_catch_paa <- matrix(catch_info$use_catch_paa, ny, n_fleets, byrow = TRUE)
   }
   
   # Create catch_info list with all necessary attributes
-  catch_info <- list()
+  if(is.null(catch_info)) catch_info <- list()
+  
   catch_info$n_fleets <- n_fleets
+  catch_info$use_agg_catch <- use_agg_catch
+  catch_info$use_catch_paa <- use_catch_paa
   catch_info$agg_catch <- matrix(1000, ny, n_fleets)
-  catch_info$agg_catch_sigma <- matrix(sqrt(log(catch_cv.input^2 + 1)), ny, n_fleets)
-  catch_info$catch_Neff <- matrix(catch_Neff.input, ny, n_fleets)
-  catch_info$use_catch_paa <- matrix(1, ny, n_fleets)
-  catch_info$use_agg_catch <- matrix(1, ny, n_fleets)
+  catch_info$agg_catch_cv <- matrix(sqrt(log(catch_cv.input^2 + 1)), ny, n_fleets, byrow = TRUE)
+  catch_info$catch_Neff <- matrix(catch_Neff.input, ny, n_fleets, byrow = TRUE)
   catch_info$selblock_pointer_fleets <- t(matrix(1:n_fleets, n_fleets, ny))
   catch_info$catch_paa <- array(1 / na, dim = c(n_fleets, ny, na))
   catch_info$catch_cv <- catch_cv.input
@@ -379,17 +404,70 @@ generate_basic_info <- function(n_stocks = 2,
   }
   
   # Create the index_info list with necessary values
-  index_info <- list()
+  if(is.null(index_info)) index_info <- list()
   index_info$n_indices <- n_indices
   index_info$agg_indices <- matrix(1000, ny, n_indices)
-  index_info$agg_index_sigma <- matrix(sqrt(log(index_cv.input^2 + 1)), ny, n_indices)
-  index_info$index_Neff <- matrix(index_Neff.input, ny, n_indices)
   index_info$index_paa <- array(1 / na, dim = c(n_indices, ny, na))
-  index_info$use_indices <- matrix(1, ny, n_indices)
-  index_info$use_index_paa <- matrix(1, ny, n_indices)
-  index_info$units_indices <- rep(2, n_indices)
-  index_info$units_index_paa <- rep(2, n_indices)
+  index_info$agg_index_cv <- matrix(sqrt(log(index_cv.input^2 + 1)), ny, n_indices, byrow = TRUE)
+  index_info$index_Neff <- matrix(index_Neff.input, ny, n_indices, byrow = TRUE)
   index_info$q <- q.input
+  
+  if (is.null(index_info$use_indices)) {
+    use_indices <- matrix(1, ny, n_indices)
+  } else {
+    if(length(index_info$use_indices) == 1) {
+      index_info$use_indices <- rep(index_info$use_indices, n_indices)
+      use_indices <- matrix(index_info$use_indices, ny, n_indices, byrow = TRUE)
+    } else if (length(index_info$use_indices) == n_indices) {
+      use_indices <- matrix(index_info$use_indices, ny, n_indices, byrow = TRUE)
+    } else {
+      stop("Length of use_indices should be n_indices!")
+    }
+  }
+  
+  if (is.null(index_info$use_index_paa)) {
+    use_index_paa <- matrix(1, ny, n_indices)
+  } else {
+    if(length(index_info$use_index_paa) == 1) {
+      index_info$use_index_paa <- rep(index_info$use_index_paa, n_indices)
+      use_index_paa <- matrix(index_info$use_index_paa, ny, n_indices, byrow = TRUE)
+    } else if (length(index_info$use_index_paa) == n_indices) {
+      use_index_paa <- matrix(index_info$use_index_paa, ny, n_indices, byrow = TRUE)
+    } else {
+      stop("Length of use_index_paa should be n_indices!")
+    }
+    use_index_paa[,which(index_info$use_indices==0)] = 0
+  }
+  
+  
+  if (is.null(index_info$units_indices)) {
+    units_indices <- rep(2, n_indices) # biomass (1) or numbers (2)
+  } else {
+    if(length(index_info$units_indices) == 1) {
+      units_indices <- rep(index_info$units_indices, n_indices)
+    } else if (length(index_info$units_indices) == n_indices) {
+      units_indices <- index_info$units_indices
+    } else {
+      stop("Length of units_indices should be n_indices!")
+    }
+  }
+  
+  if (is.null(index_info$units_index_paa)) {
+    units_index_paa <- rep(2, n_indices) # biomass (1) or numbers (2)
+  } else {
+    if(length(index_info$units_index_paa) == 1) {
+      units_index_paa <- rep(index_info$units_index_paa, n_indices)
+    } else if (length(index_info$units_index_paa) == n_indices) {
+      units_index_paa <- index_info$units_index_paa
+    } else {
+      stop("Length of units_index_paa should be n_indices!")
+    }
+  }
+  
+  index_info$use_indices <- use_indices
+  index_info$use_index_paa <- use_index_paa
+  index_info$units_indices <- units_indices
+  index_info$units_index_paa <- units_index_paa
   
   # Handle index_regions
   if (is.null(index_pointer)) {
@@ -585,13 +663,19 @@ generate_basic_info <- function(n_stocks = 2,
     
     catch_cv = catch_info_list$catch_cv,
     catch_Neff = catch_info_list$catch_Neff,
+    use_agg_catch = catch_info_list$use_agg_catch,
+    use_catch_paa = catch_info_list$use_catch_paa,
     
     # Index Information 
     index_cv = index_info_list$index_cv,
     index_Neff = index_info_list$index_Neff,
     fracyr_indices = index_info_list$fracyr_indices,
     q = index_info_list$q,
-    
+    use_indices = index_info_list$use_indices,
+    use_index_paa = index_info_list$use_index_paa,
+    units_indices = index_info_list$units_indices,
+    units_index_paa = index_info_list$units_index_paa,
+
     # Spawning and Seasons Information
     fracyr_spawn = fracyr_spawn,
     fracyr_seasons = fracyr_seasons,

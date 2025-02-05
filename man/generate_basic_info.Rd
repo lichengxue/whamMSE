@@ -18,8 +18,10 @@ generate_basic_info(
   recruit_model = 2,
   F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time =
     0.5, user_F = NULL),
-  catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2),
+  catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa =
+    1),
+  index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2,
+    use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
   fracyr_spawn = 0.5,
   fracyr_seasons = NULL,
   fleet_pointer = NULL,
@@ -86,21 +88,27 @@ generate_basic_info(
   \item \code{$Fmax} maximum F (or a multiplier when Fhist = "F-H-L")
   \item \code{$Fmin} minimum F (or a multiplier when Fhist = "F-H-L")
   \item \code{$change_time} a ratio that determines the change point
-  \item \code{$user_F} (optional) user-specified fishing mortality matrix (n_years x n_fleets)
+  \item \code{$user_F} (optional) {matrix (n_years x n_fleets) of user-specified fishing mortality.}
   }}
 
 \item{catch_info}{Fleet information
 \itemize{
-  \item \code{$catch_cv} cv for the catch (can be a single value or a vector of length n_fleets)
-  \item \code{$catch_Neff} effective sample size for the catch (can be a single value or a vector of length n_fleets)
+  \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
+  \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
+  \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
+  \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
   }}
 
 \item{index_info}{Survey information (see details)
 \itemize{
-  \item \code{$index_cv} cv for the indices (can be a single value or a vector of length n_indices)
-  \item \code{$index_Neff} effective sample size for the indices (can be a single value or a vector of length n_indices)
-  \item \code{$fracyr_indices} fraction of the year when survey is conducted (can be a single value or a vector of length n_indices) 
-  \item \code{$q} survey catchability (can be a single value or a vector of length n_indices)
+  \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
+  \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
+  \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
+  \item \code{$q} {vector (n_indices) of survey catchabilities.}
+  \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
+  \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
+  \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
+  \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
   }}
 
 \item{fracyr_spawn}{Fraction of the year when spawning occurs}
@@ -111,7 +119,7 @@ generate_basic_info(
 
 \item{index_pointer}{(optional) User-defined vector specifying the region allocation for each index. Default is every region has 1 index.}
 
-\item{user_waa}{(optional) User-defined weight-at-age vector to override default WAA values.}
+\item{user_waa}{(optional) User-defined weight-at-age vector (length = n_ages) or matrix (c(n_fleets + n_regions + n_indices + n_stocks) x n_ages) to override default WAA values.}
 
 \item{user_maturity}{(optional) User-defined maturity-at-age vector to override default maturity values.}
 
@@ -154,8 +162,6 @@ generate_basic_info(
 \item{trend_mu_rate}{Rate for movement trend (required if apply_mu_trend = 1)}
 
 \item{age_mu_devs}{Movement deviations used when onto_move = 5 (user specified age-specific movement rate), array of dim = c(n_stocks, n_regions, n_regions-1, n_ages)}
-
-\item{q}{Survey catchability}
 }
 \value{
 A list of information that will be used to prepare wham input
