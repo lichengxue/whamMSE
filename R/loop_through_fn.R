@@ -1,22 +1,21 @@
-#' Function to perform management strategy evaluation
-#'
-#' A wrapper function to step through the feedback period, update the operating model,
-#' refit the estimation model, and generate catch advice.
-#'
-#' @param om Operating model including pseudo data
-#' @param em_info A list of information used to generate the estimation model (default = NULL)
-#' @param random A vector of processes that are treated as random effects in the operating model (default = "log_NAA")
-#' @param M_em Natural mortality configuration in the assessment model
-#' @param sel_em Selectivity configuration in the assessment model
-#' @param NAA_re_em Numbers-at-age (NAA) configuration in the assessment model
-#' @param move_em Movement configuration in the assessment model
-#' @param age_comp_em Likelihood distribution of age composition data in the assessment model
+#' Perform Management Strategy Evaluation (MSE)
+#' 
+#' A wrapper function to iterate through the feedback period in a management strategy evaluation (MSE), 
+#' updating the operating model (OM), refitting the estimation model (EM), and generating catch advice.
+#' 
+#' @param om A fitted operating model containing pseudo data.
+#' @param em_info A list containing information used to generate the estimation model (default = NULL).
+#' @param random Character vector of processes treated as random effects in the operating model (default = "log_NAA").
+#' @param M_em Configuration of natural mortality in the estimation model.
+#' @param sel_em Configuration of selectivity in the estimation model.
+#' @param NAA_re_em Configuration of numbers-at-age (NAA) in the estimation model.
+#' @param move_em Configuration of movement in the estimation model.
+#' @param age_comp_em Character. The likelihood distribution of age composition data in the estimation model. Options include:
 #'   \itemize{
-#'     \item \code{"multinomial"} Default
+#'     \item \code{"multinomial"} (default)
 #'     \item \code{"dir-mult"}
 #'     \item \code{"dirichlet-miss0"}
 #'     \item \code{"dirichlet-pool0"}
-#'     \item \code{"dir-mult"}
 #'     \item \code{"logistic-normal-miss0"}
 #'     \item \code{"logistic-normal-ar1-miss0"}
 #'     \item \code{"logistic-normal-pool0"}
@@ -25,87 +24,123 @@
 #'     \item \code{"mvtweedie"}
 #'     \item \code{"dir-mult-linear"}
 #'   }
-#' @param em.opt List of options for the assessment model
-#'   \itemize{
-#'     \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
-#'     \item \code{$separate.em.type} only if separate.em = TRUE \cr
-#'     {=1} panmictic (spatially-aggregated) \cr
-#'     {=2} fleets-as-areas \cr
-#'     {=3} n single assessment models (n = n_regions) \cr
-#'     \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
-#'     \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+#' @param em.opt List of options for the assessment model, including:
+#'   \describe{
+#'     \item{\code{separate.em}}{Logical. If TRUE, separate estimation models are used for different stocks (default = FALSE).}
+#'     \item{\code{separate.em.type}}{Integer. Used only if \code{separate.em = TRUE}:}
+#'       \itemize{
+#'         \item 1 = Panmictic (spatially-aggregated model).
+#'         \item 2 = Fleets-as-areas model.
+#'         \item 3 = Separate assessment models for each region (n = number of regions).
+#'       }
+#'     \item{\code{do.move}}{Logical. If TRUE, movement is included (default = FALSE).}
+#'     \item{\code{est.move}}{Logical. If TRUE, movement rates are estimated (default = FALSE).}
 #'   }
-#' @param aggregate_catch_info (optional) User specified list of information for aggregate catch (default: use first fleet). Only when panmictic model with aggregate catch is used.
+#' @param aggregate_catch_info List. Contains details for aggregating fleet-specific catch data:
 #'   \itemize{
-#'     \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
-#'     \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
-#'     \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
-#'     \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
-#'     \item \code{$fleet_pointer} {vector (n_fleets) of which fleets should be combined. Use 0 to not include that fleet.}
-#'     }
-#' @param aggregate_index_info (optional) User specified list of information for aggregate index (default: use first index). Only when panmictic model with aggregate index is used.
-#'   \itemize{
-#'     \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
-#'     \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
-#'     \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
-#'     \item \code{$q} {vector (n_indices) of survey catchabilities.}
-#'     \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
-#'     \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
-#'     \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
-#'     \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
-#'     \item \code{$index_pointer} {vector (n_indices) of which indices should be combined. Use 0 to not include that index.}
-#'     }
-#' @param assess_years Year in which the assessment is conducted
-#' @param assess_interval Assessment interval used in the MSE feedback loop
-#' @param base_years Years used in the burn-in period
-#' @param year.use Number of years used in the assessment model
-#' @param hcr.type Type of harvest control rule
-#'   \itemize{
-#'     \item \code{"1"} Annual projected catch based on 75% of F40% (default)
-#'     \item \code{"2"} Constant catch based on 75% of F40%
-#'     \item \code{"3"} "Hockey stick" catch based on stock status
+#'     \item `fleet_pointer` - Integer vector of length `n_fleets`, specifying how fleets should be aggregated.
+#'     \item `catch_cv`, `catch_Neff` - Numeric vectors of length `n_fleets`, specifying catch CV and sample size.
+#'     \item `use_agg_catch`, `use_catch_paa` - Boolean vectors of length `n_fleets`, indicating whether to aggregate.
 #'   }
-#' @param hcr.opts only used if hcr.type = 3
+#' @param aggregate_index_info List. Contains details for aggregating index-specific data:
 #'   \itemize{
-#'     \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
-#'     \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
-#'     \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5)  
-#'     \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
+#'     \item `index_pointer` - Integer vector of length `n_indices`, specifying how indices should be aggregated.
+#'     \item `index_cv`, `index_Neff`, `q` - Numeric vectors of length `n_indices`, specifying index CV, effective sample size, and catchability coefficient.
+#'     \item `use_indices`, `use_index_paa` - Boolean vectors of length `n_indices`, indicating whether to aggregate.
 #'   }
-#' @param weight_type Type of weights to use for allocating catch
+#' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
+#' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2
+#' @param assess_years Vector of years when assessments are conducted.
+#' @param assess_interval Integer. The interval between stock assessments in the MSE feedback loop.
+#' @param base_years Vector of years used in the burn-in period.
+#' @param year.use Integer. Number of years included in the estimation model (default = 30).
+#' @param hcr List containing harvest control rule (HCR) settings:
+#'   \describe{
+#'     \item{\code{hcr.type}}{Integer. The type of harvest control rule:}
+#'       \itemize{
+#'         \item \code{1} Annual projected catch based on 75\% of F40\% (default).
+#'         \item \code{2} Constant catch based on 75\% of F40\%.
+#'         \item \code{3} "Hockey stick" catch based on stock status.
+#'       }
+#'     \item{\code{hcr.opts}}{(Only for \code{hcr.type = 3}) A list containing additional HCR options:}
+#'       \describe{
+#'         \item{\code{max_percent}}{Maximum percentage of F\_XSPR used for catch projections (default = 75).}
+#'         \item{\code{min_percent}}{Minimum percentage of F\_XSPR used for catch projections (default = 0.01).}
+#'         \item{\code{BThresh_up}}{Upper bound of overfished biomass threshold (default = 0.5).}
+#'         \item{\code{BThresh_low}}{Lower bound of overfished biomass threshold (default = 0.1).}
+#'       }
+#'   }
+#' @param catch_alloc List. Contains specifications for catch allocation:
 #'   \itemize{
-#'     \item \code{"1"} Uniform: Assign equal weights to all regions
-#'     \item \code{"2"} User defined: User provides weights (provide weights as \code{user_weights})
-#'     \item \code{"3"} Catch history: Use catch data averaged over specified number of years (provide years as \code{weight_years})
-#'     \item \code{"4"} Survey average: Use survey data averaged over specified number of years (provide years as \code{weight_years})
-#'     \item \code{"5"} Recruitment proportional: Use average recruitment estimates to allocate weights proportionally
+#'     \item `$weight_type` - Integer (1–4) indicating the type of weighting used.
+#'       \itemize{
+#'         \item `1` - Equal weighting across fleets.
+#'         \item `2` - Weighting based on past catch data.
+#'         \item `3` - Weighting based on past survey index data.
+#'         \item `4` - User-specified weights.
+#'       }
+#'     \item `$method` - String. Specifies the catch allocation method:
+#'       \itemize{
+#'         \item `"region"` - Uses regional catch totals to compute weights.
+#'         \item `"gear"` - Uses gear-type catch totals to compute weights.
+#'         \item `"combined"` - First allocates to gear-specific total catch, then splits into regions.
+#'       }
+#'     \item `$user_weights` - Numeric vector (`n_regions`). Optional. User-defined weights summing to 1.
+#'     \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
 #'   }
-#' @param weight_years Number of years to average survey or catch data for weights (only if \code{weight_type = 3 or 4})
-#' @param user_weights User-defined weights for allocating catch (only if \code{weight_type = 2})
-#' @param do.retro T/F Do retrospective analysis? Default = TRUE
-#' @param do.osa T/F Calculate one-step-ahead (OSA) residuals? Default = TRUE
-#' @param seed Seed used for generating data
-#' @param save.sdrep T/F Save every assessment model (memory intensive)
-#'   \itemize{
-#'     \item \code{"TRUE"} Save every assessment model  
-#'     \item \code{"FALSE"} Save the last assessment model (default)
+#' @param do.retro Logical. If TRUE, performs retrospective analysis (default = TRUE).
+#' @param do.osa Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).
+#' @param seed Integer. The random seed used for stochastic processes.
+#' @param save.sdrep Logical. If TRUE, saves the results of every assessment model (memory-intensive).
+#' @param save.last.em Logical. If TRUE, saves only the last estimation model (default = FALSE).
+#' 
+#' @return A list containing:
+#'   \describe{
+#'     \item{\code{om}}{Updated operating model.}
+#'     \item{\code{em_list}}{List of estimation model results across assessment years.}
+#'     \item{\code{par.est}}{Estimated parameter values.}
+#'     \item{\code{par.se}}{Standard errors of parameter estimates.}
+#'     \item{\code{adrep.est}}{Estimated values from ADMB report.}
+#'     \item{\code{adrep.se}}{Standard errors from ADMB report.}
+#'     \item{\code{opt_list}}{Optimization results from WHAM.}
+#'     \item{\code{converge_list}}{Convergence diagnostics.}
+#'     \item{\code{catch_advice}}{Projected catch advice over assessment years.}
+#'     \item{\code{em_full}}{List of full estimation model outputs.}
+#'     \item{\code{runtime}}{Elapsed time for function execution.}
 #'   }
-#' @param save.last.em T/F Save the last assessment model (Default = FALSE) (use if separate.em = FALSE)
-#' @return a list of model output
+#' 
 #' @export
+#' 
 #' @seealso \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}
 
-loop_through_fn <- function(om, em_info = NULL, random = "log_NAA", 
-                            M_em, sel_em, NAA_re_em, move_em, 
-                            age_comp_em = "multinomial", em.opt = NULL, 
+
+loop_through_fn <- function(om, 
+                            em_info = NULL, 
+                            random = NULL, 
+                            M_em = NULL, 
+                            sel_em = NULL, 
+                            NAA_re_em = NULL, 
+                            move_em = NULL, 
+                            age_comp_em = NULL, 
+                            em.opt = list(separate.em = TRUE, separate.em.type = 1,
+                                          do.move = FALSE, est.move = FALSE), 
+                            global_waa = TRUE,
                             aggregate_catch_info = NULL,
                             aggregate_index_info = NULL,
-                            assess_years = NULL, assess_interval = NULL, 
-                            base_years = NULL, year.use = 30, hcr.type = 1, 
-                            hcr.opts = NULL, weight_type = 1, weight_years = 1, user_weights = NULL,
-                            do.retro = FALSE, do.osa = FALSE, seed = 123, 
+                            filter_indices = NULL,
+                            assess_years = NULL, 
+                            assess_interval = NULL, 
+                            base_years = NULL, 
+                            year.use = 20, 
+                            hcr = list(hcr.type = 1, hcr.opts = NULL),
+                            catch_alloc = list(weight_type = 1, method = "region", user_weights = NULL, weight_years = 1),
+                            do.retro = FALSE, 
+                            do.osa = FALSE, 
+                            seed = 123, 
                             save.sdrep = FALSE, 
                             save.last.em = FALSE) {
+  
+  start.time <- Sys.time()
   
   # Helper function to check convergence
   check_conv <- function(em) {
@@ -129,63 +164,57 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
   catch_advice <- list()
   em_full <- list()
   
+  if(is.null(age_comp_em)) age_comp_em = "multinomial"
+  if(is.null(em_info)) stop("em_info must be specified!")
+  
   if (em.opt$separate.em) {
+    
     for (y in assess_years) {
-      cat(paste0("\n-----\nStock Assessment in Year ", y, "\n"))
+      
+      cat(paste0("\nNow conducting stock assessment for year ", y, "\n"))
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, 
-                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt, 
-                                em_years = em.years, year.use = year.use, age_comp = age_comp_em,
+      # Note em_info$par_inputs$user_waa for fleet 1 is wrong!
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
+                                em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
-                                aggregate_index_info = aggregate_index_info)
+                                aggregate_index_info = aggregate_index_info,
+                                filter_indices = filter_indices,
+                                global_waa) # turn off for panmictic model for now
+      
+      cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
+      
       n_stocks <- om$input$data$n_stocks
       
       if (em.opt$separate.em.type == 1) {
+        
+        cat("\nNow fitting assessment model...\n")
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+     
+        cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
+        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
         
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
+        cat("\nNow using the EM to project catch...\n")
+        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+
+        cat("\nNow allocating catch...\n")
+        advice <- calculate_catch_advice(om, advice, aggregate_catch_info, aggregate_index_info, final_year = y,
+                                         catch_alloc)
         
-        # Determine weights
-        if (weight_type == 1) {
-          weights <- rep(1 / om$input$data$n_fleets, om$input$data$n_fleets)
-        } else if (weight_type == 2) {
-          if (is.null(user_weights)) stop("User-defined weights must be provided when weight_type = 2")
-          weights <- user_weights
-        } else if (weight_type == 3) {
-          avg_years <- (y - weight_years + 1):y
-          weights <- colMeans(om$input$data$agg_catch[which(om$years %in% avg_years), , drop = FALSE])
-          weights <- weights / sum(weights)
-        } else if (weight_type == 4) {
-          avg_years <- (y - weight_years + 1):y
-          weights <- colMeans(om$input$data$agg_indices[which(om$years %in% avg_years), , drop = FALSE])
-          weights <- weights / sum(weights)
-        } else if (weight_type == 5) {
-          avg_years <- (y - weight_years + 1):y
-          avg_rec <- sapply(1:n_stocks, function(a) mean(om$rep$NAA[a, a, which(om$years %in% avg_years), 1]))
-          weights <- avg_rec / sum(avg_rec)
-        } else {
-          stop("Invalid weight_type specified")
-        }
-        
-        # Apply weights to calculate advice
-        catch_matrix <- matrix(advice, ncol = 1)
-        apply_weights <- function(advice) {
-          advice * weights
-        }
-        advice <- t(apply(catch_matrix, 1, apply_weights))
-        
-        colnames(advice) <- paste0("Region_", 1:om$input$data$n_fleets)
+        colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
         
-        cat("\n---------------------------\n")
+        cat("\nNow generating catch advice...\n")
         print(advice)
-        cat("\n---------------------------\n")
         
         interval.info <- list(catch = advice, years = y + 1:assess_interval)
-        om <- update_om_fn(om, interval.info, seed = seed, random = random)
+        
+        cat("\nNow calculating F at age in the OM given the catch advice...\n")
+        
+        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = FALSE)
         
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
@@ -205,20 +234,29 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
           if (!save.last.em) em_full[[1]] <- list()
         }
       } else if (em.opt$separate.em.type == 2) {
+        
+        cat("\nNow fitting assessment model...\n")
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+
+        cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
+        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
         
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
-        
-        colnames(advice) <- paste0("Region_", 1:om$input$data$n_fleets)
+        cat("\nNow using the EM to project catch...\n")
+        # advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
+        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+
+        colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
         
-        cat("\n---------------------------\n")
+        cat("\nNow generating catch advice...\n")
         print(advice)
-        cat("\n---------------------------\n")
         
         interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        
+        cat("\nNow calculating F at age in the OM given the catch advice...\n")
+        
         om <- update_om_fn(om, interval.info, seed = seed, random = random)
         
         em_list[[i]] <- em$rep
@@ -239,6 +277,7 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
           if (!save.last.em) em_full[[1]] <- list()
         }
       } else if (em.opt$separate.em.type == 3) {
+        
         em_list[[i]] <- list()
         par.est[[i]] <- list()
         par.se[[i]] <- list()
@@ -253,24 +292,30 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
         conv <- rep(0, n_stocks)
         pdHess <- rep(0, n_stocks)
         
+        cat("\nNow generating catch advice...\n")
         for (s in 1:n_stocks) {
+          
+          cat("\nNow fitting assessment model...\n")
           em[[s]] <- fit_wham(em_input[[s]], do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
-          convergence <- check_conv(em[[s]])
-          conv[s] <- convergence$conv
-          pdHess[s] <- convergence$pdHess
-          tmp <- advice_fn(em[[s]], pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
+          
+          cat("\nNow checking convergence of assessment model...\n")
+          conv <- check_conv(em[[s]])$conv
+          pdHess <- check_conv(em[[s]])$pdHess
+          if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
+          
+          tmp <- advice_fn(em[[s]], pro.yr = assess_interval, hcr)
           advice <- cbind(advice, tmp)
         }
         
-        colnames(advice) <- paste0("Region_", 1:om$input$data$n_fleets)
+        colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", assess_years[i] + 1:assess_interval)
         
-        cat("\n---------------------------\n")
         print(advice)
-        cat("\n---------------------------\n")
         
         # set the catch for the next assess_interval years
         interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
+        
+        cat("\nNow calculating F at age in the OM given the catch advice...\n")
         om <- update_om_fn(om, interval.info, seed = seed, random = random)
         
         for (s in 1:n_stocks) {
@@ -296,13 +341,20 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
     }
   } else {
     for (y in assess_years) {
-      cat(paste0("\n-----\nStock Assessment in Year ", y, "\n"))
+     
+      cat(paste0("\nNow conducting stock assessment for year ", y, "\n"))
+      
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, 
                                 NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt, 
-                                em_years = em.years, year.use = year.use, age_comp = age_comp_em)
+                                em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
+                                aggregate_catch_info = aggregate_catch_info,
+                                aggregate_index_info = aggregate_index_info,
+                                global_waa)
       
+      
+      cat("\nNow fitting assessment model...\n")
       if (em.opt$do.move) {
         if (em.opt$est.move) {
           em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
@@ -314,19 +366,22 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
         em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
       }
       
+      cat("\nNow checking convergence of assessment model...\n")
       conv <- check_conv(em)$conv
       pdHess <- check_conv(em)$pdHess
+      if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
       
-      advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
+      cat("\nNow generating catch advice...\n")
+      advice <- advice_fn(em, pro.yr = assess_interval, hcr)
       
-      colnames(advice) <- paste0("Region_", 1:om$input$data$n_fleets)
+      colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
       rownames(advice) <- paste0("Year_", y + 1:assess_interval)
       
-      cat("\n---------------------------\n")
       print(advice)
-      cat("\n---------------------------\n")
       
       interval.info <- list(catch = advice, years = y + 1:assess_interval)
+      
+      cat("\nNow calculating F at age in the OM given the catch advice...\n")
       om <- update_om_fn(om, interval.info, seed = seed, random = random)
       
       em_list[[i]] <- em$rep
@@ -349,7 +404,12 @@ loop_through_fn <- function(om, em_info = NULL, random = "log_NAA",
     }
   }
   
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  cat("\nTotal Runtime = ", time.taken,"\n")
+  
   return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 
               adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
-              converge_list = converge_list, catch_advice = catch_advice, em_full = em_full))
+              converge_list = converge_list, catch_advice = catch_advice, em_full = em_full,
+              runtime = time.taken, seed.save = seed, em_input = em_input))
 }

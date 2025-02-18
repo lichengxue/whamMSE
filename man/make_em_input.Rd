@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_em_input.R
 \name{make_em_input}
 \alias{make_em_input}
-\title{Generate input data for the assessment model}
+\title{Generate Input Data for the Estimation Model}
 \usage{
 make_em_input(
   om,
@@ -14,89 +14,94 @@ make_em_input(
   em.opt,
   em_years,
   year.use,
-  age_comp_em = "multinomial",
+  age_comp_em,
   aggregate_catch_info = NULL,
-  aggregate_index_info = NULL
+  aggregate_index_info = NULL,
+  filter_indices = NULL,
+  global_waa = TRUE
 )
 }
 \arguments{
-\item{om}{Operating model}
+\item{om}{List. The operating model containing observed data and simulation outputs.}
 
-\item{em_info}{A list of information used to generate the operating model}
+\item{em_info}{List. A set of estimation model parameters used to define the model structure.}
 
-\item{M_em}{Natural mortality random effects}
+\item{M_em}{List. Natural mortality random effects.}
 
-\item{sel_em}{Selectivity random effects}
+\item{sel_em}{List. Selectivity random effects.}
 
-\item{NAA_re_em}{Numbers-at-age random effects}
+\item{NAA_re_em}{List. Numbers-at-age random effects.}
 
-\item{move_em}{Movement random effects}
+\item{move_em}{List. Movement random effects.}
 
-\item{em.opt}{Movement random effects options
+\item{em.opt}{List. Options for movement in the estimation model.
 \itemize{
-  \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
-  \item \code{$separate.em.type} only if separate.em = TRUE \cr
-  {=1} panmictic (spatially-aggregated) \cr
-  {=2} fleets-as-areas \cr
-  {=3} n single assessment models (n = n_regions) \cr
-  \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
-  \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+  \item `$separate.em` Logical. `TRUE` indicates no global SPR, `FALSE` allows global SPR.
+  \item `$separate.em.type` Integer (1–3). Specifies assessment model type if `separate.em = TRUE`:
+    \itemize{
+      \item `1` - Panmictic (spatially aggregated).
+      \item `2` - Fleets-as-areas.
+      \item `3` - Separate assessment models for each region (`n_regions` models).
+    }
+  \item `$do.move` Logical. Whether movement is included (if `separate.em = FALSE`).
+  \item `$est.move` Logical. Whether movement rates are estimated (if `separate.em = FALSE`).
 }}
 
-\item{em_years}{Years used in the assessment model}
+\item{em_years}{Vector. Years used in the assessment model.}
 
-\item{year.use}{Number of years used in the assessment model}
+\item{year.use}{Integer. Number of years used in the assessment model.}
 
-\item{age_comp_em}{Likelihood distribution of age composition data in the assessment model
+\item{age_comp_em}{Character. Likelihood distribution for age composition data.
 \itemize{
-  \item \code{"multinomial"} Default
-  \item \code{"dir-mult"}
-  \item \code{"dirichlet-miss0"}
-  \item \code{"dirichlet-pool0"}
-  \item \code{"logistic-normal-miss0"}
-  \item \code{"logistic-normal-ar1-miss0"}
-  \item \code{"logistic-normal-pool0"}
-  \item \code{"logistic-normal-01-infl"}
-  \item \code{"logistic-normal-01-infl-2par"}
-  \item \code{"mvtweedie"}
-  \item \code{"dir-mult-linear"}
+  \item `"multinomial"` (default)
+  \item `"dir-mult"`
+  \item `"dirichlet-miss0"`
+  \item `"dirichlet-pool0"`
+  \item `"logistic-normal-miss0"`
+  \item `"logistic-normal-ar1-miss0"`
+  \item `"logistic-normal-pool0"`
+  \item `"logistic-normal-01-infl"`
+  \item `"logistic-normal-01-infl-2par"`
+  \item `"mvtweedie"`
+  \item `"dir-mult-linear"`
 }}
 
-\item{aggregate_catch_info}{(optional) User specified list of information for aggregate catch (default: use first fleet). Only when panmictic model with aggregate catch is used.
+\item{aggregate_catch_info}{List (optional). User-specified catch aggregation settings 
+for panmictic models using aggregate catch.
 \itemize{
-  \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
-  \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
-  \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
-  \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
-  \item \code{$fleet_pointer} {vector (n_fleets) of which fleets should be combined.}
-  }}
+  \item `$n_fleets` Integer. Number of fleets.
+  \item `$catch_cv` Numeric vector (`n_fleets`). Catch CVs for each fleet.
+  \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for catch.
+  \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 flag for using aggregate catch.
+  \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 flag for using age composition.
+  \item `$fleet_pointer` Integer vector (`n_fleets`). Defines fleet grouping (0 = exclude).
+  \item `$use_catch_weighted_waa` Logical. Whether to weight-at-age using catch.
+}}
 
-\item{aggregate_index_info}{(optional) User specified list of information for aggregate index (default: use first index). Only when panmictic model with aggregate index is used.
+\item{aggregate_index_info}{List (optional). User-specified index aggregation settings for panmictic models using aggregate indices.
 \itemize{
-  \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
-  \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
-  \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
-  \item \code{$q} {vector (n_indices) of survey catchabilities.}
-  \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
-  \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
-  \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
-  \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
-  \item \code{$index_pointer} {vector (n_indices) of which indices should be combined.}
-  }}
+  \item `$n_indices` Integer. Number of indices.
+  \item `$index_cv` Numeric vector (`n_indices`). CVs for survey indices.
+  \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for indices.
+  \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey.
+  \item `$q` Numeric vector (`n_indices`). Survey catchability coefficients.
+  \item `$use_indices` Integer vector (`n_indices`). 0/1 flag for using survey indices.
+  \item `$use_index_paa` Integer vector (`n_indices`). 0/1 flag for using age composition.
+  \item `$units_indices` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+  \item `$units_index_paa` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+  \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
+  \item `$use_index_weighted_waa` Logical. Whether to weight-at-age using indices.
+   }}
+
+\item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model}
 }
 \value{
-a wham input
+List. A `wham` input object prepared for stock assessment.
 }
 \description{
-A function to generate the input for the estimation model for management strategy evaluation.
-}
-\examples{
-\dontrun{
-data <- generate_basic_info()
-input <- prepare_wham_input(basic_info = data)
-mod <- fit_wham(input, do.fit = FALSE)
-data <- make_em_input(mod, em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move = FALSE), year.use = 10, em_years = 1973:2022)
-}
+This function generates input data for the estimation model used in 
+management strategy evaluation. It constructs the necessary parameters 
+and structures for the assessment model.
 }
 \seealso{
 \code{\link{loop_through_fn}}

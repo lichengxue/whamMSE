@@ -1,4 +1,4 @@
-#' Prepare wham input without ASAP file
+#' Prepare Input Without ASAP File
 #'
 #' Function to prepare wham input without ASAP file
 #' 

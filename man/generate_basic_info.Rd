@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_basic_info.R
 \name{generate_basic_info}
 \alias{generate_basic_info}
-\title{Generate basic information for multi-wham input}
+\title{Generate Basic Information for Multi-WHAM Input}
 \usage{
 generate_basic_info(
   n_stocks = 2,
@@ -24,8 +24,8 @@ generate_basic_info(
     use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
   fracyr_spawn = 0.5,
   fracyr_seasons = NULL,
-  fleet_pointer = NULL,
-  index_pointer = NULL,
+  fleet_regions = NULL,
+  index_regions = NULL,
   user_waa = NULL,
   user_maturity = NULL,
   bias.correct.process = FALSE,
@@ -44,136 +44,156 @@ generate_basic_info(
 )
 }
 \arguments{
-\item{n_stocks}{Number of stocks}
+\item{n_stocks}{Integer. Number of stocks.}
 
-\item{n_regions}{Number of regions}
+\item{n_regions}{Integer. Number of regions.}
 
-\item{n_indices}{Number of indices}
+\item{n_indices}{Integer. Number of indices.}
 
-\item{n_fleets}{Number of fleets}
+\item{n_fleets}{Integer. Number of fleets.}
 
-\item{n_seasons}{Number of seasons}
+\item{n_seasons}{Integer. Number of seasons.}
 
-\item{base.years}{Model years (or "burn-in" period in MSE)}
+\item{base.years}{Integer vector. Model years (or "burn-in" period in MSE).}
 
-\item{n_feedback_years}{(optional) Number of years in the MSE feedback loop}
+\item{n_feedback_years}{Integer. Optional. Number of years in the MSE feedback loop.}
 
-\item{life_history}{Fish life history (parameters are obtained from \href{https://doi.org/10.1139/cjfas-2016-0381}{Wiedenmann et al. 2017}):
+\item{life_history}{Character. Fish life history, parameters obtained from 
+\href{https://doi.org/10.1139/cjfas-2016-0381}{Wiedenmann et al. 2017}. Options:
 \itemize{
-  \item \code{"median"} median-lived species (default)
-  \item \code{"short"} short-lived species
-  \item \code{"long"} long-lived species
-  }}
-
-\item{n_ages}{Number of ages}
-
-\item{Fbar_ages}{Ages to use to average total F at age defining fully selected F for reference points.}
-
-\item{recruit_model}{Option to specify stock-recruit model
-\itemize{
-  \item \code{1} {SCAA (without NAA_re option specified) or Random walk (if NAA_re$sigma specified), i.e. predicted recruitment in year i = recruitment in year i-1}
-  \item \code{2} {(default) Random about mean, i.e. steepness = 1}
-  \item \code{3} {Beverton-Holt}
-  \item \code{4} {Ricker}
+  \item `"median"` - Median-lived species (default).
+  \item `"short"` - Short-lived species.
+  \item `"long"` - Long-lived species.
 }}
 
-\item{F_info}{Historical fishing pressure or user-specified F values
+\item{n_ages}{Integer. Number of ages.}
+
+\item{Fbar_ages}{Integer. Ages used to average total F at age for reference points.}
+
+\item{recruit_model}{Integer. Option to specify stock-recruitment model:
 \itemize{
-  \item \code{$F.year1} fishing mortality in the first year
-  \item \code{$Fhist}: \cr
-  {"constant"} = constant across years \cr
-  {"updown"}   = increase from F.year1 to Fmax until a change point and then decrease to Fmin \cr
-  {"downup"}   = decrease from F.year1 to Fmin until a change point and then increase to Fmax \cr
-  {"F-H-L"} = constant Fmax(a multiplier)xF.year1 until the change point and then constant Fmin(a multiplier)xF.year1
-  \item \code{$Fmax} maximum F (or a multiplier when Fhist = "F-H-L")
-  \item \code{$Fmin} minimum F (or a multiplier when Fhist = "F-H-L")
-  \item \code{$change_time} a ratio that determines the change point
-  \item \code{$user_F} (optional) {matrix (n_years x n_fleets) of user-specified fishing mortality.}
-  }}
-
-\item{catch_info}{Fleet information
-\itemize{
-  \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
-  \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
-  \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
-  \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
-  }}
-
-\item{index_info}{Survey information (see details)
-\itemize{
-  \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
-  \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
-  \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
-  \item \code{$q} {vector (n_indices) of survey catchabilities.}
-  \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
-  \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
-  \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
-  \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
-  }}
-
-\item{fracyr_spawn}{Fraction of the year when spawning occurs}
-
-\item{fracyr_seasons}{(optional) User-defined fraction of the year for each season. Should sum to 1.}
-
-\item{fleet_pointer}{(optional) User-defined vector specifying the region allocation for each fleet. Default is every region has 1 fleet.}
-
-\item{index_pointer}{(optional) User-defined vector specifying the region allocation for each index. Default is every region has 1 index.}
-
-\item{user_waa}{(optional) User-defined weight-at-age vector (length = n_ages) or matrix (c(n_fleets + n_regions + n_indices + n_stocks) x n_ages) to override default WAA values.}
-
-\item{user_maturity}{(optional) User-defined maturity-at-age vector to override default maturity values.}
-
-\item{bias.correct.process}{T/F process error is bias corrected}
-
-\item{bias.correct.observation}{T/F observation error is bias corrected}
-
-\item{bias.correct.BRPs}{T/F biological reference point is bias corrected}
-
-\item{mig_type}{0 = migration after survival, 1 = movement and mortality simultaneous}
-
-\item{XSPR_R_opt}{\itemize{
-\item \code{1} use annual R estimates for annual SSB_XSPR
-\item \code{2} use average R estimates for annual SSB_XSPR (default)
-\item \code{3} use annual expected R for annual SSB_XSPR
-\item \code{4} use average expected R estimates for annual SSB_XSPR
-\item \code{5} use bias-corrected expected recruitment
+  \item `1` - SCAA (without NAA_re option) or random walk (if NAA_re$sigma is specified).
+  \item `2` - (Default) Random about mean, i.e., steepness = 1.
+  \item `3` - Beverton-Holt.
+  \item `4` - Ricker.
 }}
 
-\item{move_dyn}{Movement dynamics. 0 = natal homing, 1 = meta-population}
-
-\item{onto_move}{Array of age-specific movement type with dims = n_stocks x n_regions (from region x) x n_regions-1 (to region y)
+\item{F_info}{List. Historical fishing pressure or user-specified F values:
 \itemize{
-  \item \code{0} same mean movement rate across ages (default)
-  \item \code{1} increasing logistic (2 parameters)
-  \item \code{2} decreasing logistic (2 parameters)
-  \item \code{3} double-logistic (4 parameters)
-  \item \code{4} double-normal (4 parameters)
-  \item \code{5} user specified age-specific movement rate
-  }}
+  \item `$F.year1` - Fishing mortality in the first year.
+  \item `$Fhist` - Historical fishing mortality pattern. Options:
+    \itemize{
+      \item `"constant"` - Constant across years.
+      \item `"updown"` - Increase to `Fmax` until change point, then decrease to `Fmin`.
+      \item `"downup"` - Decrease to `Fmin` until change point, then increase to `Fmax`.
+      \item `"F-H-L"` - Constant `Fmax` until change point, then constant `Fmin`.
+    }
+  \item `$Fmax` - Maximum F (or multiplier when `Fhist = "F-H-L"`).
+  \item `$Fmin` - Minimum F (or multiplier when `Fhist = "F-H-L"`).
+  \item `$change_time` - Ratio that determines the change point.
+  \item `$user_F` - Optional matrix (`n_years x n_fleets`) of user-specified F values.
+}}
 
-\item{onto_move_pars}{Parameters for age-specific movement, array of dim = c(n_stocks, n_regions, 4)}
+\item{catch_info}{List. Fleet information:
+\itemize{
+  \item `$catch_cv` - Vector (`n_fleets`) of CVs for fleet catch.
+  \item `$catch_Neff` - Vector (`n_fleets`) of effective sample sizes for fleet catch.
+  \item `$use_agg_catch` - Vector (`n_fleets`) of 0/1 flags for aggregate catch use.
+  \item `$use_catch_paa` - Vector (`n_fleets`) of 0/1 flags for age composition use.
+}}
 
-\item{apply_re_trend}{Indicator to apply recruitment trend (default is 0)}
+\item{index_info}{List. Survey information:
+\itemize{
+  \item `$index_cv` - Vector (`n_indices`) of CVs for survey indices.
+  \item `$index_Neff` - Vector (`n_indices`) of effective sample sizes for survey indices.
+  \item `$fracyr_indices` - Vector (`n_indices`) of survey timings within the year.
+  \item `$q` - Vector (`n_indices`) of survey catchabilities.
+  \item `$use_indices` - Vector (`n_indices`) of 0/1 flags for aggregate observation use.
+  \item `$use_index_paa` - Vector (`n_indices`) of 0/1 flags for age composition use.
+  \item `$units_indices` - Vector (`n_indices`) with 1 (biomass) or 2 (numbers).
+  \item `$units_index_paa` - Vector (`n_indices`) with 1 (biomass) or 2 (numbers).
+}}
 
-\item{trend_re_rate}{Rate for recruitment trend (required if apply_re_trend = 1)}
+\item{fracyr_spawn}{Numeric. Fraction of the year when spawning occurs.}
 
-\item{apply_mu_trend}{Indicator to apply movement trend (default is 0)}
+\item{fracyr_seasons}{Numeric vector. Optional. User-defined seasonal fractions summing to 1.}
 
-\item{trend_mu_rate}{Rate for movement trend (required if apply_mu_trend = 1)}
+\item{fleet_regions}{Integer vector. Optional. Region allocation for each fleet.}
 
-\item{age_mu_devs}{Movement deviations used when onto_move = 5 (user specified age-specific movement rate), array of dim = c(n_stocks, n_regions, n_regions-1, n_ages)}
+\item{index_regions}{Integer vector. Optional. Region allocation for each index.}
+
+\item{user_waa}{Numeric vector/matrix. Optional. User-defined weight-at-age values.}
+
+\item{user_maturity}{Numeric vector. Optional. User-defined maturity-at-age values.}
+
+\item{bias.correct.process}{Logical. Apply process error bias correction.}
+
+\item{bias.correct.observation}{Logical. Apply observation error bias correction.}
+
+\item{bias.correct.BRPs}{Logical. Apply biological reference point bias correction.}
+
+\item{mig_type}{Integer. Migration type:
+\itemize{
+  \item `0` - Migration after survival.
+  \item `1` - Movement and mortality simultaneous.
+}}
+
+\item{XSPR_R_opt}{Integer. Spawning stock-recruitment method:
+\itemize{
+  \item `1` - Annual R estimates for annual SSB_XSPR.
+  \item `2` - (Default) Average R estimates for annual SSB_XSPR.
+  \item `3` - Annual expected R for annual SSB_XSPR.
+  \item `4` - Average expected R for annual SSB_XSPR.
+  \item `5` - Bias-corrected expected recruitment.
+}}
+
+\item{move_dyn}{Integer. Movement dynamics:
+\itemize{
+  \item `0` - Natal homing.
+  \item `1` - Meta-population.
+}}
+
+\item{onto_move}{Integer array (`n_stocks x n_regions x (n_regions - 1)`). Age-specific movement type:
+\itemize{
+  \item `0` - Same movement rate across ages (default).
+  \item `1` - Increasing logistic (2 parameters).
+  \item `2` - Decreasing logistic (2 parameters).
+  \item `3` - Double-logistic (4 parameters).
+  \item `4` - Double-normal (4 parameters).
+  \item `5` - User-specified age-specific movement rate.
+}}
+
+\item{onto_move_pars}{Numeric array (`n_stocks x n_regions x (n_regions - 1) x 4`). Parameters for age-specific movement.}
+
+\item{apply_re_trend}{Logical. Apply recruitment trend.}
+
+\item{trend_re_rate}{Numeric. Rate for recruitment trend (if `apply_re_trend = TRUE`).}
+
+\item{apply_mu_trend}{Logical. Apply movement trend.}
+
+\item{trend_mu_rate}{Numeric. Rate for movement trend (if `apply_mu_trend = TRUE`).}
+
+\item{age_mu_devs}{Numeric array (`n_stocks x n_regions x (n_regions - 1) x n_ages`). Movement deviations for user-specified rates.}
 }
 \value{
-A list of information that will be used to prepare wham input
+A list containing:
+  \itemize{
+    \item `$basic_info` - General biological and fishery details.
+    \item `$catch_info` - Fleet-specific catch data.
+    \item `$index_info` - Survey-related data.
+    \item `$F` - Fishing mortality settings.
+    \item `$par_inputs` - A list of input parameters for model setup.
+  }
 }
 \description{
-The generate_basic_info() function is used to generate biological and fishery information for 
-simulation-estimation and management strategy evaluation.  
-Note that not all information is included here. More details can be found in \code{\link{prepare_wham_input}}
+The `generate_basic_info()` function creates biological and fishery information necessary 
+for simulation-estimation and management strategy evaluation (MSE). This function defines 
+stock structure, fleet operations, life history parameters, fishing mortality, and 
+movement dynamics, among other essential components.
 }
 \examples{
 \dontrun{
-data <- generate_basic_info()
+data <- generate_basic_info(n_stocks = 2, n_regions = 2, n_fleets = 3, base.years = 1:30)
 }
 }
 \seealso{

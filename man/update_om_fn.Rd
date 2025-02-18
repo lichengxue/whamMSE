@@ -2,29 +2,50 @@
 % Please edit documentation in R/update_om_fn.R
 \name{update_om_fn}
 \alias{update_om_fn}
-\title{Update the operating model and generate data}
+\title{Update the Operating Model and Generate Simulated Data}
 \usage{
-update_om_fn(om, interval.info = NULL, seed = 123, random = "log_NAA")
+update_om_fn(
+  om,
+  interval.info = NULL,
+  seed = 123,
+  random = "log_NAA",
+  method = "nlminb",
+  by_fleet = FALSE
+)
 }
 \arguments{
-\item{om}{Operating model with years including burn-in + feedback years.}
+\item{om}{A fitted operating model that includes both burn-in and feedback years.}
 
-\item{interval.info}{Catch advice for a number of years projected from the estimation model.
-\itemize{
-  \item \code{$years} Projection years.
-  \item \code{$catch} Matrix (n_region x n_years) projected catch.
+\item{interval.info}{A list containing projected catch advice for future years from the estimation model. It includes:
+\describe{
+  \item{\code{years}}{Vector of projection years.}
+  \item{\code{catch}}{Matrix (n_regions x n_years) of projected catch.}
 }}
 
-\item{seed}{Seed used to generate data.}
+\item{seed}{Integer. Seed used for generating simulated data to ensure reproducibility (default = 123).}
 
-\item{random}{A vector of processes that are treated as random effects in the operating model}
+\item{random}{Character vector of process names that are treated as random effects in the operating model (default = "log_NAA").}
+
+\item{method}{Character. Optimization method used for solving F. Options include:
+\itemize{
+  \item \code{"nlminb"} (default): Uses `nlminb` optimization.
+  \item \code{"BFGS"}: Uses `optim` with the BFGS method.
+}}
+
+\item{by_fleet}{Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).}
 }
 \value{
-An operating model with simulated data and updated F time series.
+An updated operating model (`om`) with:
+  \itemize{
+    \item Updated F time series.
+    \item Simulated observation data.
+    \item Updated random effect parameters.
+  }
 }
 \description{
-Function to update F in the operating model (see \code{\link{update_om_F}}) and generate data given the updated F.
+This function updates fishing mortality (F) in the operating model, projects the population forward,
+and generates new simulated data based on the updated F time series.
 }
 \seealso{
-\code{\link{get_F_from_Catch_region}}
+\code{\link{get_F_from_Catch}}, \code{\link{update_om_F}}
 }

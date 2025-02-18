@@ -1,36 +1,25 @@
-#' Update the Operating Model and Generate Simulated Data
-#'
-#' This function updates fishing mortality (F) in the operating model, projects the population forward,
-#' and generates new simulated data based on the updated F time series.
-#'
-#' @param om A fitted operating model that includes both burn-in and feedback years.
-#' @param interval.info A list containing projected catch advice for future years from the estimation model. It includes:
-#'   \describe{
-#'     \item{\code{years}}{Vector of projection years.}
-#'     \item{\code{catch}}{Matrix (n_regions x n_years) of projected catch.}
-#'   }
-#' @param seed Integer. Seed used for generating simulated data to ensure reproducibility (default = 123).
-#' @param random Character vector of process names that are treated as random effects in the operating model (default = "log_NAA").
-#' @param method Character. Optimization method used for solving F. Options include:
+#' Update the operating model and generate data
+#' 
+#' Function to update F in the operating model (see \code{\link{update_om_F}}) and generate data given the updated F.
+#' 
+#' @param om Operating model with years including burn-in + feedback years.
+#' @param interval.info Catch advice for a number of years projected from the estimation model.
 #'   \itemize{
-#'     \item \code{"nlminb"} (default): Uses `nlminb` optimization.
-#'     \item \code{"BFGS"}: Uses `optim` with the BFGS method.
+#'     \item \code{$years} Projection years.
+#'     \item \code{$catch} Matrix (n_region x n_years) projected catch.
 #'   }
-#' @param by_fleet Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).
-#'
-#' @return An updated operating model (`om`) with:
-#'   \itemize{
-#'     \item Updated F time series.
-#'     \item Simulated observation data.
-#'     \item Updated random effect parameters.
-#'   }
-#'
+#' @param seed Seed used to generate data.
+#' @param random A vector of processes that are treated as random effects in the operating model
+#' 
+#' @return An operating model with simulated data and updated F time series.
+#'   
 #' @export
 #'
-#' @seealso \code{\link{get_F_from_Catch}}, \code{\link{update_om_F}}
-#'
+#' @seealso \code{\link{get_F_from_Catch_region}}
+#' 
 update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA", method = "nlminb", by_fleet = FALSE) {
   
+  library(expm)
   if(!is.null(interval.info)){
     # Iterative update F in the OM using get_F_from_Catch_region function
     t <- 0
@@ -50,6 +39,29 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       
       om <- update_om_F(om, year, Fsolve)
       
+      # Solve for fishing mortality rate (F)
+      # Fsolve <- get_F_from_Catch(
+      #   Catch = interval.info$catch[t,], 
+      #   NAA = rep$NAA[,,year,], 
+      #   log_M = log(rep$MAA[,,year,]), 
+      #   mu = rep$mu[,,,year,,], 
+      #   L = rep$L[year,], 
+      #   # sel = (rep$FAA / max(rep$FAA))[,year,]/max(max(rep$FAA)), 
+      #   # sel = rep$FAA[,year,]/max(rep$FAA[,year,]),
+      #   sel = rep$sel_static,
+      #   fracyr_season = om$input$data$fracyr_seasons, 
+      #   fleet_regions = om$input$data$fleet_regions, 
+      #   fleet_seasons = om$input$data$fleet_seasons, 
+      #   can_move = om$input$data$can_move, 
+      #   mig_type = om$input$data$mig_type, 
+      #   waacatch = om$input$data$waa[(1:om$input$data$n_fleets + 1), year,],
+      #   trace = TRUE, 
+      #   F_init = rep(0.1, om$input$data$n_fleets)
+      # )
+      
+      # Update F parameters in the operating model
+      # om$input$par$F_pars[year,] <- log(Fsolve)
+      
       # Names of observation data to update
       obs_names <- c("agg_indices", "agg_catch", "catch_paa", "index_paa", "Ecov_obs", "obsvec")
       
@@ -67,8 +79,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       # Update the parameters in the operating model
       om$input$par[random] <- om_sim[random]
       
-      cat(paste0("\nNow projecting data for years after ", y, "\n"))
-      
+      cat(paste0("\nNow re-projecting data for years after ", y, "\n"))
       # Fit the WHAM model without actually performing the fit (do.fit = FALSE)
       om <- fit_wham(om$input, do.fit = FALSE, MakeADFun.silent = TRUE)
       

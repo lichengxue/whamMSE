@@ -2,29 +2,30 @@
 % Please edit documentation in R/loop_through_fn.R
 \name{loop_through_fn}
 \alias{loop_through_fn}
-\title{Function to perform management strategy evaluation}
+\title{Perform Management Strategy Evaluation (MSE)}
 \usage{
 loop_through_fn(
   om,
   em_info = NULL,
-  random = "log_NAA",
-  M_em,
-  sel_em,
-  NAA_re_em,
-  move_em,
-  age_comp_em = "multinomial",
-  em.opt = NULL,
+  random = NULL,
+  M_em = NULL,
+  sel_em = NULL,
+  NAA_re_em = NULL,
+  move_em = NULL,
+  age_comp_em = NULL,
+  em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move =
+    FALSE),
+  global_waa = TRUE,
   aggregate_catch_info = NULL,
   aggregate_index_info = NULL,
+  filter_indices = NULL,
   assess_years = NULL,
   assess_interval = NULL,
   base_years = NULL,
-  year.use = 30,
-  hcr.type = 1,
-  hcr.opts = NULL,
-  weight_type = 1,
-  weight_years = 1,
-  user_weights = NULL,
+  year.use = 20,
+  hcr = list(hcr.type = 1, hcr.opts = NULL),
+  catch_alloc = list(weight_type = 1, method = "region", user_weights = NULL,
+    weight_years = 1),
   do.retro = FALSE,
   do.osa = FALSE,
   seed = 123,
@@ -33,27 +34,26 @@ loop_through_fn(
 )
 }
 \arguments{
-\item{om}{Operating model including pseudo data}
+\item{om}{A fitted operating model containing pseudo data.}
 
-\item{em_info}{A list of information used to generate the estimation model (default = NULL)}
+\item{em_info}{A list containing information used to generate the estimation model (default = NULL).}
 
-\item{random}{A vector of processes that are treated as random effects in the operating model (default = "log_NAA")}
+\item{random}{Character vector of processes treated as random effects in the operating model (default = "log_NAA").}
 
-\item{M_em}{Natural mortality configuration in the assessment model}
+\item{M_em}{Configuration of natural mortality in the estimation model.}
 
-\item{sel_em}{Selectivity configuration in the assessment model}
+\item{sel_em}{Configuration of selectivity in the estimation model.}
 
-\item{NAA_re_em}{Numbers-at-age (NAA) configuration in the assessment model}
+\item{NAA_re_em}{Configuration of numbers-at-age (NAA) in the estimation model.}
 
-\item{move_em}{Movement configuration in the assessment model}
+\item{move_em}{Configuration of movement in the estimation model.}
 
-\item{age_comp_em}{Likelihood distribution of age composition data in the assessment model
+\item{age_comp_em}{Character. The likelihood distribution of age composition data in the estimation model. Options include:
 \itemize{
-  \item \code{"multinomial"} Default
+  \item \code{"multinomial"} (default)
   \item \code{"dir-mult"}
   \item \code{"dirichlet-miss0"}
   \item \code{"dirichlet-pool0"}
-  \item \code{"dir-mult"}
   \item \code{"logistic-normal-miss0"}
   \item \code{"logistic-normal-ar1-miss0"}
   \item \code{"logistic-normal-pool0"}
@@ -63,95 +63,110 @@ loop_through_fn(
   \item \code{"dir-mult-linear"}
 }}
 
-\item{em.opt}{List of options for the assessment model
-\itemize{
-  \item \code{$separate.em} TRUE = No Global SPR, FALSE = Global SPR
-  \item \code{$separate.em.type} only if separate.em = TRUE \cr
-  {=1} panmictic (spatially-aggregated) \cr
-  {=2} fleets-as-areas \cr
-  {=3} n single assessment models (n = n_regions) \cr
-  \item \code{$do.move} T/F movement is included (use if separate.em = FALSE)
-  \item \code{$est.move} T/F movement rate is estimated (use if separate.em = FALSE)
+\item{em.opt}{List of options for the assessment model, including:
+\describe{
+  \item{\code{separate.em}}{Logical. If TRUE, separate estimation models are used for different stocks (default = FALSE).}
+  \item{\code{separate.em.type}}{Integer. Used only if \code{separate.em = TRUE}:}
+    \itemize{
+      \item 1 = Panmictic (spatially-aggregated model).
+      \item 2 = Fleets-as-areas model.
+      \item 3 = Separate assessment models for each region (n = number of regions).
+    }
+  \item{\code{do.move}}{Logical. If TRUE, movement is included (default = FALSE).}
+  \item{\code{est.move}}{Logical. If TRUE, movement rates are estimated (default = FALSE).}
 }}
 
-\item{aggregate_catch_info}{(optional) User specified list of information for aggregate catch (default: use first fleet). Only when panmictic model with aggregate catch is used.
+\item{aggregate_catch_info}{List. Contains details for aggregating fleet-specific catch data:
 \itemize{
-  \item \code{$catch_cv} {vector (n_fleets) of CVs for fleet catch.}
-  \item \code{$catch_Neff} {vector (n_fleets) of effective sample sizes for fleet catch.}
-  \item \code{$use_agg_catch} {vector (n_fleets) of 0/1 values flagging whether whether to use aggregate catch.}
-  \item \code{$use_catch_paa} {vector (n_fleets) of 0/1 values flagging whether to use proportions at age observations.}
-  \item \code{$fleet_pointer} {vector (n_fleets) of which fleets should be combined.}
-  }}
-
-\item{aggregate_index_info}{(optional) User specified list of information for aggregate index (default: use first index). Only when panmictic model with aggregate index is used.
-\itemize{
-  \item \code{$index_cv} {vector (n_indices) of CVs for survey indices.}
-  \item \code{$index_Neff} {vector (n_indices) of effective sample sizes for survey indices.}
-  \item \code{$fracyr_indices} {vector (n_indices) of fractions of the year when each survey is conducted.}
-  \item \code{$q} {vector (n_indices) of survey catchabilities.}
-  \item \code{$use_indices} {vector (n_indices) of 0/1 values flagging whether to use aggregate observations.}
-  \item \code{$use_index_paa} {vector (n_indices) of 0/1 values flagging whether to use proportions at age observations.}
-  \item \code{$units_indices} {vector (n_indices) of 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).}
-  \item \code{$units_index_paa} {vector (n_indices) of 1/2 values flagging whether composition observations are biomass (1) or numbers (2).}
-  \item \code{$index_pointer} {vector (n_indices) of which indices should be combined.}
-  }}
-
-\item{assess_years}{Year in which the assessment is conducted}
-
-\item{assess_interval}{Assessment interval used in the MSE feedback loop}
-
-\item{base_years}{Years used in the burn-in period}
-
-\item{year.use}{Number of years used in the assessment model}
-
-\item{hcr.type}{Type of harvest control rule
-\itemize{
-  \item \code{"1"} Annual projected catch based on 75% of F40% (default)
-  \item \code{"2"} Constant catch based on 75% of F40%
-  \item \code{"3"} "Hockey stick" catch based on stock status
+  \item `fleet_pointer` - Integer vector of length `n_fleets`, specifying how fleets should be aggregated.
+  \item `catch_cv`, `catch_Neff` - Numeric vectors of length `n_fleets`, specifying catch CV and sample size.
+  \item `use_agg_catch`, `use_catch_paa` - Boolean vectors of length `n_fleets`, indicating whether to aggregate.
 }}
 
-\item{hcr.opts}{only used if hcr.type = 3
+\item{aggregate_index_info}{List. Contains details for aggregating index-specific data:
 \itemize{
-  \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections (default = 75)
-  \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections (default = 0.01)
-  \item \code{"BThresh_up"} Upper bound of overfished level (default = 0.5)  
-  \item \code{"BThresh_low"} Lower bound of overfished level (default = 0.1)
+  \item `index_pointer` - Integer vector of length `n_indices`, specifying how indices should be aggregated.
+  \item `index_cv`, `index_Neff`, `q` - Numeric vectors of length `n_indices`, specifying index CV, effective sample size, and catchability coefficient.
+  \item `use_indices`, `use_index_paa` - Boolean vectors of length `n_indices`, indicating whether to aggregate.
 }}
 
-\item{weight_type}{Type of weights to use for allocating catch
-\itemize{
-  \item \code{"1"} Uniform: Assign equal weights to all regions
-  \item \code{"2"} User defined: User provides weights (provide weights as \code{user_weights})
-  \item \code{"3"} Catch history: Use catch data averaged over specified number of years (provide years as \code{weight_years})
-  \item \code{"4"} Survey average: Use survey data averaged over specified number of years (provide years as \code{weight_years})
-  \item \code{"5"} Recruitment proportional: Use average recruitment estimates to allocate weights proportionally
+\item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2}
+
+\item{assess_years}{Vector of years when assessments are conducted.}
+
+\item{assess_interval}{Integer. The interval between stock assessments in the MSE feedback loop.}
+
+\item{base_years}{Vector of years used in the burn-in period.}
+
+\item{year.use}{Integer. Number of years included in the estimation model (default = 30).}
+
+\item{hcr}{List containing harvest control rule (HCR) settings:
+\describe{
+  \item{\code{hcr.type}}{Integer. The type of harvest control rule:}
+    \itemize{
+      \item \code{1} Annual projected catch based on 75\% of F40\% (default).
+      \item \code{2} Constant catch based on 75\% of F40\%.
+      \item \code{3} "Hockey stick" catch based on stock status.
+    }
+  \item{\code{hcr.opts}}{(Only for \code{hcr.type = 3}) A list containing additional HCR options:}
+    \describe{
+      \item{\code{max_percent}}{Maximum percentage of F\_XSPR used for catch projections (default = 75).}
+      \item{\code{min_percent}}{Minimum percentage of F\_XSPR used for catch projections (default = 0.01).}
+      \item{\code{BThresh_up}}{Upper bound of overfished biomass threshold (default = 0.5).}
+      \item{\code{BThresh_low}}{Lower bound of overfished biomass threshold (default = 0.1).}
+    }
 }}
 
-\item{weight_years}{Number of years to average survey or catch data for weights (only if \code{weight_type = 3 or 4})}
-
-\item{user_weights}{User-defined weights for allocating catch (only if \code{weight_type = 2})}
-
-\item{do.retro}{T/F Do retrospective analysis? Default = TRUE}
-
-\item{do.osa}{T/F Calculate one-step-ahead (OSA) residuals? Default = TRUE}
-
-\item{seed}{Seed used for generating data}
-
-\item{save.sdrep}{T/F Save every assessment model (memory intensive)
+\item{catch_alloc}{List. Contains specifications for catch allocation:
 \itemize{
-  \item \code{"TRUE"} Save every assessment model  
-  \item \code{"FALSE"} Save the last assessment model (default)
+  \item `$weight_type` - Integer (1–4) indicating the type of weighting used.
+    \itemize{
+      \item `1` - Equal weighting across fleets.
+      \item `2` - Weighting based on past catch data.
+      \item `3` - Weighting based on past survey index data.
+      \item `4` - User-specified weights.
+    }
+  \item `$method` - String. Specifies the catch allocation method:
+    \itemize{
+      \item `"region"` - Uses regional catch totals to compute weights.
+      \item `"gear"` - Uses gear-type catch totals to compute weights.
+      \item `"combined"` - First allocates to gear-specific total catch, then splits into regions.
+    }
+  \item `$user_weights` - Numeric vector (`n_regions`). Optional. User-defined weights summing to 1.
+  \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
 }}
 
-\item{save.last.em}{T/F Save the last assessment model (Default = FALSE) (use if separate.em = FALSE)}
+\item{do.retro}{Logical. If TRUE, performs retrospective analysis (default = TRUE).}
+
+\item{do.osa}{Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).}
+
+\item{seed}{Integer. The random seed used for stochastic processes.}
+
+\item{save.sdrep}{Logical. If TRUE, saves the results of every assessment model (memory-intensive).}
+
+\item{save.last.em}{Logical. If TRUE, saves only the last estimation model (default = FALSE).}
+
+\item{ind_em}{Vector. Indices specifying the years for which the estimation model should use data.}
 }
 \value{
-a list of model output
+A list containing:
+  \describe{
+    \item{\code{om}}{Updated operating model.}
+    \item{\code{em_list}}{List of estimation model results across assessment years.}
+    \item{\code{par.est}}{Estimated parameter values.}
+    \item{\code{par.se}}{Standard errors of parameter estimates.}
+    \item{\code{adrep.est}}{Estimated values from ADMB report.}
+    \item{\code{adrep.se}}{Standard errors from ADMB report.}
+    \item{\code{opt_list}}{Optimization results from WHAM.}
+    \item{\code{converge_list}}{Convergence diagnostics.}
+    \item{\code{catch_advice}}{Projected catch advice over assessment years.}
+    \item{\code{em_full}}{List of full estimation model outputs.}
+    \item{\code{runtime}}{Elapsed time for function execution.}
+  }
 }
 \description{
-A wrapper function to step through the feedback period, update the operating model,
-refit the estimation model, and generate catch advice.
+A wrapper function to iterate through the feedback period in a management strategy evaluation (MSE), 
+updating the operating model (OM), refitting the estimation model (EM), and generating catch advice.
 }
 \seealso{
 \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}

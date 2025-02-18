@@ -2,23 +2,28 @@
 % Please edit documentation in R/update_om_F.R
 \name{update_om_F}
 \alias{update_om_F}
-\title{Update fishing mortality in the operating model given the catch}
+\title{Update Fishing Mortality (F) in the Operating Model}
 \usage{
-update_om_F(om, year, catch)
+update_om_F(om, year, Fsolve)
 }
 \arguments{
-\item{om}{Operating model}
+\item{om}{A fitted operating model that includes burn-in and feedback years.}
 
-\item{year}{Actual year(s) in the projection}
+\item{year}{Integer. The year for which fishing mortality is being updated.}
 
-\item{catch}{Catch advice in the projection years}
+\item{Fsolve}{Numeric vector. Estimated fishing mortality values for each fleet.}
 }
 \value{
-an operating model with updated F time series
+An updated operating model (`om`) with:
+  \itemize{
+    \item Updated F time series.
+    \item Adjusted F deviation parameters (\code{F_pars}) for model consistency.
+  }
 }
 \description{
-Function to update F in the operating model given the catch advice
+This function updates fishing mortality (F) in the operating model (`om`) for a specified year
+and ensures consistency in future F projections.
 }
 \seealso{
-\code{\link{get_F_from_catch}}
+\code{\link{get_F_from_Catch}}, \code{\link{update_om_fn}}
 }

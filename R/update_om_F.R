@@ -1,58 +1,64 @@
-#' Update fishing mortality in the operating model given the catch
-#' 
-#' Function to update F in the operating model given the catch advice 
-#' 
-#' @param om Operating model 
-#' @param year Actual year(s) in the projection
-#' @param catch Catch advice in the projection years 
-#'     
-#' @return an operating model with updated F time series
-#'   
+#' Update Fishing Mortality (F) in the Operating Model
+#'
+#' This function updates fishing mortality (F) in the operating model (`om`) for a specified year
+#' and ensures consistency in future F projections.
+#'
+#' @param om A fitted operating model that includes burn-in and feedback years.
+#' @param year Integer. The year for which fishing mortality is being updated.
+#' @param Fsolve Numeric vector. Estimated fishing mortality values for each fleet.
+#'
+#' @return An updated operating model (`om`) with:
+#'   \itemize{
+#'     \item Updated F time series.
+#'     \item Adjusted F deviation parameters (\code{F_pars}) for model consistency.
+#'   }
+#'
 #' @export
 #'
-#' @seealso \code{\link{get_F_from_catch}}
-#' 
-update_om_F = function(om, year, catch){
-  rep = om$rep #generate the reported values given the parameters
-  #year = om$years[year]
-  year_ind = which(om$years == year) #index corresponding to year
-  Fsolve = get_F_from_catch(om, year = year_ind, catch) #find the F for the catch advice
-  n_regions = length(om$input$region_names)
-  sel = rep$FAA[,year_ind,]
-  #sel_all = sel/max(sel)
-  sel_all = t(apply(sel,1,function(row) row/max(row)))
-  FAA_all = Fsolve * rbind(sel_all)
-  F_region = apply(FAA_all, 1, max) #full F for each region
-  om$input$par$F_pars[year_ind,] = log(F_region)
+#' @seealso \code{\link{get_F_from_Catch}}, \code{\link{update_om_fn}}
+#'
+update_om_F <- function(om, year, Fsolve) {
+  
+  if(length(Fsolve) > 1) {
+    if(om$input$data$F_config==1) {
+      if(year>1) {
+        FAA_ym1 <- rbind(rep$FAA[,year-1,]) #n_fleets x n_ages
+        F_fleet_ym1 <- apply(rbind(FAA_ym1),1,max) #Full F for each fleet in previous year
+        om$input$par$F_pars[year,] <- log(F_fleet_y) - log(F_fleet_ym1) #change the F_dev to produce the right full F
+        if(year< NROW(om$input$par$F_pars)){ #change F devs in later years to retain F in those years. Not really necessary for closed loop sims
+          FAA_yp1 <- rbind(rep$FAA[,year+1,]) #n_fleets x n_ages
+          F_fleet_yp1 <- apply(rbind(FAA_yp1),1,max) #Full F for each fleet in previous year
+          om$input$par$F_pars[year+1,] <- log(F_fleet_yp1) - log(F_fleet_y) #change the F_dev to produce the right full F
+        }
+      } else om$input$par$F_pars[year,] <- log(F_fleet_y) #if year is the first year of the model, change F in year 1
+    } else{ #alternative configuration of F_pars
+      om$input$par$F_pars[year,] <- log(Fsolve)
+    }
+  } else {
+    rep = om$rep
+    FAA <- rbind(rep$FAA[,year,]) #n_fleets x n_ages
+    age_ind <- om$env$data$which_F_age[year] #which age is used by wham to define total "full F"
+    old_max_F <- apply(FAA,2,sum)[age_ind] # n_ages
+    selAA <- FAA/old_max_F #sum(selAA[i,]) = 1
+    new_FAA <- Fsolve * selAA #updated FAA
+    F_fleet_y <- apply(new_FAA, 1, max) #full F for each fleet
+    if(om$input$data$F_config==1) {
+      if(year>1) {
+        FAA_ym1 <- rbind(rep$FAA[,year-1,]) #n_fleets x n_ages
+        F_fleet_ym1 <- apply(rbind(FAA_ym1),1,max) #Full F for each fleet in previous year
+        om$input$par$F_pars[year,] <- log(F_fleet_y) - log(F_fleet_ym1) #change the F_dev to produce the right full F
+        if(year< NROW(om$input$par$F_pars)){ #change F devs in later years to retain F in those years. Not really necessary for closed loop sims
+          FAA_yp1 <- rbind(rep$FAA[,year+1,]) #n_fleets x n_ages
+          F_fleet_yp1 <- apply(rbind(FAA_yp1),1,max) #Full F for each fleet in previous year
+          om$input$par$F_pars[year+1,] <- log(F_fleet_yp1) - log(F_fleet_y) #change the F_dev to produce the right full F
+        }
+      } else om$input$par$F_pars[year,] <- log(F_fleet_y) #if year is the first year of the model, change F in year 1
+    } else{ #alternative configuration of F_pars
+      om$input$par$F_pars[year,] <- log(F_fleet_y)
+    }
+  }
+  
   om <- fit_wham(om$input, do.fit = FALSE, MakeADFun.silent = TRUE)
   return(om)
 }
-
-get_F_from_catch <- function(om, year, catch, Finit = 0.1, maxF = 10){ # here year has to be year starting from 1
   
-  get_catch = function(log_F, naa, sel, waa, Maa){
-    Faa = exp(log_F) * sel_tot
-    Zaa = Maa + Faa
-    Catch = 0
-    for(a  in 1:length(naa)) Catch = Catch + waa[a] * naa[a] * Faa[a] *(1 - exp(-Zaa[a]))/Zaa[a];
-    return(Catch)
-  }
-  
-  rep = om$report()
-  n_regions = length(om$input$region_names)
-  Fsolve = NULL
-  for (r in 1:n_regions) {
-    naa = colSums(rep$NAA[,r,year,]) # n_stocks x n_regions x n_years x n_ages
-    Maa = colMeans(rep$MAA[,r,year,]) # assume MAA is the same across stocks
-    sel_tot <- rep$FAA[r,year,]/max(rep$FAA[r,year,])
-    waa = om$input$data$waa[om$input$data$waa_pointer_totcatch, year,][r,] # assume MAA is the same across stocks
-    
-    obj = function(log_F) (catch[r] - get_catch(log_F, naa, sel_tot, waa, Maa))^2
-    opt = try(nlminb(log(Finit), obj))
-    if(!is.character(opt)) Fsolve.tmp = exp(opt$par)[1] else Fsolve.tmp = maxF
-    if(Fsolve.tmp>10) Fsolve.tmp = maxF
-    Fsolve[r] <- Fsolve.tmp
-  }
-  cat(paste0("\nFsolve: ", Fsolve,"\n"))
-  return(Fsolve)
-}

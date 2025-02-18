@@ -2,7 +2,7 @@
 % Please edit documentation in R/initial_input_no_asap_fn.r
 \name{initial_input_no_asap_fn}
 \alias{initial_input_no_asap_fn}
-\title{Prepare wham input without ASAP file}
+\title{Prepare Input Without ASAP File}
 \usage{
 initial_input_no_asap_fn(input, basic_info)
 }

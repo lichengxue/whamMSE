@@ -1,45 +1,52 @@
-#' Generate catch advice
-#' 
-#' A function to generate catch advice for management strategy evaluation. 
-#' 
-#' @param em Estimation model
-#' @param pro.yr Number of years in projection
-#' @param hcr.type Type of harvest control rule
-#'   \itemize{
-#'     \item \code{"1"} Annual projected catch based on 75% of F40% (default)
-#'     \item \code{"2"} Constant catch based on 75% of F40% (default)
-#'     \item \code{"3"} "Hockey stick" catch based on stock status
+#' Generate Catch Advice for Management Strategy Evaluation
+#'
+#' A function to generate catch advice based on different harvest control rules (HCRs) for use in management strategy evaluation.
+#'
+#' @param em An estimation model fitted using WHAM.
+#' @param pro.yr Integer. The number of years for projection.
+#' @param hcr A list specifying the harvest control rule (HCR) type and options. It should contain:
+#'   \describe{
+#'     \item{\code{hcr.type}}{Integer. The type of harvest control rule to use. Options include:}
+#'     \itemize{
+#'       \item \code{1}: Annual projected catch based on 75\% of F40\% (default).
+#'       \item \code{2}: Constant catch based on 75\% of F40\%.
+#'       \item \code{3}: "Hockey stick" approach based on stock status.
 #'     }
-#' @param hcr.opts 
-#'   \itemize{
-#'     \item \code{"percentFXSPR"} percent of F_XSPR to use for calculating catch in projections, default = 75
-#'     \item \code{"percentSPR"} X\% SPR used to calculate reference points, default = 40
-#'     \item \code{"avg.yrs"} controls which years the MAA, WAA, M, F will be averaged over in the projections, default = 5
-#'     \item \code{"max_percent"} maximum percent of F_XSPR to use for calculating catch in projections, default = 75
-#'     \item \code{"min_percent"} minimum percent of F_XSPR to use for calculating catch in projections, default = 0.01
-#'     \item \code{"BThresh_up"} Upper bound of overfished level, default = 0.5
-#'     \item \code{"BThresh_low"} Lower bound of overfished level, default = 0.1
+#'     \item{\code{hcr.opts}}{A list of additional options for the harvest control rule, including:}
+#'     \describe{
+#'       \item{\code{percentFXSPR}}{Numeric. The percentage of F\_XSPR to use for calculating catch in projections (default = 75).}
+#'       \item{\code{percentSPR}}{Numeric. The X\% SPR used to calculate reference points (default = 40).}
+#'       \item{\code{avg.yrs}}{Integer. The number of years over which mean values of MAA, WAA, M, and F will be averaged in projections (default = 5).}
+#'       \item{\code{max_percent}}{Numeric. Maximum percentage of F\_XSPR to use in projections (default = 75).}
+#'       \item{\code{min_percent}}{Numeric. Minimum percentage of F\_XSPR to use in projections (default = 0.01).}
+#'       \item{\code{BThresh_up}}{Numeric. Upper bound of overfished biomass threshold (default = 0.5).}
+#'       \item{\code{BThresh_low}}{Numeric. Lower bound of overfished biomass threshold (default = 0.1).}
 #'     }
-#'     
-#' @return a list of catch advice
-#'   
+#'   }
+#'
+#' @return A matrix containing the projected catch advice for the specified number of projection years.
+#'
 #' @export
-#' 
+#'
 #' @seealso \code{\link{project_wham}}
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' data <- generate_basic_info(n_stocks = 2, n_regions = 2, n_indices = 2, n_fleets = 2, base.years = 2003:2022)
-#' NAA_re <- list(N1_model=c("equilibrium","equilibrium"),sigma=c("rec","rec"),cor=c("iid","iid"),recruit_model = 2)
+#' NAA_re <- list(N1_model = c("equilibrium", "equilibrium"), sigma = c("rec", "rec"), cor = c("iid", "iid"), recruit_model = 2)
 #' input <- prepare_wham_input(basic_info = data, NAA_re = NAA_re)
 #' mod <- fit_wham(input, do.fit = FALSE)
-#' input$data = mod$simulate(complete=TRUE)
+#' input$data <- mod$simulate(complete = TRUE)
 #' mod <- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = FALSE)
-#' catch <- advice_fn(mod, pro.yr = 3, type = 1)
+#' catch <- advice_fn(mod, pro.yr = 3, hcr = list(hcr.type = 1))
 #' }
 
-advice_fn <- function(em, pro.yr = assess.interval, hcr.type = 1, hcr.opts = NULL) {
-  cat(paste0("----------------\nHarvest Control Rule type ", hcr.type, " is in use!\n----------------\n"))
+advice_fn <- function(em, pro.yr = assess.interval, hcr) {
+  
+  hcr.type = ifelse(is.null(hcr$hcr.type), 1, hcr$hcr.type) 
+  hcr.opts = hcr$hcr.opts
+  
+  cat(paste0("\nHarvest Control Rule type ", hcr.type, "\n"))
   
   if(is.null(hcr.opts$percentFXSPR)) {
     percentFXSPR = 75
@@ -65,7 +72,7 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr.type = 1, hcr.opts = NUL
     percentSPR = percentSPR
   )
   
-  em_proj <- project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) # Projected version of the em
+  if (hcr.type %in% 1:2) em_proj <- project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) # Projected version of the em
   
   if (hcr.type == 1) {
     advice <- em_proj$rep$pred_catch[length(em_proj$years) + 1:pro.yr,]
