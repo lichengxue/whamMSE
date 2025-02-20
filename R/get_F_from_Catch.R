@@ -19,8 +19,8 @@
 #'
 get_F_from_Catch <- function(om, Catch, year, method = "nlminb", by_fleet = FALSE) {
   
-  library(numDeriv)
-  library(expm)
+  require(numDeriv)
+  require(expm)
   
   rep = om$rep
   NAA = rep$NAA[,,year,]

@@ -52,6 +52,8 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
     return(renumbered_indices)
   }
   
+  if (em.opt$separate.em == FALSE) em.opt$separate.em.type = 0
+  
   if (em.opt$separate.em.type == 2) {
     
     n_regions <- em_info$basic_info$n_regions
@@ -60,7 +62,7 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
     em_info_new <- em_info
     
     # Apply `filter_indices` (remove excluded indices) only if provided
-    if (!is.null(filter_indices)) {
+    if (!is.null(filter_indices) && any(filter_indices != 0)) {
       relevant_indices <- which(filter_indices != 0)
       em_info_new$basic_info$n_indices = length(relevant_indices)
     } else {
@@ -126,6 +128,7 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
     em_info_list = em_info_new
   }
   
+  # Important: I don't think this model can handle missing survey (using filter_indices) #
   if (em.opt$separate.em.type == 3) {
     # Initialize a list to store per-region em_info
     em_info_list <- list()
@@ -150,9 +153,11 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
       relevant_indices <- which(index_regions == r)
       
       # Apply `filter_indices` (remove excluded indices) only if provided
+      if (is.null(filter_indices)) filter_indices = 1:filter_indices
+      
       if (!is.null(filter_indices)) {
         relevant_indices <- relevant_indices[filter_indices[relevant_indices] != 0]
-      }
+      } 
       
       n_indices <- length(relevant_indices)
       
@@ -199,6 +204,63 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
       # Store in list
       em_info_list[[r]] <- em_info_new
     }
+  }
+  
+  if (em.opt$separate.em == FALSE) {
+    
+    n_regions <- em_info$basic_info$n_regions
+    
+    # Create a new em_info structure for each region
+    em_info_new <- em_info
+    
+    # Apply `filter_indices` (remove excluded indices) only if provided
+    if (!is.null(filter_indices) && any(filter_indices != 0)) {
+      relevant_indices <- which(filter_indices != 0)
+      em_info_new$basic_info$n_indices = length(relevant_indices)
+    } else {
+      relevant_indices <- 1:em_info_new$par_inputs$n_indices
+    }
+    
+    n_indices <- length(relevant_indices)
+    
+    if (n_indices > 0) {
+      # Subset index-related parameters
+      em_info_new$par_inputs$n_indices <- n_indices
+      em_info_new$par_inputs$index_cv <- subset_or_use_first(em_info$par_inputs$index_cv, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$index_Neff <- subset_or_use_first(em_info$par_inputs$index_Neff, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$fracyr_indices <- subset_or_use_first(em_info$par_inputs$fracyr_indices, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$q <- subset_or_use_first(em_info$par_inputs$q, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$use_indices <- subset_or_use_first(em_info$par_inputs$use_indices, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$use_index_paa <- subset_or_use_first(em_info$par_inputs$use_index_paa, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$units_indices <- subset_or_use_first(em_info$par_inputs$units_indices, relevant_indices, length(index_regions))
+      em_info_new$par_inputs$units_index_paa <- subset_or_use_first(em_info$par_inputs$units_index_paa, relevant_indices, length(index_regions))
+      
+      # Renumber index_regions for remaining indices
+      em_info_new$par_inputs$index_regions <- filter_and_renumber_indices(index_regions[relevant_indices], filter_indices[relevant_indices])
+    } else {
+      em_info_new$par_inputs$index_regions <- NULL  # No indices left
+    }
+    
+    # Extract WAA matrix for the region
+    n_fleets = length(fleet_regions)
+    
+    if (!is.null(filter_indices) && any(filter_indices != 0)) {
+      max.dim = n_fleets + n_regions + length(index_regions) + n_regions
+      index_keep = n_fleets + n_regions + relevant_indices
+      index_dim = (n_fleets + n_regions + 1):(n_fleets + n_regions + length(index_regions))
+      index_rm = index_dim[index_keep != index_dim]
+      em_info_new$par_inputs$user_waa = em_info$basic_info$waa[-index_rm, 1, ]
+      em_info_new$basic_info$waa = em_info$basic_info$waa[-index_rm, , ]
+      em_info_new$basic_info$waa_pointer_fleets   <- 1:n_fleets
+      em_info_new$basic_info$waa_pointer_totcatch <- n_fleets + 1:n_regions
+      em_info_new$basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
+      em_info_new$basic_info$waa_pointer_ssb      <- (n_fleets + n_regions + n_indices + 1):(n_fleets + n_regions + n_indices + n_regions)
+      em_info_new$basic_info$waa_pointer_M        <- em_info_new$basic_info$waa_pointer_ssb
+      
+    } 
+    
+    # Store in list
+    em_info_list = em_info_new
   }
   
   return(em_info_list)

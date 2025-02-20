@@ -199,7 +199,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       
       if (!is.null(filter_indices) & any(filter_indices == 0)) {
         info$index_info$agg_indices <- data$agg_indices[ind_em, idx, drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[, ind_em, idx, drop = FALSE]
+        info$index_info$index_paa <- data$index_paa[idx, ind_em, , drop = FALSE]
       } else {
         info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
         info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
@@ -291,14 +291,39 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     }
   } else {
     # Generic case for estimation model generation
-    info <- generate_basic_info_em(em_info, em_years)
+    # info <- generate_basic_info_em(em_info, em_years)
+
+    n_fleets <- data$n_fleets
+    n_indices <- data$n_indices
+    fleet_regions <- em_info$catch_info$fleet_regions
+    index_regions <- em_info$index_info$index_regions
+    
+    em_info <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices = filter_indices, em.opt)
+    
+    if (!is.null(filter_indices) & any(filter_indices == 0)) {
+      n_indices = sum(filter_indices != 0)
+      idx = which(filter_indices != 0)
+    } 
+    
+    info <- generate_basic_info_em(em_info, em_years,
+                                   n_stocks = om$input$data$n_stocks, 
+                                   n_regions = om$input$data$n_regions, 
+                                   n_fleets = n_fleets, 
+                                   n_indices = n_indices, 
+                                   filter_indices = filter_indices)
     basic_info <- info$basic_info
     
     # Fill in the data from operating model simulation
     info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
-    info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
     info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
-    info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
+    
+    if (!is.null(filter_indices) & any(filter_indices == 0)) {
+      info$index_info$agg_indices <- data$agg_indices[ind_em, idx, drop = FALSE]
+      info$index_info$index_paa <- data$index_paa[idx, ind_em, , drop = FALSE]
+    } else {
+      info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
+      info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
+    }
     
     if (em.opt$do.move) {
       

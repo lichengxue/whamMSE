@@ -36,24 +36,38 @@
 #'     \item{\code{do.move}}{Logical. If TRUE, movement is included (default = FALSE).}
 #'     \item{\code{est.move}}{Logical. If TRUE, movement rates are estimated (default = FALSE).}
 #'   }
-#' @param aggregate_catch_info List. Contains details for aggregating fleet-specific catch data:
+#' @param aggregate_catch_info List (optional). User-specified catch aggregation settings 
+#'   for panmictic models using aggregate catch.
 #'   \itemize{
-#'     \item `fleet_pointer` - Integer vector of length `n_fleets`, specifying how fleets should be aggregated.
-#'     \item `catch_cv`, `catch_Neff` - Numeric vectors of length `n_fleets`, specifying catch CV and sample size.
-#'     \item `use_agg_catch`, `use_catch_paa` - Boolean vectors of length `n_fleets`, indicating whether to aggregate.
+#'     \item `$n_fleets` Integer. Number of fleets.
+#'     \item `$catch_cv` Numeric vector (`n_fleets`). Catch CVs for each fleet.
+#'     \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for catch.
+#'     \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 flag for using aggregate catch.
+#'     \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 flag for using age composition.
+#'     \item `$fleet_pointer` Integer vector (`n_fleets`). Defines fleet grouping (0 = exclude).
+#'     \item `$use_catch_weighted_waa` Logical. Whether to weight-at-age using catch.
 #'   }
-#' @param aggregate_index_info List. Contains details for aggregating index-specific data:
+#' @param aggregate_index_info List (optional). User-specified index aggregation settings for panmictic models using aggregate indices.
 #'   \itemize{
-#'     \item `index_pointer` - Integer vector of length `n_indices`, specifying how indices should be aggregated.
-#'     \item `index_cv`, `index_Neff`, `q` - Numeric vectors of length `n_indices`, specifying index CV, effective sample size, and catchability coefficient.
-#'     \item `use_indices`, `use_index_paa` - Boolean vectors of length `n_indices`, indicating whether to aggregate.
-#'   }
+#'     \item `$n_indices` Integer. Number of indices.
+#'     \item `$index_cv` Numeric vector (`n_indices`). CVs for survey indices.
+#'     \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for indices.
+#'     \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey.
+#'     \item `$q` Numeric vector (`n_indices`). Survey catchability coefficients.
+#'     \item `$use_indices` Integer vector (`n_indices`). 0/1 flag for using survey indices.
+#'     \item `$use_index_paa` Integer vector (`n_indices`). 0/1 flag for using age composition.
+#'     \item `$units_indices` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+#'     \item `$units_index_paa` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+#'     \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
+#'     \item `$use_index_weighted_waa` Logical. Whether to weight-at-age using indices.
+#'      }
 #' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
 #' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2
 #' @param assess_years Vector of years when assessments are conducted.
 #' @param assess_interval Integer. The interval between stock assessments in the MSE feedback loop.
 #' @param base_years Vector of years used in the burn-in period.
-#' @param year.use Integer. Number of years included in the estimation model (default = 30).
+#' @param year.use Integer. Number of years included in the estimation model (default = 20).
+#' @param add.years Logical. Whether or not using entire time series of data in the assessment model (default = FALSE).
 #' @param hcr List containing harvest control rule (HCR) settings:
 #'   \describe{
 #'     \item{\code{hcr.type}}{Integer. The type of harvest control rule:}
@@ -81,12 +95,20 @@
 #'       }
 #'     \item `$method` - String. Specifies the catch allocation method:
 #'       \itemize{
-#'         \item `"region"` - Uses regional catch totals to compute weights.
-#'         \item `"gear"` - Uses gear-type catch totals to compute weights.
-#'         \item `"combined"` - First allocates to gear-specific total catch, then splits into regions.
+#'         \item `"equal"` - Use equal weights, split total catch into fleet-specific catches (use when weight_type = 1).
+#'         \item `"fleet_equal"` - Use equal weights, split total fleet catch into fleet-specific catches (use when weight_type = 1).
+#'         \item `"fleet_region"` - Uses regional catch totals to compute weights (use when weight_type = 2).
+#'         \item `"fleet_gear"` - Uses gear-type catch totals to compute weights (use when weight_type = 2).
+#'         \item `"fleet_combined"` - First allocates to gear-specific total catch, then splits into regions (use when weight_type = 2).
+#'         \item `"fleet_catch"` - Uses fleet-specific catch to compute weights (use when weight_type = 2).
+#'         \item `"index_equal"` - Uses survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+#'         \item `"index_gear"` - Uses survey-based regional weighting, then assigns based on gear-specific weights (use when weight_type = 3).
+#'         \item `"index_multiple"` - Uses multiple survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+#'         \item `"user_defined"` - Uses manually specified weights for each region or each fleet (use when weight_type = 4).
 #'       }
-#'     \item `$user_weights` - Numeric vector (`n_regions`). Optional. User-defined weights summing to 1.
+#'     \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1 (use when weight_type = 4).
 #'     \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
+#'     \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 #'   }
 #' @param do.retro Logical. If TRUE, performs retrospective analysis (default = TRUE).
 #' @param do.osa Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).
@@ -132,8 +154,9 @@ loop_through_fn <- function(om,
                             assess_interval = NULL, 
                             base_years = NULL, 
                             year.use = 20, 
+                            add.years = FALSE,
                             hcr = list(hcr.type = 1, hcr.opts = NULL),
-                            catch_alloc = list(weight_type = 1, method = "region", user_weights = NULL, weight_years = 1),
+                            catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
                             do.retro = FALSE, 
                             do.osa = FALSE, 
                             seed = 123, 
@@ -174,6 +197,9 @@ loop_through_fn <- function(om,
       cat(paste0("\nNow conducting stock assessment for year ", y, "\n"))
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
+      
+      if (add.years) year.use = year.use + assess_interval * (i-1)
+        
       # Note em_info$par_inputs$user_waa for fleet 1 is wrong!
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
                                 NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
@@ -183,7 +209,7 @@ loop_through_fn <- function(om,
                                 filter_indices = filter_indices,
                                 global_waa) # turn off for panmictic model for now
       
-      cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
+      #cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
       
       n_stocks <- om$input$data$n_stocks
       
@@ -195,13 +221,16 @@ loop_through_fn <- function(om,
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
-        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
+        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
-
+        em.advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        
+        cat("\nProject catch from assessment model is ", em.advice, "\n")
+        
         cat("\nNow allocating catch...\n")
-        advice <- calculate_catch_advice(om, advice, aggregate_catch_info, aggregate_index_info, final_year = y,
+        
+        advice <- calculate_catch_advice(om, em.advice, aggregate_catch_info, aggregate_index_info, final_year = y,
                                          catch_alloc)
         
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
@@ -241,12 +270,13 @@ loop_through_fn <- function(om,
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
-        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
+        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
         # advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
         advice <- advice_fn(em, pro.yr = assess_interval, hcr)
-
+        
+        if(is.vector(advice)) advice <- as.matrix(t(advice))
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
         
@@ -301,12 +331,13 @@ loop_through_fn <- function(om,
           cat("\nNow checking convergence of assessment model...\n")
           conv <- check_conv(em[[s]])$conv
           pdHess <- check_conv(em[[s]])$pdHess
-          if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
+          if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
           
           tmp <- advice_fn(em[[s]], pro.yr = assess_interval, hcr)
           advice <- cbind(advice, tmp)
         }
         
+        if(is.vector(advice)) advice <- as.matrix(t(advice))
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", assess_years[i] + 1:assess_interval)
         
@@ -346,15 +377,19 @@ loop_through_fn <- function(om,
       
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em, 
-                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt, 
+      
+      if (add.years) year.use = year.use + assess_interval * (i-1)
+      
+      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
                                 em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
-                                global_waa)
-      
+                                filter_indices = filter_indices,
+                                global_waa) # turn off for panmictic model for now
       
       cat("\nNow fitting assessment model...\n")
+      
       if (em.opt$do.move) {
         if (em.opt$est.move) {
           em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
@@ -369,11 +404,12 @@ loop_through_fn <- function(om,
       cat("\nNow checking convergence of assessment model...\n")
       conv <- check_conv(em)$conv
       pdHess <- check_conv(em)$pdHess
-      if (conv & pdHess) cat("\nAssessment model is converged!\n") else warnings("\nAssessment model is not converged!\n")
+      if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
       
       cat("\nNow generating catch advice...\n")
       advice <- advice_fn(em, pro.yr = assess_interval, hcr)
       
+      if(is.vector(advice)) advice <- as.matrix(t(advice))
       colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
       rownames(advice) <- paste0("Year_", y + 1:assess_interval)
       
@@ -406,6 +442,7 @@ loop_through_fn <- function(om,
   
   end.time <- Sys.time()
   time.taken <- end.time - start.time
+  cat("Please ignore Warning in check_projF(proj_mod).")
   cat("\nTotal Runtime = ", time.taken,"\n")
   
   return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 

@@ -23,9 +23,10 @@ loop_through_fn(
   assess_interval = NULL,
   base_years = NULL,
   year.use = 20,
+  add.years = FALSE,
   hcr = list(hcr.type = 1, hcr.opts = NULL),
-  catch_alloc = list(weight_type = 1, method = "region", user_weights = NULL,
-    weight_years = 1),
+  catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years
+    = 1),
   do.retro = FALSE,
   do.osa = FALSE,
   seed = 123,
@@ -76,19 +77,32 @@ loop_through_fn(
   \item{\code{est.move}}{Logical. If TRUE, movement rates are estimated (default = FALSE).}
 }}
 
-\item{aggregate_catch_info}{List. Contains details for aggregating fleet-specific catch data:
+\item{aggregate_catch_info}{List (optional). User-specified catch aggregation settings 
+for panmictic models using aggregate catch.
 \itemize{
-  \item `fleet_pointer` - Integer vector of length `n_fleets`, specifying how fleets should be aggregated.
-  \item `catch_cv`, `catch_Neff` - Numeric vectors of length `n_fleets`, specifying catch CV and sample size.
-  \item `use_agg_catch`, `use_catch_paa` - Boolean vectors of length `n_fleets`, indicating whether to aggregate.
+  \item `$n_fleets` Integer. Number of fleets.
+  \item `$catch_cv` Numeric vector (`n_fleets`). Catch CVs for each fleet.
+  \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for catch.
+  \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 flag for using aggregate catch.
+  \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 flag for using age composition.
+  \item `$fleet_pointer` Integer vector (`n_fleets`). Defines fleet grouping (0 = exclude).
+  \item `$use_catch_weighted_waa` Logical. Whether to weight-at-age using catch.
 }}
 
-\item{aggregate_index_info}{List. Contains details for aggregating index-specific data:
+\item{aggregate_index_info}{List (optional). User-specified index aggregation settings for panmictic models using aggregate indices.
 \itemize{
-  \item `index_pointer` - Integer vector of length `n_indices`, specifying how indices should be aggregated.
-  \item `index_cv`, `index_Neff`, `q` - Numeric vectors of length `n_indices`, specifying index CV, effective sample size, and catchability coefficient.
-  \item `use_indices`, `use_index_paa` - Boolean vectors of length `n_indices`, indicating whether to aggregate.
-}}
+  \item `$n_indices` Integer. Number of indices.
+  \item `$index_cv` Numeric vector (`n_indices`). CVs for survey indices.
+  \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for indices.
+  \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey.
+  \item `$q` Numeric vector (`n_indices`). Survey catchability coefficients.
+  \item `$use_indices` Integer vector (`n_indices`). 0/1 flag for using survey indices.
+  \item `$use_index_paa` Integer vector (`n_indices`). 0/1 flag for using age composition.
+  \item `$units_indices` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+  \item `$units_index_paa` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+  \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
+  \item `$use_index_weighted_waa` Logical. Whether to weight-at-age using indices.
+   }}
 
 \item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2}
 
@@ -98,7 +112,9 @@ loop_through_fn(
 
 \item{base_years}{Vector of years used in the burn-in period.}
 
-\item{year.use}{Integer. Number of years included in the estimation model (default = 30).}
+\item{year.use}{Integer. Number of years included in the estimation model (default = 20).}
+
+\item{add.years}{Logical. Whether or not using entire time series of data in the assessment model (default = FALSE).}
 
 \item{hcr}{List containing harvest control rule (HCR) settings:
 \describe{
@@ -128,12 +144,20 @@ loop_through_fn(
     }
   \item `$method` - String. Specifies the catch allocation method:
     \itemize{
-      \item `"region"` - Uses regional catch totals to compute weights.
-      \item `"gear"` - Uses gear-type catch totals to compute weights.
-      \item `"combined"` - First allocates to gear-specific total catch, then splits into regions.
+      \item `"equal"` - Use equal weights, split total catch into fleet-specific catches (use when weight_type = 1).
+      \item `"fleet_equal"` - Use equal weights, split total fleet catch into fleet-specific catches (use when weight_type = 1).
+      \item `"fleet_region"` - Uses regional catch totals to compute weights (use when weight_type = 2).
+      \item `"fleet_gear"` - Uses gear-type catch totals to compute weights (use when weight_type = 2).
+      \item `"fleet_combined"` - First allocates to gear-specific total catch, then splits into regions (use when weight_type = 2).
+      \item `"fleet_catch"` - Uses fleet-specific catch to compute weights (use when weight_type = 2).
+      \item `"index_equal"` - Uses survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+      \item `"index_gear"` - Uses survey-based regional weighting, then assigns based on gear-specific weights (use when weight_type = 3).
+      \item `"index_multiple"` - Uses multiple survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+      \item `"user_defined"` - Uses manually specified weights for each region or each fleet (use when weight_type = 4).
     }
-  \item `$user_weights` - Numeric vector (`n_regions`). Optional. User-defined weights summing to 1.
+  \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1 (use when weight_type = 4).
   \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
+  \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 }}
 
 \item{do.retro}{Logical. If TRUE, performs retrospective analysis (default = TRUE).}

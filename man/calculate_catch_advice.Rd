@@ -10,8 +10,8 @@ calculate_catch_advice(
   aggregate_catch_info,
   aggregate_index_info,
   final_year,
-  catch_alloc = list(weight_type = 1, method = "fleet_region", user_weights = NULL,
-    weight_years = 1, survey_pointer = 1)
+  catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years
+    = 1, survey_pointer = 1)
 )
 }
 \arguments{
@@ -43,18 +43,20 @@ where each column represents a gear type. If `advice` is a vector, it represents
     }
   \item `$method` - String. Specifies the catch allocation method:
     \itemize{
-      \item `"fleet_region"` - Uses regional catch totals to compute weights.
-      \item `"fleet_gear"` - Uses gear-type catch totals to compute weights.
-      \item `"fleet_combined"` - First allocates to gear-specific total catch, then splits into regions.
-      \item `"fleet_catch"` - Uses fleet-specific catch to compute weights.
-      \item `"index_equal"` - Uses survey-based regional weighting, then assigns equally among fleets in the same region.
-      \item `"index_gear"` - Uses survey-based regional weighting, then assigns based on gear-specific weights.
-      \item `"index_multiple"` - Uses multiple survey-based regional weighting, then assigns equally among fleets in the same region.
-      \item `"user_defined"` - Uses manually specified weights for each region or each fleet.
+      \item `"equal"` - Use equal weights, split total catch into fleet-specific catches (use when weight_type = 1).
+      \item `"fleet_equal"` - Use equal weights, split total fleet catch into fleet-specific catches (use when weight_type = 1).
+      \item `"fleet_region"` - Uses regional catch totals to compute weights (use when weight_type = 2).
+      \item `"fleet_gear"` - Uses gear-type catch totals to compute weights (use when weight_type = 2).
+      \item `"fleet_combined"` - First allocates to gear-specific total catch, then splits into regions (use when weight_type = 2).
+      \item `"fleet_catch"` - Uses fleet-specific catch to compute weights (use when weight_type = 2).
+      \item `"index_equal"` - Uses survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+      \item `"index_gear"` - Uses survey-based regional weighting, then assigns based on gear-specific weights (use when weight_type = 3).
+      \item `"index_multiple"` - Uses multiple survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
+      \item `"user_defined"` - Uses manually specified weights for each region or each fleet (use when weight_type = 4).
     }
-  \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1.
+  \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1 (use when weight_type = 4).
   \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
-  \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting.
+  \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 }}
 }
 \value{

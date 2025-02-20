@@ -36,7 +36,7 @@ generate_basic_info_em <- function(em_info,
                                    n_indices = NULL, 
                                    filter_indices = NULL) {
   
-  if (is.null(filter_indices)) {
+  if (is.null(filter_indices) || all(filter_indices != 0)) {
     # Default to values from em_info if not provided
     if (is.null(n_stocks)) n_stocks <- em_info$par_inputs$n_stocks
     if (is.null(n_regions)) n_regions <- em_info$par_inputs$n_regions
@@ -79,7 +79,7 @@ generate_basic_info_em <- function(em_info,
       
       # Construct index_info list
       index_info = list(
-        index_info$n_indices <- em_info$par_inputs$n_indices,
+        n_indices <- em_info$par_inputs$n_indices,
         agg_indices = em_info$par_inputs$agg_indices, 
         index_paa = em_info$par_inputs$index_paa,
         index_cv = em_info$par_inputs$index_cv,
@@ -186,7 +186,7 @@ generate_basic_info_em <- function(em_info,
         
         # Construct index_info list
         index_info = list(
-          index_info$n_indices <- em_info$par_inputs$n_indices,
+          n_indices <- em_info$par_inputs$n_indices,
           agg_indices = em_info$par_inputs$agg_indices, 
           index_paa = em_info$par_inputs$index_paa,
           index_cv = em_info$par_inputs$index_cv,
@@ -202,7 +202,7 @@ generate_basic_info_em <- function(em_info,
         fracyr_spawn = em_info$par_inputs$fracyr_spawn,
         fracyr_seasons = em_info$par_inputs$fracyr_seasons, # Pass user-defined season fractions if available
         fleet_regions = em_info$par_inputs$fleet_regions, # Fleet region allocation
-        index_regions = em_info$par_inputs$index_regions, # Index region allocation
+        index_regions = index_regions[which(filter_indices != 0)], # Index region allocation
         user_waa = em_info$par_inputs$user_waa, # Use user-defined weight-at-age if provided
         user_maturity = em_info$par_inputs$user_maturity, # Use user-defined maturity-at-age if provided
         bias.correct.process = em_info$par_inputs$bias_correct_process,

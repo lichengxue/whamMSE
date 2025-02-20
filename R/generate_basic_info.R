@@ -205,6 +205,20 @@ generate_basic_info <- function(n_stocks = 2,
   fracyr_seasons = basic_info$fracyr_seasons
   basic_info$fracyr_SSB <- matrix(0, ny, n_stocks) # Assume fish is recruited at the beginning of the year
   basic_info$fracyr_spawn = fracyr_spawn # rep(fracyr_spawn, n_stocks) different spawning season???
+
+  if(is.null(catch_info$catch_cv)) catch_info$catch_cv = 0.1
+  if(is.null(catch_info$catch_Neff)) catch_info$catch_Neff = 100
+  if(is.null(catch_info$use_agg_catch)) catch_info$use_agg_catch = 1
+  if(is.null(catch_info$use_catch_paa)) catch_info$use_catch_paa = 1
+  
+  if(is.null(index_info$index_cv)) index_info$index_cv = 0.1
+  if(is.null(index_info$index_Neff)) index_info$index_Neff = 100
+  if(is.null(index_info$fracyr_indices)) index_info$fracyr_indices = 0.5
+  if(is.null(index_info$q)) index_info$q = 0.2
+  if(is.null(index_info$use_indices)) index_info$use_indices = 1
+  if(is.null(index_info$use_index_paa)) index_info$use_index_paa = 1
+  if(is.null(index_info$units_indices)) index_info$units_indices = 2
+  if(is.null(index_info$units_index_paa)) index_info$units_index_paa = 2
   
   catch_info_list <- catch_info
   index_info_list <- index_info
@@ -240,10 +254,10 @@ generate_basic_info <- function(n_stocks = 2,
       
       if (Fhist == "updown") {
         F_vals <- matrix(c(seq(F.year1, Fmax, length.out = mid),
-                      seq(Fmax, Fmin, length.out = nby - mid + 1)[-1]), nby, n_fleets)
+                           seq(Fmax, Fmin, length.out = nby - mid + 1)[-1]), nby, n_fleets)
       } else if (Fhist == "downup") {
         F_vals <- matrix(c(seq(F.year1, Fmin, length.out = mid),
-                      seq(Fmin, Fmax, length.out = nby - mid + 1)[-1]), nby, n_fleets)
+                           seq(Fmin, Fmax, length.out = nby - mid + 1)[-1]), nby, n_fleets)
       } else if (Fhist == "F-H-L") {
         F_vals <- matrix(F.year1 * Fmin, nby, n_fleets)
         F_vals[1:mid, ] <- F.year1 * Fmax
@@ -289,14 +303,14 @@ generate_basic_info <- function(n_stocks = 2,
     if (length(user_waa) == na) {
       W <- user_waa
       for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W, simplify = FALSE))
-      } else if (is.matrix(user_waa) && dim(user_waa)[1] == nwaa && dim(user_waa)[2] == na) {
-        W <- user_waa
-        for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W[i,], simplify = FALSE))
-      } else {
-        warnings("Dimension of W should be either a vector of n_ages or a matrix with nrow = c(n_fleets + n_regions + n_indices + n_stocks) and ncol = n_ages!")
-      }
+    } else if (is.matrix(user_waa) && dim(user_waa)[1] == nwaa && dim(user_waa)[2] == na) {
+      W <- user_waa
+      for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W[i,], simplify = FALSE))
+    } else {
+      warnings("Dimension of W should be either a vector of n_ages or a matrix with nrow = c(n_fleets + n_regions + n_indices + n_stocks) and ncol = n_ages!")
+    }
   }
-
+  
   basic_info$waa_pointer_fleets   <- 1:n_fleets
   basic_info$waa_pointer_totcatch <- (n_fleets + 1):(n_fleets + n_regions)
   basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
@@ -326,9 +340,9 @@ generate_basic_info <- function(n_stocks = 2,
     } else {
       stop("catch_Neff must be either a single value or a vector of length n_fleets.")
     }
-
+    
   }
-
+  
   if (is.null(catch_info$use_agg_catch)) {
     use_agg_catch <- matrix(1, ny, n_fleets)
   } else {
@@ -697,7 +711,7 @@ generate_basic_info <- function(n_stocks = 2,
     use_index_paa = index_info_list$use_index_paa,
     units_indices = index_info_list$units_indices,
     units_index_paa = index_info_list$units_index_paa,
-
+    
     # Spawning and Seasons Information
     fracyr_spawn = fracyr_spawn,
     fracyr_seasons = fracyr_seasons,
