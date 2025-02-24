@@ -153,7 +153,7 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
       relevant_indices <- which(index_regions == r)
       
       # Apply `filter_indices` (remove excluded indices) only if provided
-      if (is.null(filter_indices)) filter_indices = 1:filter_indices
+      if (is.null(filter_indices)) filter_indices = 1:relevant_indices
       
       if (!is.null(filter_indices)) {
         relevant_indices <- relevant_indices[filter_indices[relevant_indices] != 0]

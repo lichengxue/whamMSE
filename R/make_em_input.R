@@ -116,6 +116,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       
       n_fleets <- ifelse(is.null(aggregate_catch_info$n_fleets), 1, aggregate_catch_info$n_fleets)
       n_indices <- ifelse(is.null(aggregate_index_info$n_indices), 1, aggregate_index_info$n_indices)
+      n_stocks = n_regions = 1
       
       em_info = make_aggregate_data(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em)
       

@@ -169,7 +169,7 @@ loop_through_fn <- function(om,
   check_conv <- function(em) {
     conv <- as.logical(1 - em$opt$convergence)
     pdHess <- as.logical(if (em$na_sdrep == FALSE & !is.na(em$na_sdrep)) 1 else 0)
-    if (!conv | !pdHess) warning("Assessment model is not converged!")
+    if (!conv | !pdHess) warnings("Assessment model is not converged!")
     list(conv = conv, pdHess = pdHess)
   }
   
@@ -221,7 +221,7 @@ loop_through_fn <- function(om,
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
-        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
+        if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
         em.advice <- advice_fn(em, pro.yr = assess_interval, hcr)
@@ -230,7 +230,10 @@ loop_through_fn <- function(om,
         
         cat("\nNow allocating catch...\n")
         
-        advice <- calculate_catch_advice(om, em.advice, aggregate_catch_info, aggregate_index_info, final_year = y,
+        advice <- calculate_catch_advice(om, em.advice, 
+                                         aggregate_catch_info, 
+                                         aggregate_index_info, 
+                                         final_year = y,
                                          catch_alloc)
         
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
@@ -270,7 +273,7 @@ loop_through_fn <- function(om,
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
-        if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
+        if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
         # advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
@@ -331,7 +334,7 @@ loop_through_fn <- function(om,
           cat("\nNow checking convergence of assessment model...\n")
           conv <- check_conv(em[[s]])$conv
           pdHess <- check_conv(em[[s]])$pdHess
-          if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
+          if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
           
           tmp <- advice_fn(em[[s]], pro.yr = assess_interval, hcr)
           advice <- cbind(advice, tmp)
@@ -404,7 +407,7 @@ loop_through_fn <- function(om,
       cat("\nNow checking convergence of assessment model...\n")
       conv <- check_conv(em)$conv
       pdHess <- check_conv(em)$pdHess
-      if (conv & pdHess) cat("\nAssessment model is converged!\n") else warning("\nAssessment model is not converged!\n")
+      if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
       
       cat("\nNow generating catch advice...\n")
       advice <- advice_fn(em, pro.yr = assess_interval, hcr)

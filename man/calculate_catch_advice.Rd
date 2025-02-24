@@ -17,53 +17,55 @@ calculate_catch_advice(
 \arguments{
 \item{om}{List. The operating model containing input data, fleet, and index information.}
 
-\item{advice}{Matrix or vector. Catch advice of dimension (`n_years, n_fleets`), 
-where each column represents a gear type. If `advice` is a vector, it represents total annual catch.}
+\item{advice}{Matrix or vector. Catch advice of dimension (n_years, n_fleets), 
+where each column represents a gear type. If advice is a vector, it represents total annual catch.}
 
 \item{aggregate_catch_info}{List. Contains fleet allocation information:
 \itemize{
-  \item `$fleet_pointer` - Vector indicating the gear type assignment for each fleet.
+  \item $fleet_pointer - Vector indicating the gear type assignment for each fleet.
 }}
 
 \item{aggregate_index_info}{List. Contains index region allocation information:
 \itemize{
-  \item `$index_pointer` - Vector indicating the index region assignment.
+  \item $index_pointer - Vector indicating the index region assignment.
 }}
 
 \item{final_year}{Integer. The last year to consider when calculating historical catch weights.}
 
 \item{catch_alloc}{List. Contains specifications for catch allocation:
 \itemize{
-  \item `$weight_type` - Integer (1–4) indicating the type of weighting used.
+  \item $weight_type - Integer (1–4) indicating the type of weighting used.
     \itemize{
-      \item `1` - Equal weighting across fleets.
-      \item `2` - Weighting based on past catch data.
-      \item `3` - Weighting based on past survey index data.
-      \item `4` - User-specified weights.
+      \item 1 - Equal weighting across fleets.
+      \item 2 - Weighting based on past catch data.
+      \item 3 - Weighting based on past survey index data.
+      \item 4 - User-specified weights.
     }
-  \item `$method` - String. Specifies the catch allocation method:
+  \item $method - String. Specifies the catch allocation method:
     \itemize{
-      \item `"equal"` - Use equal weights, split total catch into fleet-specific catches (use when weight_type = 1).
-      \item `"fleet_equal"` - Use equal weights, split total fleet catch into fleet-specific catches (use when weight_type = 1).
-      \item `"fleet_region"` - Uses regional catch totals to compute weights (use when weight_type = 2).
-      \item `"fleet_gear"` - Uses gear-type catch totals to compute weights (use when weight_type = 2).
-      \item `"fleet_combined"` - First allocates to gear-specific total catch, then splits into regions (use when weight_type = 2).
-      \item `"fleet_catch"` - Uses fleet-specific catch to compute weights (use when weight_type = 2).
-      \item `"index_equal"` - Uses survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
-      \item `"index_gear"` - Uses survey-based regional weighting, then assigns based on gear-specific weights (use when weight_type = 3).
-      \item `"index_multiple"` - Uses multiple survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
-      \item `"user_defined"` - Uses manually specified weights for each region or each fleet (use when weight_type = 4).
+      \item "equal" - Total catch is equally split among all fleets.
+      \item "fleet_equal" - Total catch for each gear type is equally distributed among all regions.
+      \item "fleet_region" - Total catch is allocated to each region based on historical region-specific catch and then equally allocated to all fleets within the same region.
+      \item "fleet_gear" - Total catch is allocated to each gear type based on historical gear-specific catch and then equally allocated to all regions.
+      \item "fleet_combined" - Total catch is allocated to regions and gear types separately based on historical region-specific and gear-specific catch.
+      \item "fleet_catch" - Total catch is allocated based on historical fleet-specific catch within each region.
+      \item "index_equal" - Total catch is allocated based on historical region-specific survey catch and then equally distributed among all fleets within the same region.
+      \item "index_gear" - Total catch is allocated based on historical region-specific survey catch and then distributed among fleets based on historical gear-specific catch.
+      \item "multiple_index_equal" - Total catch is allocated based on multiple historical region-specific surveys catch and then equally distributed among all fleets within the same region.
+      \item "multiple_index_gear" - Total catch is allocated based on multiple historical region-specific surveys catch and then distributed among fleets within the same region based on historical gear-specific catch.
+      \item "user_defined_fleets" - Catch allocation is based on user-defined weights for each fleet.
+      \item "user_defined_regions" - Catch is allocated based on user-defined weights for regions, then equally distributed among fleets within the region.
     }
-  \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1 (use when weight_type = 4).
-  \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
-  \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
+  \item $user_weights - Numeric vector (n_regions or n_fleets). Optional. User-defined weights summing to 1 (use when weight_type = 4).
+  \item $weight_years - Integer. Number of years to average for calculating historical catch weights.
+  \item $survey_pointer - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 }}
 }
 \value{
-A matrix of dimension (`n_years, n_fleets`) representing region-specific 
+A matrix of dimension (n_years, n_fleets) representing region-specific 
   and gear-specific catch advice.
 }
 \description{
 This function distributes total catch into region- and gear-specific fleets 
-based on different weighting methods: `"fleet_region"`, `"fleet_gear"`, `"fleet_combined"`, `"fleet_catch"`, `"index_equal"`, `"index_gear"`, `"index_multiple"`, or user-specified weights.
+based on different weighting methods: "fleet_region", "fleet_gear", "fleet_combined", "fleet_catch", "index_equal", "index_gear", "multiple_index_equal", "multiple_index_gear", or user-specified weights.
 }

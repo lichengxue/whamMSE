@@ -73,9 +73,6 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   #   return(aggregated_values)
   # }
   
-  
-  
-  
   aggregate_parameters <- function(values, pointers, default_values) {
     # Ignore 0s in pointers
     valid_pointers <- pointers[pointers > 0]
@@ -476,8 +473,8 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   em_info$par_inputs$user_waa <- do.call(rbind,c(aggregated_fleet_waa,aggregated_region_waa,aggregated_index_waa,aggregated_stock_waa))
   em_info$basic_info$waa = em_info$par_inputs$user_waa
   
-  em_info$par_inputs$n_regions = 1
-  em_info$par_inputs$n_stocks = 1 
+  em_info$par_inputs$n_regions = n_regions = 1
+  em_info$par_inputs$n_stocks = n_stocks = 1 
   em_info$par_inputs$n_fleets = n_fleets
   em_info$par_inputs$n_indices = n_indices
   
