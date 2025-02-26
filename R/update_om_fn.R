@@ -29,7 +29,7 @@
 #'
 #' @seealso \code{\link{get_F_from_Catch}}, \code{\link{update_om_F}}
 #'
-update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA", method = "nlminb", by_fleet = FALSE) {
+update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA", method = "nlminb", by_fleet = TRUE, do.brps = FALSE) {
   
   if(!is.null(interval.info)){
     # Iterative update F in the OM using get_F_from_Catch_region function
@@ -44,7 +44,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       
       cat(paste0("\nNow calculating fleet-specific F in year ", y, "\n"))
       
-      Fsolve <- get_F_from_Catch(om, Catch, year, method = "nlminb", by_fleet = FALSE)
+      Fsolve <- get_F_from_Catch(om, Catch, year, method = "nlminb", by_fleet = by_fleet)
       
       cat(paste0("\nNow updating F in OM for year ", y, "\n"))
       
@@ -70,7 +70,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       cat(paste0("\nNow projecting data for years after ", y, "\n"))
       
       # Fit the WHAM model without actually performing the fit (do.fit = FALSE)
-      om <- fit_wham(om$input, do.fit = FALSE, MakeADFun.silent = TRUE)
+      om <- fit_wham(om$input, do.fit = FALSE, do.brps = do.brps, MakeADFun.silent = TRUE)
       
     }
     
@@ -88,7 +88,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
     om$input$par[random] = om_sim[random] #update any simulated random effects
     
     # reset the om
-    om <- fit_wham(om$input, do.fit = FALSE, MakeADFun.silent = TRUE)
+    om <- fit_wham(om$input, do.fit = FALSE, do.brps = do.brps, MakeADFun.silent = TRUE)
   }
   
   return(om)

@@ -68,6 +68,8 @@
 #' @param base_years Vector of years used in the burn-in period.
 #' @param year.use Integer. Number of years included in the estimation model (default = 20).
 #' @param add.years Logical. Whether or not using entire time series of data in the assessment model (default = FALSE).
+#' @param by_fleet Logical. Whether calculate fleet-specific fishing mortality or global fishing mortality (default = TRUE).
+#' @param do.brps Logical. Whether or not update reference point in the OM (default = FALSE).
 #' @param hcr List containing harvest control rule (HCR) settings:
 #'   \describe{
 #'     \item{\code{hcr.type}}{Integer. The type of harvest control rule:}
@@ -159,9 +161,11 @@ loop_through_fn <- function(om,
                             catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
                             do.retro = FALSE, 
                             do.osa = FALSE, 
+                            do.brps = FALSE,
                             seed = 123, 
                             save.sdrep = FALSE, 
-                            save.last.em = FALSE) {
+                            save.last.em = FALSE,
+                            by_fleet = FALSE) {
   
   start.time <- Sys.time()
   
@@ -246,7 +250,9 @@ loop_through_fn <- function(om,
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         
-        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = FALSE)
+        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
+        
+        cat("Updated Prediced Catch \n",om$rep$pred_catch[i,],"\n")
         
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
@@ -290,7 +296,7 @@ loop_through_fn <- function(om,
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         
-        om <- update_om_fn(om, interval.info, seed = seed, random = random)
+        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
         
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
@@ -350,7 +356,7 @@ loop_through_fn <- function(om,
         interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
-        om <- update_om_fn(om, interval.info, seed = seed, random = random)
+        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
         
         for (s in 1:n_stocks) {
           em_list[[i]][[s]] <- em[[s]]$rep
@@ -416,12 +422,14 @@ loop_through_fn <- function(om,
       colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
       rownames(advice) <- paste0("Year_", y + 1:assess_interval)
       
-      print(advice)
+      cat("Catch Advice \n",advice,"\n")
       
       interval.info <- list(catch = advice, years = y + 1:assess_interval)
       
       cat("\nNow calculating F at age in the OM given the catch advice...\n")
-      om <- update_om_fn(om, interval.info, seed = seed, random = random)
+      om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
+      
+      cat("Updated Prediced Catch \n",om$rep$pred_catch[i,],"\n")
       
       em_list[[i]] <- em$rep
       par.est[[i]] <- as.list(em$sdrep, "Estimate")

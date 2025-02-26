@@ -10,7 +10,8 @@ update_om_fn(
   seed = 123,
   random = "log_NAA",
   method = "nlminb",
-  by_fleet = FALSE
+  by_fleet = TRUE,
+  do.brps = FALSE
 )
 }
 \arguments{

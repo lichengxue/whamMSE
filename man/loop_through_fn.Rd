@@ -29,9 +29,11 @@ loop_through_fn(
     = 1),
   do.retro = FALSE,
   do.osa = FALSE,
+  do.brps = FALSE,
   seed = 123,
   save.sdrep = FALSE,
-  save.last.em = FALSE
+  save.last.em = FALSE,
+  by_fleet = FALSE
 )
 }
 \arguments{
@@ -164,11 +166,15 @@ for panmictic models using aggregate catch.
 
 \item{do.osa}{Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).}
 
+\item{do.brps}{Logical. Whether or not update reference point in the OM (default = FALSE).}
+
 \item{seed}{Integer. The random seed used for stochastic processes.}
 
 \item{save.sdrep}{Logical. If TRUE, saves the results of every assessment model (memory-intensive).}
 
 \item{save.last.em}{Logical. If TRUE, saves only the last estimation model (default = FALSE).}
+
+\item{by_fleet}{Logical. Whether calculate fleet-specific fishing mortality or global fishing mortality (default = TRUE).}
 
 \item{ind_em}{Vector. Indices specifying the years for which the estimation model should use data.}
 }

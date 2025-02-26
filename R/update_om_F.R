@@ -6,7 +6,7 @@
 #' @param om A fitted operating model that includes burn-in and feedback years.
 #' @param year Integer. The year for which fishing mortality is being updated.
 #' @param Fsolve Numeric vector. Estimated fishing mortality values for each fleet.
-#'
+#' 
 #' @return An updated operating model (`om`) with:
 #'   \itemize{
 #'     \item Updated F time series.
@@ -58,7 +58,7 @@ update_om_F <- function(om, year, Fsolve) {
     }
   }
   
-  om <- fit_wham(om$input, do.fit = FALSE, MakeADFun.silent = TRUE)
+  om <- fit_wham(om$input, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
   return(om)
 }
   
