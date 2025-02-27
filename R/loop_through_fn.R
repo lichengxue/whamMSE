@@ -112,11 +112,14 @@
 #'     \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
 #'     \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 #'   }
-#' @param do.retro Logical. If TRUE, performs retrospective analysis (default = TRUE).
-#' @param do.osa Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).
+#' @param do.retro Logical. If TRUE, performs retrospective analysis for the assessment model (default = TRUE).
+#' @param do.osa Logical. If TRUE, calculates one-step-ahead (OSA) residuals for the assessment model (default = TRUE).
+#' @param do.brps Logical. If TRUE, calculates reference points in the operating model (default = FALSE).
 #' @param seed Integer. The random seed used for stochastic processes.
 #' @param save.sdrep Logical. If TRUE, saves the results of every assessment model (memory-intensive).
 #' @param save.last.em Logical. If TRUE, saves only the last estimation model (default = FALSE).
+#' @param by_fleet Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).
+#' @param FXSPR_init Numeric. change initial F for estimating reference point in the assessment model (default = NULL).
 #' 
 #' @return A list containing:
 #'   \describe{
@@ -165,7 +168,8 @@ loop_through_fn <- function(om,
                             seed = 123, 
                             save.sdrep = FALSE, 
                             save.last.em = FALSE,
-                            by_fleet = FALSE) {
+                            by_fleet = FALSE,
+                            FXSPR_init = NULL) {
   
   start.time <- Sys.time()
   
@@ -215,12 +219,14 @@ loop_through_fn <- function(om,
       
       #cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
       
+      if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
+      
       n_stocks <- om$input$data$n_stocks
       
       if (em.opt$separate.em.type == 1) {
         
         cat("\nNow fitting assessment model...\n")
-        em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+        em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
      
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
@@ -228,6 +234,7 @@ loop_through_fn <- function(om,
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
+        
         em.advice <- advice_fn(em, pro.yr = assess_interval, hcr)
         
         cat("\nProject catch from assessment model is ", em.advice, "\n")
@@ -274,7 +281,7 @@ loop_through_fn <- function(om,
       } else if (em.opt$separate.em.type == 2) {
         
         cat("\nNow fitting assessment model...\n")
-        em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+        em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
 
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
@@ -335,7 +342,7 @@ loop_through_fn <- function(om,
         for (s in 1:n_stocks) {
           
           cat("\nNow fitting assessment model...\n")
-          em[[s]] <- fit_wham(em_input[[s]], do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+          em[[s]] <- fit_wham(em_input[[s]], do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
           
           cat("\nNow checking convergence of assessment model...\n")
           conv <- check_conv(em[[s]])$conv
@@ -401,13 +408,13 @@ loop_through_fn <- function(om,
       
       if (em.opt$do.move) {
         if (em.opt$est.move) {
-          em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+          em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
         } else {
           em_input <- fix_move(em_input)
-          em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+          em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
         }
       } else {
-        em <- fit_wham(em_input, do.retro = FALSE, do.osa = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
+        em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
       }
       
       cat("\nNow checking convergence of assessment model...\n")

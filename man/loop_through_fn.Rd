@@ -33,7 +33,8 @@ loop_through_fn(
   seed = 123,
   save.sdrep = FALSE,
   save.last.em = FALSE,
-  by_fleet = FALSE
+  by_fleet = FALSE,
+  FXSPR_init = NULL
 )
 }
 \arguments{
@@ -162,11 +163,11 @@ for panmictic models using aggregate catch.
   \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 }}
 
-\item{do.retro}{Logical. If TRUE, performs retrospective analysis (default = TRUE).}
+\item{do.retro}{Logical. If TRUE, performs retrospective analysis for the assessment model (default = TRUE).}
 
-\item{do.osa}{Logical. If TRUE, calculates one-step-ahead (OSA) residuals (default = TRUE).}
+\item{do.osa}{Logical. If TRUE, calculates one-step-ahead (OSA) residuals for the assessment model (default = TRUE).}
 
-\item{do.brps}{Logical. Whether or not update reference point in the OM (default = FALSE).}
+\item{do.brps}{Logical. If TRUE, calculates reference points in the operating model (default = FALSE).}
 
 \item{seed}{Integer. The random seed used for stochastic processes.}
 
@@ -174,7 +175,9 @@ for panmictic models using aggregate catch.
 
 \item{save.last.em}{Logical. If TRUE, saves only the last estimation model (default = FALSE).}
 
-\item{by_fleet}{Logical. Whether calculate fleet-specific fishing mortality or global fishing mortality (default = TRUE).}
+\item{by_fleet}{Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).}
+
+\item{FXSPR_init}{Numeric. change initial F for estimating reference point in the assessment model (default = NULL).}
 
 \item{ind_em}{Vector. Indices specifying the years for which the estimation model should use data.}
 }

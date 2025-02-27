@@ -137,21 +137,24 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       #   
       # em_info <- aggregate_em_data(data, em_info, aggregate_catch_info, aggregate_index_info, ind_em, n_fleets, n_indices)
       
+      # Override any movement or trend information
+      em_info$par_inputs$move_dyn <- 0
+      em_info$par_inputs$onto_move <- matrix(0)
+      em_info$par_inputs$apply_re_trend <- 0
+      em_info$par_inputs$apply_mu_trend <- 0
+      
       info <- generate_basic_info_em(em_info, em_years, n_stocks = 1, n_regions = 1, n_fleets = n_fleets, n_indices = n_indices)
       
       basic_info <- info$basic_info
+      catch_info <- info$catch_info
+      index_info <- info$index_info
+      F_info     <- info$F
       
       # Fill in the data from the operating model simulation
-      info$catch_info$agg_catch <- agg_catch
-      info$catch_info$catch_paa <- catch_paa
-      info$index_info$agg_indices <- agg_indices
-      info$index_info$index_paa <- index_paa
-
-      # Override any movement or trend information
-      basic_info$move_dyn <- 0
-      basic_info$onto_move <- matrix(0)
-      basic_info$apply_re_trend <- 0
-      basic_info$apply_mu_trend <- 0
+      catch_info$agg_catch <- agg_catch
+      catch_info$catch_paa <- catch_paa
+      index_info$agg_indices <- agg_indices
+      index_info$index_paa <- index_paa
       
       em_input <- prepare_wham_input(
         basic_info = basic_info,
@@ -160,9 +163,9 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         NAA_re = NAA_re_em,
         move = NULL,
         age_comp = age_comp_em,
-        catch_info = info$catch_info,
-        index_info = info$index_info,
-        F = info$F
+        catch_info = catch_info,
+        index_info = index_info,
+        F = F_info
       )
       
       if (!global_waa) {

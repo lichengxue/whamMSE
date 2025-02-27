@@ -17,7 +17,8 @@
 #'     \item \code{"BFGS"}: Uses `optim` with the BFGS method.
 #'   }
 #' @param by_fleet Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).
-#'
+#' @param do.brps Logical. If TRUE, calculates reference points in the operating model (default = FALSE).
+#' 
 #' @return An updated operating model (`om`) with:
 #'   \itemize{
 #'     \item Updated F time series.

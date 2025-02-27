@@ -28,6 +28,7 @@ get_F_from_Catch <- function(om, Catch, year, method = "nlminb", by_fleet = FALS
   mu = rep$mu[,,,year,,]
   sel = rbind(rep$FAA[,year,]/max(exp(rep$log_FAA_tot[year,])))
   fracyr_seasons = om$input$data$fracyr_seasons
+  if(length(fracyr_seasons) == 1) mu = array(mu, dim = c(dim(mu)[1:2],1,dim(mu)[3:4]))
   fleet_regions = om$input$data$fleet_regions
   fleet_seasons = om$input$data$fleet_seasons
   can_move = om$input$data$can_move

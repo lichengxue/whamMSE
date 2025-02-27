@@ -311,6 +311,8 @@ generate_basic_info <- function(n_stocks = 2,
     }
   }
   
+  user_waa = basic_info$waa[,1,]
+  
   basic_info$waa_pointer_fleets   <- 1:n_fleets
   basic_info$waa_pointer_totcatch <- (n_fleets + 1):(n_fleets + n_regions)
   basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
@@ -575,7 +577,7 @@ generate_basic_info <- function(n_stocks = 2,
     
     # Check if any value in basic_info$fracyr_SSB[, s] is equal to 0
     if (any(basic_info$fracyr_SSB[, s] == 0)) {
-      warning(paste("Spawning fraction for stock", s, "is equal to 0, indicating spawning is happening at the edge of a season. This can cause issues in calculations."))
+      cat("Spawning fraction for stock", s, "is equal to 0. This may cause issues when having multiple seasons.\n")
     }
   }
   
