@@ -32,6 +32,7 @@ update_om_F <- function(om, year, Fsolve) {
         }
       } else om$input$par$F_pars[year,] <- log(F_fleet_y) #if year is the first year of the model, change F in year 1
     } else{ #alternative configuration of F_pars
+      cat("\nFleet-specific fishing mortality is ", Fsolve, "\n")
       om$input$par$F_pars[year,] <- log(Fsolve)
     }
   } else {
@@ -42,6 +43,7 @@ update_om_F <- function(om, year, Fsolve) {
     selAA <- FAA/old_max_F #sum(selAA[i,]) = 1
     new_FAA <- Fsolve * selAA #updated FAA
     F_fleet_y <- apply(new_FAA, 1, max) #full F for each fleet
+    cat("\nFleet-specific fishing mortality is ", F_fleet_y, "\n")
     if(om$input$data$F_config==1) {
       if(year>1) {
         FAA_ym1 <- rbind(rep$FAA[,year-1,]) #n_fleets x n_ages

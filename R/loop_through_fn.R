@@ -118,7 +118,7 @@
 #' @param seed Integer. The random seed used for stochastic processes.
 #' @param save.sdrep Logical. If TRUE, saves the results of every assessment model (memory-intensive).
 #' @param save.last.em Logical. If TRUE, saves only the last estimation model (default = FALSE).
-#' @param by_fleet Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = FALSE).
+#' @param by_fleet Logical. If TRUE, estimates F separately for each fleet. If FALSE, estimates a single global F (default = TRUE).
 #' @param FXSPR_init Numeric. change initial F for estimating reference point in the assessment model (default = NULL).
 #' 
 #' @return A list containing:
@@ -168,7 +168,7 @@ loop_through_fn <- function(om,
                             seed = 123, 
                             save.sdrep = FALSE, 
                             save.last.em = FALSE,
-                            by_fleet = FALSE,
+                            by_fleet = TRUE,
                             FXSPR_init = NULL) {
   
   start.time <- Sys.time()
@@ -206,7 +206,7 @@ loop_through_fn <- function(om,
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
       
-      if (add.years) year.use = year.use + assess_interval * (i-1)
+      if (add.years && i != 1) year.use = year.use + assess_interval
         
       # Note em_info$par_inputs$user_waa for fleet 1 is wrong!
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
@@ -259,7 +259,7 @@ loop_through_fn <- function(om,
         
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
         
-        cat("Updated Prediced Catch \n",om$rep$pred_catch[i,],"\n")
+        # 
         
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
@@ -394,7 +394,7 @@ loop_through_fn <- function(om,
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
       
-      if (add.years) year.use = year.use + assess_interval * (i-1)
+      if (add.years && i != 1) year.use = year.use + assess_interval
       
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
                                 NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
@@ -436,7 +436,6 @@ loop_through_fn <- function(om,
       cat("\nNow calculating F at age in the OM given the catch advice...\n")
       om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
       
-      cat("Updated Prediced Catch \n",om$rep$pred_catch[i,],"\n")
       
       em_list[[i]] <- em$rep
       par.est[[i]] <- as.list(em$sdrep, "Estimate")

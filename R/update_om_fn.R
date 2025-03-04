@@ -43,11 +43,12 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       
       rep <- om$rep #generate the reported values given the parameters
       
-      cat(paste0("\nNow calculating fleet-specific F in year ", y, "\n"))
+      cat("\nNow calculating fleet-specific F in year ", y, "\n")
       
       Fsolve <- get_F_from_Catch(om, Catch, year, method = "nlminb", by_fleet = by_fleet)
       
-      cat(paste0("\nNow updating F in OM for year ", y, "\n"))
+      cat("\nFishing mortality is ", Fsolve, "\n")
+      cat("\nNow updating F in OM for year ", y, "\n")
       
       om <- update_om_F(om, year, Fsolve)
       
@@ -57,7 +58,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       # Set seed for reproducibility
       set.seed(seed)
       
-      cat(paste0("\nNow simulating data for year ", y, "\n"))
+      cat("\nNow simulating data for year ", y, "\n")
       
       # Simulate the population and observations
       om_sim <- om$simulate(complete = TRUE)
@@ -68,7 +69,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
       # Update the parameters in the operating model
       om$input$par[random] <- om_sim[random]
       
-      cat(paste0("\nNow projecting data for years after ", y, "\n"))
+      cat("\nNow projecting data for years after ", y, "\n")
       
       # Fit the WHAM model without actually performing the fit (do.fit = FALSE)
       om <- fit_wham(om$input, do.fit = FALSE, do.brps = do.brps, MakeADFun.silent = TRUE)
@@ -88,6 +89,7 @@ update_om_fn <- function(om, interval.info = NULL, seed = 123, random = "log_NAA
     
     om$input$par[random] = om_sim[random] #update any simulated random effects
     
+    cat("\nNow simulating data")
     # reset the om
     om <- fit_wham(om$input, do.fit = FALSE, do.brps = do.brps, MakeADFun.silent = TRUE)
   }
