@@ -248,7 +248,7 @@ filter_and_generate_em_info <- function(em_info, fleet_regions, index_regions, f
       max.dim = n_fleets + n_regions + length(index_regions) + n_regions
       index_keep = n_fleets + n_regions + relevant_indices
       index_dim = (n_fleets + n_regions + 1):(n_fleets + n_regions + length(index_regions))
-      index_rm = index_dim[index_keep != index_dim]
+      index_rm = setdiff(index_dim,index_keep)
       em_info_new$par_inputs$user_waa = em_info$basic_info$waa[-index_rm, 1, ]
       em_info_new$basic_info$waa = em_info$basic_info$waa[-index_rm, , ]
       em_info_new$basic_info$waa_pointer_fleets   <- 1:n_fleets
