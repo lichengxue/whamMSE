@@ -239,9 +239,11 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     if (em.opt$separate.em.type == 3) {
       # Multiple regions and stocks scenario
 
-      fleet_regions <- em_info$catch_info$fleet_regions
-      index_regions <- em_info$index_info$index_regions
-        
+      # fleet_regions <- em_info$catch_info$fleet_regions
+      # index_regions <- em_info$index_info$index_regions
+      fleet_regions <- data$fleet_regions
+      index_regions <- data$index_regions
+      
       em_input <- list()
       em_info_new <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices, em.opt)
       
@@ -249,8 +251,8 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         
         # Generate basic info for current stock
         info <- generate_basic_info_em(em_info_new[[r]], em_years, n_stocks = 1, n_regions = 1, 
-                                       n_fleets = em_info_new[[r]]$par_inputs$n_fleets, 
-                                       n_indices = em_info_new[[r]]$par_inputs$n_indices, filter_indices)
+                                       n_fleets = em_info_new$par_inputs$n_fleets, 
+                                       n_indices = em_info_new$par_inputs$n_indices, filter_indices)
         basic_info <- info$basic_info
         
         # Override any movement or trend information

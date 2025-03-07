@@ -259,8 +259,6 @@ loop_through_fn <- function(om,
         
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
         
-        # 
-        
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
         par.se[[i]] <- as.list(em$sdrep, "Std. Error")
