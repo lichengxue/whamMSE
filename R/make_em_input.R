@@ -172,7 +172,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         waa_info <- basic_info[grepl("waa", names(basic_info))]
         em_input <- update_waa(em_input, waa_info = waa_info)
       }
-
+      
+      # if (global_maa) {
+      #   maturity <- basic_info$maturity
+      #   em_input$data$mature[1,,] = colMeans(maturity[,1,])
+      # } else {
+      #   stop("For a panmictic assessment model, global_maa is forced to be TRUE")
+      # }
     }
     
     if (em.opt$separate.em.type == 2) {
@@ -233,6 +239,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         waa_info <- basic_info[grepl("waa", names(basic_info))]
         em_input <- update_waa(em_input, waa_info = waa_info)
       }
+      
+      # if (global_maa) {
+      #   maturity <- basic_info$maturity
+      #   em_input$data$mature[1,,] = colMeans(maturity[,1,])
+      # } else {
+      #   stop("For a FAA assessment model, global_maa is forced to be TRUE")
+      # }
       
     }
     
@@ -332,7 +345,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     }
     
     if (em.opt$do.move) {
-      
+      basic_info$NAA_where = om$input$data$NAA_where
       em_input <- prepare_wham_input(
         basic_info = basic_info,
         selectivity = sel_em,

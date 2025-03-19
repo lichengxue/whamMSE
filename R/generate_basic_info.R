@@ -161,7 +161,7 @@ generate_basic_info <- function(n_stocks = 2,
     length(unique(c(...))) == 1
   }
   
-  if (!check_dimensions(n_stocks, n_regions, n_indices, n_fleets)) cat("\n Note: n_stocks, n_regions, n_fleets, n_indices are not the same.")
+  if (!check_dimensions(n_stocks, n_regions, n_indices, n_fleets)) cat("\n Note: n_stocks, n_regions, n_fleets, n_indices are not the same.\n")
   
   basic_info = list()
   basic_info$bias_correct_process = bias.correct.process
@@ -283,14 +283,19 @@ generate_basic_info <- function(n_stocks = 2,
   if (is.null(user_maturity)) {
     maturity <- Generate_Maturity(life_history, na)
   } else {
-    if (length(user_maturity) != na) {
-      stop("user_maturity must have length equal to n_ages.")
+    if (is.matrix(user_maturity) && ncol(user_maturity) == na && nrow(user_maturity) == n_stocks) {
+      maturity <- user_maturity
+      basic_info$maturity <- array(NA, dim = c(n_stocks, ny, na))
+      for (i in 1:n_stocks) basic_info$maturity[i, , ] <- t(matrix(maturity[i,], na, ny))
     }
-    maturity <- user_maturity
-  }
-  maturity <- t(matrix(maturity, na, ny))
-  basic_info$maturity <- array(NA, dim = c(n_stocks, ny, na))
-  for (i in 1:n_stocks) basic_info$maturity[i, , ] <- maturity
+    else if (is.vector(user_maturity) && length(user_maturity) == na) {
+      maturity <- user_maturity
+      basic_info$maturity <- array(NA, dim = c(n_stocks, ny, na))
+      for (i in 1:n_stocks) basic_info$maturity[i, , ] <- t(matrix(maturity, na, ny))
+    } else {
+      stop("user_maturity must have length equal to n_ages!")
+    }
+  } 
   
   # Weight at age
   nwaa <- n_fleets + n_regions + n_indices + n_stocks
@@ -554,7 +559,7 @@ generate_basic_info <- function(n_stocks = 2,
     
     # Check if any value in index_info$fracyr_indices[, s] is equal to 0
     if (any(index_info$fracyr_indices[, s] == 0)) {
-      warning(paste("Survey fraction for index", s, "is equal to 0, indicating the survey is happening at the edge of a season. This can cause issues in calculations."))
+      cat(paste("\nSurvey fraction for index", s, "is equal to 0, indicating the survey is happening at the edge of a season.\n"))
     }
   }
   

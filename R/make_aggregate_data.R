@@ -394,6 +394,8 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
     }
   }
   
+  
+  
   # ---- Compute WAA Weights ---- #
   # fleet_weights <- list()
   # for (f in valid_fleets) {
@@ -472,6 +474,11 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   # Store the aggregated WAA back into `em_info`
   em_info$par_inputs$user_waa <- do.call(rbind,c(aggregated_fleet_waa,aggregated_region_waa,aggregated_index_waa,aggregated_stock_waa))
   em_info$basic_info$waa = em_info$par_inputs$user_waa
+  
+  # Average MAA to get global MAA
+  maturity <- em_info$par_inputs$user_maturity
+  if(is.vector(maturity)) em_info$par_inputs$user_maturity = maturity
+  if(is.matrix(maturity)) em_info$par_inputs$user_maturity = colMeans(maturity)
   
   em_info$par_inputs$n_regions = n_regions = 1
   em_info$par_inputs$n_stocks = n_stocks = 1 
