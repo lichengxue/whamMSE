@@ -65,37 +65,8 @@
 #'     \item `$use_index_weighted_waa` Logical. Whether to weight-at-age using indices.
 #'      }
 #' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model 
-#' @param reduce_region_info List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
-#'   The expected components include:
-#'   \itemize{
-#'     \item `$remove_regions`
-#'       Specifies which regions should be removed from the model.
-#'
-#'     \item `$reassign`
-#'       Specifies reassignment of surveys from removed regions to non-removed regions.
-#'
-#'     \item `$NAA_where`
-#'       Specifies recruitment assignments after region reduction.
-#'
-#'     \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
-#'       Model settings that may change based on region reduction.
-#'
-#'     \item `$onto_move_list`
-#'       Contains movement-related parameters with the following elements:
-#'       \itemize{
-#'         \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
-#'           Specifies movement rules between stocks and regions. Default = NULL.
-#'
-#'         \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
-#'           Specifies movement parameters. Default = NULL.
-#'
-#'         \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
-#'           Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
-#'       }
-#'   }
-#'   
 #' @return List. A `wham` input object prepared for stock assessment.
-#' 
+#'
 #' @export
 #'
 #' @seealso \code{\link{loop_through_fn}}
@@ -107,7 +78,6 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
                           aggregate_catch_info = NULL,
                           aggregate_index_info = NULL,
                           filter_indices = NULL,
-                          reduce_region_info = NULL,
                           global_waa = TRUE
                           ) {
   
@@ -140,8 +110,8 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     ind_em <- (length(em_years) - year.use + 1):length(em_years)
   }
   
-  if (em.opt$separate.em) {    # Non-spatial or Spatially implicit  
-
+  if (em.opt$separate.em) {
+    
     if (em.opt$separate.em.type == 1) {
       
       n_fleets <- ifelse(is.null(aggregate_catch_info$n_fleets), 1, aggregate_catch_info$n_fleets)
@@ -247,7 +217,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       
       # Override any movement or trend information
       basic_info$move_dyn <- 0
-      basic_info$onto_move <- NULL
+      basic_info$onto_move <- matrix(0)
       basic_info$apply_re_trend <- 0
       basic_info$apply_mu_trend <- 0
       
@@ -300,7 +270,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         
         # Override any movement or trend information
         basic_info$move_dyn <- 0
-        basic_info$onto_move <- NULL
+        basic_info$onto_move <- matrix(0)
         basic_info$apply_re_trend <- 0
         basic_info$apply_mu_trend <- 0
         
@@ -338,206 +308,87 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         }
       }
     }
-  } 
-  
-  if (!em.opt$separate.em) { # Spatially explicit
-    
+  } else {
+    # Generic case for estimation model generation
+    # info <- generate_basic_info_em(em_info, em_years)
+
     n_fleets <- data$n_fleets
     n_indices <- data$n_indices
     fleet_regions <- em_info$catch_info$fleet_regions
     index_regions <- em_info$index_info$index_regions
     
-    remove_regions <- reduce_region_info$remove_regions
-    
-    em_info <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices = filter_indices, reduce_region_info = reduce_region_info, em.opt = em.opt)
+    em_info <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices = filter_indices, em.opt)
     
     if (!is.null(filter_indices) & any(filter_indices == 0)) {
       n_indices = sum(filter_indices != 0)
       idx = which(filter_indices != 0)
     } 
     
-    # If remove_regions = NULL
-    if(is.null(remove_regions)) {
-      
-      n_stocks = om$input$data$n_stocks
-      n_regions = om$input$data$n_regions
-      
-      info <- generate_basic_info_em(em_info, em_years,
-                                     n_stocks = n_stocks, 
-                                     n_regions = n_regions, 
-                                     n_fleets = n_fleets, 
-                                     n_indices = n_indices, 
-                                     filter_indices = filter_indices)
-      
-      basic_info <- info$basic_info
-      
-      info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
-      info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
-      
-      if (!is.null(filter_indices) & any(filter_indices == 0)) {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, idx, drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[idx, ind_em, , drop = FALSE]
-      } else {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
-      }
-      
-      if (em.opt$do.move) {
-        basic_info$NAA_where = om$input$data$NAA_where
-        em_input <- prepare_wham_input(
-          basic_info = basic_info,
-          selectivity = sel_em,
-          M = M_em,
-          NAA_re = NAA_re_em,
-          move = move_em,
-          age_comp = age_comp_em,
-          catch_info = info$catch_info,
-          index_info = info$index_info,
-          F = info$F
-        )
-        
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
-        }
-      } else {
-        
-        # No movement
-        # Override any movement or trend information
-        basic_info$move_dyn <- 0
-        basic_info$onto_move <- NULL
-        basic_info$apply_re_trend <- 0
-        basic_info$apply_mu_trend <- 0
-        
-        # No movement
-        em_input <- prepare_wham_input(
-          basic_info = basic_info,
-          selectivity = sel_em,
-          M = M_em,
-          NAA_re = NAA_re_em,
-          move = NULL,
-          age_comp = age_comp_em,
-          catch_info = info$catch_info,
-          index_info = info$index_info,
-          F = info$F
-        )
-        
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
-        }
-      }
-    } 
+    info <- generate_basic_info_em(em_info, em_years,
+                                   n_stocks = om$input$data$n_stocks, 
+                                   n_regions = om$input$data$n_regions, 
+                                   n_fleets = n_fleets, 
+                                   n_indices = n_indices, 
+                                   filter_indices = filter_indices)
+    basic_info <- info$basic_info
     
-    # If there is "remove_regions" 
-    if(!is.null(remove_regions)) {
-      n_stocks = if(!is.null(em_info$par_inputs$n_stocks))em_info$par_inputs$n_stocks
-      n_regions = if(!is.null(em_info$par_inputs$n_regions))em_info$par_inputs$n_regions
-      n_fleets = if(!is.null(em_info$par_inputs$n_fleets))em_info$par_inputs$n_fleets
-      n_indices = if(!is.null(em_info$par_inputs$n_indices))em_info$par_inputs$n_indices
-      
-      info <- generate_basic_info_em(em_info = em_info, 
-                                     em_years = em_years,
-                                     n_stocks = n_stocks, 
-                                     n_regions = n_regions, 
-                                     n_fleets = n_fleets, 
-                                     n_indices = n_indices, 
-                                     filter_indices = filter_indices)
-                                            
-      basic_info <- info$basic_info
-      id_fleets = info$fleets_to_remove
-      id_indices = info$indices_to_remove
-      if(id_indices == 0) id_indices = numeric(0)
-      
-      if(length(id_fleets) > 0) {
-        info$catch_info$agg_catch <- data$agg_catch[ind_em, -id_fleets , drop = FALSE]
-        info$catch_info$catch_paa <- data$catch_paa[-id_fleets, ind_em, , drop = FALSE]
-      } else {
-        info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
-        info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
-      }
-
-      if (!is.null(filter_indices) & any(filter_indices == 0)) {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, idx, drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[idx, ind_em, , drop = FALSE]
-      } else {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
-      }
-      
-      if(length(id_indices) > 0) {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, -id_indices, drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[-id_indices, ind_em, , drop = FALSE]
-      } else {
-        info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
-        info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
-      }
-      
-      if(is.null(reduce_region_info)) Stop("Users must prepare a list of new model configuration (NAA_where, sel_em, M_em, NAA_re_em, move_em, onto_move_list) if some areas are dropped from the model!")
-      
-      basic_info$NAA_where = reduce_region_info$NAA_where
-      sel_em = reduce_region_info$sel_em
-      M_em = reduce_region_info$M_em
-      NAA_re_em = reduce_region_info$NAA_re_em
-      move_em = reduce_region_info$move_em
-      onto_move_list = reduce_region_info$onto_move_list
-      
-      if(n_regions == 1) move_em = NULL # This must be NULL when n_regions = 1
-      if(n_regions == 1) basic_info$NAA_where = NULL # This must be NULL when n_regions = 1
-      if(n_regions == 1) {
-        basic_info$move_dyn <- 0
-        basic_info$onto_move <- NULL
-        basic_info$apply_re_trend <- 0
-        basic_info$apply_mu_trend <- 0
-      }  
-      
-      if (em.opt$do.move) {
-        
-        em_input <- prepare_wham_input(
-          basic_info = basic_info,
-          selectivity = sel_em,
-          M = M_em,
-          NAA_re = NAA_re_em,
-          move = move_em,
-          age_comp = age_comp_em,
-          catch_info = info$catch_info,
-          index_info = info$index_info,
-          F = info$F
-        )
-        
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
-        }
-      } else {
-        
-        # No movement
-        # Override any movement or trend information
-        basic_info$move_dyn <- 0
-        basic_info$onto_move <- NULL
-        basic_info$apply_re_trend <- 0
-        basic_info$apply_mu_trend <- 0
-        
-        # No movement
-        em_input <- prepare_wham_input(
-          basic_info = basic_info,
-          selectivity = sel_em,
-          M = M_em,
-          NAA_re = NAA_re_em,
-          move = NULL,
-          age_comp = age_comp_em,
-          catch_info = info$catch_info,
-          index_info = info$index_info,
-          F = info$F
-        )
-        
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
-        }
-      }
+    # Fill in the data from operating model simulation
+    info$catch_info$agg_catch <- data$agg_catch[ind_em, , drop = FALSE]
+    info$catch_info$catch_paa <- data$catch_paa[, ind_em, , drop = FALSE]
+    
+    if (!is.null(filter_indices) & any(filter_indices == 0)) {
+      info$index_info$agg_indices <- data$agg_indices[ind_em, idx, drop = FALSE]
+      info$index_info$index_paa <- data$index_paa[idx, ind_em, , drop = FALSE]
+    } else {
+      info$index_info$agg_indices <- data$agg_indices[ind_em, , drop = FALSE]
+      info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
     }
     
+    if (em.opt$do.move) {
+      basic_info$NAA_where = om$input$data$NAA_where
+      em_input <- prepare_wham_input(
+        basic_info = basic_info,
+        selectivity = sel_em,
+        M = M_em,
+        NAA_re = NAA_re_em,
+        move = move_em,
+        age_comp = age_comp_em,
+        catch_info = info$catch_info,
+        index_info = info$index_info,
+        F = info$F
+      )
+      
+      if (!global_waa) {
+        waa_info <- basic_info[grepl("waa", names(basic_info))]
+        em_input <- update_waa(em_input, waa_info = waa_info)
+      }
+      
+    } else {
+      
+      # Override any movement or trend information
+      basic_info$move_dyn <- 0
+      basic_info$onto_move <- matrix(0)
+      basic_info$apply_re_trend <- 0
+      basic_info$apply_mu_trend <- 0
+      
+      # No movement
+      em_input <- prepare_wham_input(
+        basic_info = basic_info,
+        selectivity = sel_em,
+        M = M_em,
+        NAA_re = NAA_re_em,
+        move = NULL,
+        age_comp = age_comp_em,
+        catch_info = info$catch_info,
+        index_info = info$index_info,
+        F = info$F
+      )
+      
+      if (!global_waa) {
+        waa_info <- basic_info[grepl("waa", names(basic_info))]
+        em_input <- update_waa(em_input, waa_info = waa_info)
+      }
+    }
   }
   
   return(em_input)

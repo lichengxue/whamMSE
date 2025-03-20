@@ -18,6 +18,7 @@ make_em_input(
   aggregate_catch_info = NULL,
   aggregate_index_info = NULL,
   filter_indices = NULL,
+  reduce_region_info = NULL,
   global_waa = TRUE
 )
 }
@@ -94,6 +95,35 @@ for panmictic models using aggregate catch.
    }}
 
 \item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model}
+
+\item{reduce_region_info}{List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
+  The expected components include:
+  \itemize{
+    \item `$remove_regions`
+      Specifies which regions should be removed from the model.
+
+    \item `$reassign`
+      Specifies reassignment of surveys from removed regions to non-removed regions.
+
+    \item `$NAA_where`
+      Specifies recruitment assignments after region reduction.
+
+    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
+      Model settings that may change based on region reduction.
+
+    \item `$onto_move_list`
+      Contains movement-related parameters with the following elements:
+      \itemize{
+        \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
+          Specifies movement rules between stocks and regions. Default = NULL.
+
+        \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
+          Specifies movement parameters. Default = NULL.
+
+        \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
+          Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
+      }
+  }}
 }
 \value{
 List. A `wham` input object prepared for stock assessment.

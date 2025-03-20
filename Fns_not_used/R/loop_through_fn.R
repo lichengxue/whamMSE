@@ -63,34 +63,6 @@
 #'      }
 #' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
 #' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2
-#' @param reduce_region_info List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
-#'   The expected components include:
-#'   \itemize{
-#'     \item `$remove_regions`
-#'       Specifies which regions should be removed from the model.
-#'
-#'     \item `$reassign`
-#'       Specifies reassignment of surveys from removed regions to non-removed regions.
-#'
-#'     \item `$NAA_where`
-#'       Specifies recruitment assignments after region reduction.
-#'
-#'     \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
-#'       Model settings that may change based on region reduction.
-#'
-#'     \item `$onto_move_list`
-#'       Contains movement-related parameters with the following elements:
-#'       \itemize{
-#'         \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
-#'           Specifies movement rules between stocks and regions. Default = NULL.
-#'
-#'         \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
-#'           Specifies movement parameters. Default = NULL.
-#'
-#'         \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
-#'           Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
-#'       }
-#'   }
 #' @param assess_years Vector of years when assessments are conducted.
 #' @param assess_interval Integer. The interval between stock assessments in the MSE feedback loop.
 #' @param base_years Vector of years used in the burn-in period.
@@ -163,7 +135,7 @@
 #'     \item{\code{em_full}}{List of full estimation model outputs.}
 #'     \item{\code{runtime}}{Elapsed time for function execution.}
 #'   }
-#'   
+#' 
 #' @export
 #' 
 #' @seealso \code{\link{make_em_input}}, \code{\link{update_om_fn}}, \code{\link{advice_fn}}
@@ -190,7 +162,6 @@ loop_through_fn <- function(om,
                             add.years = FALSE,
                             hcr = list(hcr.type = 1, hcr.opts = NULL),
                             catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
-                            reduce_region_info = NULL,
                             do.retro = FALSE, 
                             do.osa = FALSE, 
                             do.brps = FALSE,
@@ -429,8 +400,7 @@ loop_through_fn <- function(om,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
                                 filter_indices = filter_indices,
-                                reduce_region_info = reduce_region_info,
-                                global_waa = global_waa) # turn off for panmictic model for now
+                                global_waa) # turn off for panmictic model for now
       
       cat("\nNow fitting assessment model...\n")
       
@@ -452,17 +422,6 @@ loop_through_fn <- function(om,
       
       cat("\nNow generating catch advice...\n")
       advice <- advice_fn(em, pro.yr = assess_interval, hcr)
-      if(!is.null(reduce_region_info$remove_regions)) {
-        remove_regions = reduce_region_info$remove_regions
-        fleets_to_remove <- which(fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
-        fleets_to_keep <- which(!fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
-        advice.tmp <- matrix(0, nrow = assess_interval, ncol = length(fleet_regions))
-        advice.tmp[,fleets_to_keep] = advice
-        if (!is.null(reduce_region_info$fleet_catch)){
-          advice.tmp[,fleets_to_remove] = reduce_region_info$fleet_catch # this can be a vector then the value will be filled by vertical and then by horizontal, OR can be a matrix (nrow = assess_interval x ncol = n_fleets_to_keep).
-        }
-        advice <- advice.tmp
-      }
       
       if(is.vector(advice)) advice <- as.matrix(t(advice))
       colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
@@ -474,6 +433,7 @@ loop_through_fn <- function(om,
       
       cat("\nNow calculating F at age in the OM given the catch advice...\n")
       om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
+      
       
       em_list[[i]] <- em$rep
       par.est[[i]] <- as.list(em$sdrep, "Estimate")

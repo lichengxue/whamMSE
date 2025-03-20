@@ -51,7 +51,6 @@ initial_input_no_asap_fn <- function(input, basic_info) {
   # Handling onto_move
   if (is.null(basic_info$onto_move)) {
     data$onto_move = array(0, dim = c(n_stocks,n_regions,n_regions-1))
-    #data$onto_move = NULL
   } 
   
   # Handling onto_move_pars

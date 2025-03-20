@@ -9,6 +9,7 @@ filter_and_generate_em_info(
   fleet_regions,
   index_regions,
   filter_indices = NULL,
+  reduce_region_info = NULL,
   em.opt
 )
 }
@@ -20,6 +21,35 @@ filter_and_generate_em_info(
 \item{index_regions}{Integer vector. Specifies the region assignment of each index.}
 
 \item{filter_indices}{Integer vector (optional). Indicates which indices to keep (1) or exclude (0).}
+
+\item{reduce_region_info}{List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
+  The expected components include:
+  \itemize{
+    \item `$remove_regions`
+      Specifies which regions should be removed from the model.
+
+    \item `$reassign`
+      Specifies reassignment of surveys from removed regions to non-removed regions.
+
+    \item `$NAA_where`
+      Specifies recruitment assignments after region reduction.
+
+    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
+      Model settings that may change based on region reduction.
+
+    \item `$onto_move_list`
+      Contains movement-related parameters with the following elements:
+      \itemize{
+        \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
+          Specifies movement rules between stocks and regions. Default = NULL.
+
+        \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
+          Specifies movement parameters. Default = NULL.
+
+        \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
+          Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
+      }
+  }}
 }
 \value{
 A list containing modified `em_info` lists for each region with filtered fleets, indices, renumbered index regions, and extracted weight-at-age (WAA) matrices.

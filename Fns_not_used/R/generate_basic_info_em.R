@@ -116,10 +116,6 @@ generate_basic_info_em <- function(em_info,
       trend_mu_rate = em_info$par_inputs$trend_mu_rate,
       age_mu_devs = em_info$par_inputs$age_mu_devs
     ) 
-    
-    basic_info$fleets_to_remove = em_info$par_inputs$fleets_to_remove
-    basic_info$indices_to_remove = em_info$par_inputs$indices_to_remove 
-    
   } else {
     
     if (any(filter_indices == 0)) {
@@ -227,11 +223,6 @@ generate_basic_info_em <- function(em_info,
         trend_mu_rate = em_info$par_inputs$trend_mu_rate,
         age_mu_devs = em_info$par_inputs$age_mu_devs
       )
-      
-      # Double check this
-      basic_info$fleets_to_remove = em_info$par_inputs$fleets_to_remove
-      basic_info$indices_to_remove = em_info$par_inputs$indices_to_remove 
-      
     } else {
       stop("filter_indices is not specified correctly!")
     }

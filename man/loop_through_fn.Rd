@@ -27,6 +27,7 @@ loop_through_fn(
   hcr = list(hcr.type = 1, hcr.opts = NULL),
   catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years
     = 1),
+  reduce_region_info = NULL,
   do.retro = FALSE,
   do.osa = FALSE,
   do.brps = FALSE,
@@ -162,6 +163,35 @@ for panmictic models using aggregate catch.
   \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
   \item `$survey_pointer` - Integer/Vector. Specifies which survey index type to use for weighting (use when weight_type = 3).
 }}
+
+\item{reduce_region_info}{List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
+  The expected components include:
+  \itemize{
+    \item `$remove_regions`
+      Specifies which regions should be removed from the model.
+
+    \item `$reassign`
+      Specifies reassignment of surveys from removed regions to non-removed regions.
+
+    \item `$NAA_where`
+      Specifies recruitment assignments after region reduction.
+
+    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
+      Model settings that may change based on region reduction.
+
+    \item `$onto_move_list`
+      Contains movement-related parameters with the following elements:
+      \itemize{
+        \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
+          Specifies movement rules between stocks and regions. Default = NULL.
+
+        \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
+          Specifies movement parameters. Default = NULL.
+
+        \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
+          Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
+      }
+  }}
 
 \item{do.retro}{Logical. If TRUE, performs retrospective analysis for the assessment model (default = TRUE).}
 

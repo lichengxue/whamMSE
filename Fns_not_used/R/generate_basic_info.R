@@ -149,7 +149,7 @@ generate_basic_info <- function(n_stocks = 2,
                                 mig_type = 0,
                                 XSPR_R_opt = 2,
                                 move_dyn = 0,
-                                onto_move = 0, 
+                                onto_move = 0,
                                 onto_move_pars = NULL,
                                 apply_re_trend = 0,
                                 trend_re_rate = NULL,
@@ -589,7 +589,6 @@ generate_basic_info <- function(n_stocks = 2,
   # Handling onto_move
   if (is.null(basic_info$onto_move)) {
     onto_move = array(0, dim = c(n_stocks,n_regions,n_regions-1))
-    # onto_move = NULL
   } else {
     if (sum(basic_info$onto_move) == 0) {
       onto_move = array(0, dim = c(n_stocks,n_regions,n_regions-1))
