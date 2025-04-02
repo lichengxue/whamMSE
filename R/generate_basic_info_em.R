@@ -53,8 +53,8 @@ generate_basic_info_em <- function(em_info,
       base.years = em_years,
       life_history = em_info$par_inputs$life_history,
       n_ages = em_info$par_inputs$n_ages,
-      Fbar_ages = em_info$par_inputs$Fbar_ages,
-      recruit_model = em_info$par_inputs$recruit_model,
+      # Fbar_ages = em_info$par_inputs$Fbar_ages,
+      # recruit_model = em_info$par_inputs$recruit_model,
       
       # Using F_info from em_info to construct F_info list
       F_info = list(
@@ -165,8 +165,8 @@ generate_basic_info_em <- function(em_info,
         base.years = em_years,
         life_history = em_info$par_inputs$life_history,
         n_ages = em_info$par_inputs$n_ages,
-        Fbar_ages = em_info$par_inputs$Fbar_ages,
-        recruit_model = em_info$par_inputs$recruit_model,
+        # Fbar_ages = em_info$par_inputs$Fbar_ages,
+        # recruit_model = em_info$par_inputs$recruit_model,
         
         # Using F_info from em_info to construct F_info list
         F_info = list(

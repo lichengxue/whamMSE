@@ -17,8 +17,8 @@ make_em_input(
   age_comp_em,
   aggregate_catch_info = NULL,
   aggregate_index_info = NULL,
-  filter_indices = NULL,
   reduce_region_info = NULL,
+  filter_indices = NULL,
   global_waa = TRUE
 )
 }
@@ -67,63 +67,54 @@ make_em_input(
   \item `"dir-mult-linear"`
 }}
 
-\item{aggregate_catch_info}{List (optional). User-specified catch aggregation settings 
-for panmictic models using aggregate catch.
+\item{aggregate_catch_info}{List (optional). User-specified catch aggregation settings for panmictic models using aggregate catch.
 \itemize{
   \item `$n_fleets` Integer. Number of fleets.
-  \item `$catch_cv` Numeric vector (`n_fleets`). Catch CVs for each fleet.
-  \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for catch.
-  \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 flag for using aggregate catch.
-  \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 flag for using age composition.
+  \item `$catch_cv` Numeric vector (`n_fleets`). CVs for annual aggregate catches by fleet.
+  \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for fleet catches.
+  \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 values flagging whether to use aggregate catches.
+  \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 values flagging whether to use proportions at age observations.
   \item `$fleet_pointer` Integer vector (`n_fleets`). Defines fleet grouping (0 = exclude).
-  \item `$use_catch_weighted_waa` Logical. Whether to weight-at-age using catch.
+  \item `$use_catch_weighted_waa` Logical. Whether to use weighted weight-at-age based on fleet catches.
 }}
 
 \item{aggregate_index_info}{List (optional). User-specified index aggregation settings for panmictic models using aggregate indices.
 \itemize{
   \item `$n_indices` Integer. Number of indices.
-  \item `$index_cv` Numeric vector (`n_indices`). CVs for survey indices.
-  \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for indices.
-  \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey.
-  \item `$q` Numeric vector (`n_indices`). Survey catchability coefficients.
-  \item `$use_indices` Integer vector (`n_indices`). 0/1 flag for using survey indices.
-  \item `$use_index_paa` Integer vector (`n_indices`). 0/1 flag for using age composition.
-  \item `$units_indices` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
-  \item `$units_index_paa` Integer vector (`n_indices`). 1 = Biomass, 2 = Numbers.
+  \item `$index_cv` Numeric vector (`n_indices`). CVs for annual aggregate index catches.
+  \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for survey indices.
+  \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey index.
+  \item `$q` Numeric vector (`n_indices`). Initial survey catchabilities.
+  \item `$use_indices` Integer vector (`n_indices`). 0/1 values flagging whether to use survey indices.
+  \item `$use_index_paa` Integer vector (`n_indices`). 0/1 values flagging whether to use proportions at age observations.
+  \item `$units_indices` Integer vector (`n_indices`). 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).
+  \item `$units_index_paa` Integer vector (`n_indices`). 1/2 values flagging whether composition observations are biomass (1) or numbers (2).
   \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
-  \item `$use_index_weighted_waa` Logical. Whether to weight-at-age using indices.
+  \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
    }}
 
+\item{reduce_region_info}{List (optional). Remove specific regions from the assessment model. If `NULL`, no modifications are applied.
+The expected components include:
+\itemize{
+  \item `$remove_regions` Integer vector (`n_regions`). 0/1 values flagging whether to include regions.
+  \item `$reassign` Numeric. Specify reassignment for surveys from the "removed" regions to "remaining" regions.
+  \item `$NAA_where`Integer array (`n_stocks × n_regions × n_ages`) 0/1 values flagging whether the stock from a certain age can be present in a specific region.
+  \item `$sel_em` Selectivity configuration for the "reduced" assessment model.
+  \item `$M_em` Natural mortality configuration for the "reduced" assessment model.
+  \item `$NAA_re_em` Numbers-at-age configuration for the "reduced" assessment model.
+  \item `$move_em` Movement configuration for the "reduced" assessment model.
+  \item `$onto_move_list` List of ontogenetic movement information for the "reduced" assessment model:
+    \itemize{
+      \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
+        Age-specific movement type.
+      \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
+        Parameters controlling age-specific movement patterns.
+      \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
+        User-specified deviations in mean movement rates across ages.
+    }
+}}
+
 \item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model}
-
-\item{reduce_region_info}{List (optional). Specifies modifications for regions. If `NULL`, no modifications are applied.
-  The expected components include:
-  \itemize{
-    \item `$remove_regions`
-      Specifies which regions should be removed from the model.
-
-    \item `$reassign`
-      Specifies reassignment of surveys from removed regions to non-removed regions.
-
-    \item `$NAA_where`
-      Specifies recruitment assignments after region reduction.
-
-    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
-      Model settings that may change based on region reduction.
-
-    \item `$onto_move_list`
-      Contains movement-related parameters with the following elements:
-      \itemize{
-        \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
-          Specifies movement rules between stocks and regions. Default = NULL.
-
-        \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
-          Specifies movement parameters. Default = NULL.
-
-        \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
-          Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
-      }
-  }}
 }
 \value{
 List. A `wham` input object prepared for stock assessment.

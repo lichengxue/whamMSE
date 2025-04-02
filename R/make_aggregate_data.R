@@ -7,18 +7,30 @@
 #'
 #' @param om List. The operating model containing observed data, including:
 #' @param em_info List. The estimation model information, including:
-#' @param aggregate_catch_info List. Contains details for aggregating fleet-specific catch data:
+#' @param aggregate_catch_info List (optional). User-specified catch aggregation settings for panmictic models using aggregate catch.
 #'   \itemize{
-#'     \item `fleet_pointer` - Integer vector of length `n_fleets`, specifying how fleets should be aggregated.
-#'     \item `catch_cv`, `catch_Neff` - Numeric vectors of length `n_fleets`, specifying catch CV and sample size.
-#'     \item `use_agg_catch`, `use_catch_paa` - Boolean vectors of length `n_fleets`, indicating whether to aggregate.
+#'     \item `$n_fleets` Integer. Number of fleets.
+#'     \item `$catch_cv` Numeric vector (`n_fleets`). CVs for annual aggregate catches by fleet.
+#'     \item `$catch_Neff` Numeric vector (`n_fleets`). Effective sample sizes for fleet catches.
+#'     \item `$use_agg_catch` Integer vector (`n_fleets`). 0/1 values flagging whether to use aggregate catches.
+#'     \item `$use_catch_paa` Integer vector (`n_fleets`). 0/1 values flagging whether to use proportions at age observations.
+#'     \item `$fleet_pointer` Integer vector (`n_fleets`). Defines fleet grouping (0 = exclude).
+#'     \item `$use_catch_weighted_waa` Logical. Whether to use weighted weight-at-age based on fleet catches.
 #'   }
-#' @param aggregate_index_info List. Contains details for aggregating index-specific data:
+#' @param aggregate_index_info List (optional). User-specified index aggregation settings for panmictic models using aggregate indices.
 #'   \itemize{
-#'     \item `index_pointer` - Integer vector of length `n_indices`, specifying how indices should be aggregated.
-#'     \item `index_cv`, `index_Neff`, `q` - Numeric vectors of length `n_indices`, specifying index CV, effective sample size, and catchability coefficient.
-#'     \item `use_indices`, `use_index_paa` - Boolean vectors of length `n_indices`, indicating whether to aggregate.
-#'   }
+#'     \item `$n_indices` Integer. Number of indices.
+#'     \item `$index_cv` Numeric vector (`n_indices`). CVs for annual aggregate index catches.
+#'     \item `$index_Neff` Numeric vector (`n_indices`). Effective sample sizes for survey indices.
+#'     \item `$fracyr_indices` Numeric vector (`n_indices`). Fraction of the year for each survey index.
+#'     \item `$q` Numeric vector (`n_indices`). Initial survey catchabilities.
+#'     \item `$use_indices` Integer vector (`n_indices`). 0/1 values flagging whether to use survey indices.
+#'     \item `$use_index_paa` Integer vector (`n_indices`). 0/1 values flagging whether to use proportions at age observations.
+#'     \item `$units_indices` Integer vector (`n_indices`). 1/2 values flagging whether aggregate observations are biomass (1) or numbers (2).
+#'     \item `$units_index_paa` Integer vector (`n_indices`). 1/2 values flagging whether composition observations are biomass (1) or numbers (2).
+#'     \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
+#'     \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
+#'      }
 #' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
 #'
 #' @return List. An updated `em_info` object with:

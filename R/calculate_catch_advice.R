@@ -26,16 +26,16 @@
 #'       }
 #'     \item $method - String. Specifies the catch allocation method:
 #'       \itemize{
-#'         \item "equal" - Total catch is equally split among all fleets.
-#'         \item "fleet_equal" - Total catch for each gear type is equally distributed among all regions.
-#'         \item "fleet_region" - Total catch is allocated to each region based on historical region-specific catch and then equally allocated to all fleets within the same region.
-#'         \item "fleet_gear" - Total catch is allocated to each gear type based on historical gear-specific catch and then equally allocated to all regions.
-#'         \item "fleet_combined" - Total catch is allocated to regions and gear types separately based on historical region-specific and gear-specific catch.
+#'         \item "equal" - Total catch is equally allocated to all fleets across regions.
+#'         \item "gear_equal" - Gear-specific total catch is equally allocated to fleets using the same gear type.
+#'         \item "fleet_region" - Total catch is allocated to each region based on historical regional catch. Then, the regional catch is equally distributed among all fleets within the region.
+#'         \item "fleet_gear" - Total catch is allocated to each gear type based on historical gear-specific catch. Then, the gear-specific catch is equally distributed among regions that use this gear.
+#'         \item "fleet_combined" - Total catch is allocated based on historical regional and gear-specific catch.
 #'         \item "fleet_catch" - Total catch is allocated based on historical fleet-specific catch within each region.
-#'         \item "index_equal" - Total catch is allocated based on historical region-specific survey catch and then equally distributed among all fleets within the same region.
+#'         \item "index_equal" - Total catch is allocated to each region based on historical survey catch. Then, the regional catch is distributed among fleets based on historical gear-specific catch.
 #'         \item "index_gear" - Total catch is allocated based on historical region-specific survey catch and then distributed among fleets based on historical gear-specific catch.
-#'         \item "multiple_index_equal" - Total catch is allocated based on multiple historical region-specific surveys catch and then equally distributed among all fleets within the same region.
-#'         \item "multiple_index_gear" - Total catch is allocated based on multiple historical region-specific surveys catch and then distributed among fleets within the same region based on historical gear-specific catch.
+#'         \item "multiple_index_equal" - Total catch is allocated to each region based on historical survey catch from multiple surveys. Then, the regional catch is equally distributed among fleets within the region.
+#'         \item "multiple_index_gear" - Total catch is allocated to each region based on multiple historical survey-based catch estimates, then distributed among fleets within the region based on historical gear-specific catch.
 #'         \item "user_defined_fleets" - Catch allocation is based on user-defined weights for each fleet.
 #'         \item "user_defined_regions" - Catch is allocated based on user-defined weights for regions, then equally distributed among fleets within the region.
 #'       }
@@ -86,12 +86,12 @@ calculate_catch_advice <- function(om,
   index_pointer <- if (!is.null(aggregate_index_info$index_pointer)) aggregate_index_info$index_pointer else rep(1, n_indices)
   
   if (weight_type == 1) { 
-    if(!method %in% c("equal","fleet_equal"))
+    if(!method %in% c("equal","gear_equal"))
       warning("method is not specified correctly!")
     weight_matrix <- matrix(1 / n_fleets, n_years, n_fleets, byrow = TRUE)
     if (method == "equal") {
       final_advice <- weight_matrix * if (is.matrix(advice)) rowSums(advice) else sum(advice) # completely equal
-    } else if (method == "fleet_equal") {
+    } else if (method == "gear_equal") {
       if (is.vector(advice)) {
         # Initialize advice matrix
         advice_matrix <- matrix(0, nrow = n_years, ncol = n_fleets)

@@ -20,67 +20,60 @@
 #'     \item `"long"` - Long-lived species.
 #'   }
 #' @param n_ages Integer. Number of ages.
-#' @param Fbar_ages Integer. Ages used to average total F at age for reference points.
-#' @param recruit_model Integer. Option to specify stock-recruitment model:
-#'   \itemize{
-#'     \item `1` - SCAA (without NAA_re option) or random walk (if NAA_re$sigma is specified).
-#'     \item `2` - (Default) Random about mean, i.e., steepness = 1.
-#'     \item `3` - Beverton-Holt.
-#'     \item `4` - Ricker.
-#'   }
-#' @param F_info List. Historical fishing pressure or user-specified F values:
+#' @param F_info List. Historical fishing pressure or user-specified fishing mortality values:
 #'   \itemize{
 #'     \item `$F.year1` - Fishing mortality in the first year.
-#'     \item `$Fhist` - Historical fishing mortality pattern. Options:
+#'     \item `$Fhist` - Pattern of historical fishing mortality. Options include:
 #'       \itemize{
 #'         \item `"constant"` - Constant across years.
 #'         \item `"updown"` - Increase to `Fmax` until change point, then decrease to `Fmin`.
 #'         \item `"downup"` - Decrease to `Fmin` until change point, then increase to `Fmax`.
-#'         \item `"F-H-L"` - Constant `Fmax` until change point, then constant `Fmin`.
+#'         \item `"F-H-L"` - Constant `F.year1*Fmax` until change point, followed by constant `F.year1*Fmin`.
+#'         \item `"F-L-H"` - Constant `F.year1*Fmin` until change point, followed by constant `F.year1*Fmax`.
 #'       }
 #'     \item `$Fmax` - Maximum F (or multiplier when `Fhist = "F-H-L"`).
 #'     \item `$Fmin` - Minimum F (or multiplier when `Fhist = "F-H-L"`).
-#'     \item `$change_time` - Ratio that determines the change point.
-#'     \item `$user_F` - Optional matrix (`n_years x n_fleets`) of user-specified F values.
+#'     \item `$change_time` - Proportion of the time series (0–1) indicating when the change in fishing mortality occurs.
+#'     \item `$user_F` - Optional matrix (`n_years x n_fleets`) of user-specified fishing mortality values.
 #'   }
-#' @param catch_info List. Fleet information:
+#' @param catch_info List. Fleet catch information:
 #'   \itemize{
-#'     \item `$catch_cv` - Vector (`n_fleets`) of CVs for fleet catch.
-#'     \item `$catch_Neff` - Vector (`n_fleets`) of effective sample sizes for fleet catch.
-#'     \item `$use_agg_catch` - Vector (`n_fleets`) of 0/1 flags for aggregate catch use.
-#'     \item `$use_catch_paa` - Vector (`n_fleets`) of 0/1 flags for age composition use.
+#'     \item `"$catch_cv"` – Vector of length `n_fleets`, or a single value applied to all fleets, specifying CV for each fleet catch.
+#'     \item `"$catch_Neff"` – Vector of length `n_fleets`, or a single value applied to all fleets, specifying effective sample sizes for fleet catch age composition.
+#'     \item `"$use_agg_catch"` – Vector of length `n_fleets`, or a single value applied to all fleets, with 0/1 flags indicating whether aggregate catch data are used.
+#'     \item `"$use_catch_paa"` – Vector of length `n_fleets`, or a single value applied to all fleets, with 0/1 flags indicating whether age composition data for catch are used.
 #'   }
-#' @param index_info List. Survey information:
+#' @param index_info List. Survey index information:
 #'   \itemize{
-#'     \item `$index_cv` - Vector (`n_indices`) of CVs for survey indices.
-#'     \item `$index_Neff` - Vector (`n_indices`) of effective sample sizes for survey indices.
-#'     \item `$fracyr_indices` - Vector (`n_indices`) of survey timings within the year.
-#'     \item `$q` - Vector (`n_indices`) of survey catchabilities.
-#'     \item `$use_indices` - Vector (`n_indices`) of 0/1 flags for aggregate observation use.
-#'     \item `$use_index_paa` - Vector (`n_indices`) of 0/1 flags for age composition use.
-#'     \item `$units_indices` - Vector (`n_indices`) with 1 (biomass) or 2 (numbers).
-#'     \item `$units_index_paa` - Vector (`n_indices`) with 1 (biomass) or 2 (numbers).
+#'     \item `"$index_cv"` – Vector of length `n_indices`, or a single value applied to all indices, specifying CV for each survey index.
+#'     \item `"$index_Neff"` – Vector of length `n_indices`, or a single value applied to all indices, specifying effective sample sizes for survey age composition.
+#'     \item `"$fracyr_indices"` – Vector of length `n_indices`, or a single value applied to all indices, specifying the fraction of the year when surveys occur.
+#'     \item `"$q"` – Vector of length `n_indices`, or a single value applied to all indices, specifying survey catchabilities.
+#'     \item `"$use_indices"` – Vector of length `n_indices`, or a single value applied to all indices, with 0/1 flags indicating whether aggregate index data are used.
+#'     \item `"$use_index_paa"` – Vector of length `n_indices`, or a single value applied to all indices, with 0/1 flags indicating whether age composition data for indices are used.
+#'     \item `"$units_indices"` – Vector of length `n_indices`, or a single value applied to all indices, where 1 = biomass and 2 = numbers for aggregate index data.
+#'     \item `"$units_index_paa"` – Vector of length `n_indices`, or a single value applied to all indices, where 1 = biomass and 2 = numbers for index age composition data.
 #'   }
 #' @param fracyr_spawn Numeric. Fraction of the year when spawning occurs.
 #' @param fracyr_seasons Numeric vector. Optional. User-defined seasonal fractions summing to 1.
-#' @param fleet_regions Integer vector. Optional. Region allocation for each fleet.
-#' @param index_regions Integer vector. Optional. Region allocation for each index.
-#' @param user_waa Numeric vector/matrix. Optional. User-defined weight-at-age values.
-#' @param user_maturity Numeric vector. Optional. User-defined maturity-at-age values.
-#' @param bias.correct.process Logical. Apply process error bias correction.
-#' @param bias.correct.observation Logical. Apply observation error bias correction.
-#' @param bias.correct.BRPs Logical. Apply biological reference point bias correction.
+#' @param fleet_regions Integer vector. Optional. User-defined region allocation for each fleet.
+#' @param index_regions Integer vector. Optional. User-defined region allocation for each index.
+#' @param user_waa Numeric vector/matrix. Optional. User-defined weight-at-age vector/matrix.
+#' @param user_maturity Numeric vector. Optional. User-defined maturity-at-age vector/matrix.
+#' @param bias.correct.process Logical. Whether to apply process error bias correction.
+#' @param bias.correct.observation Logical. Whether to apply observation error bias correction.
+#' @param bias.correct.BRPs Logical. Whether to apply biological reference point bias correction.
 #' @param mig_type Integer. Migration type:
 #'   \itemize{
-#'     \item `0` - Migration after survival.
-#'     \item `1` - Movement and mortality simultaneous.
+#'     \item `0` - Movement occurs after survival.
+#'     \item `1` - Movement and mortality occur simultaneously.
 #'   }
-#' @param XSPR_R_opt Integer. Spawning stock-recruitment method:
+#' @param XSPR_R_opt Integer. Recruitment that will be used to calculate SPR-based reference points:
 #'   \itemize{
-#'     \item `1` - Annual R estimates for annual SSB_XSPR.
-#'     \item `2` - (Default) Average R estimates for annual SSB_XSPR.
-#'     \item `3` - Annual expected R for annual SSB_XSPR.
-#'     \item `4` - Average expected R for annual SSB_XSPR.
+#'     \item `1` - Annual recruitment estimates.
+#'     \item `2` - Average recruitment estimates (Default).
+#'     \item `3` - Annual expected recruitment.
+#'     \item `4` - Average expected recruitment.
 #'     \item `5` - Bias-corrected expected recruitment.
 #'   }
 #' @param move_dyn Integer. Movement dynamics:
@@ -97,13 +90,12 @@
 #'     \item `4` - Double-normal (4 parameters).
 #'     \item `5` - User-specified age-specific movement rate.
 #'   }
-#' @param onto_move_pars Numeric array (`n_stocks x n_regions x (n_regions - 1) x 4`). Parameters for age-specific movement.
-#' @param apply_re_trend Logical. Apply recruitment trend.
-#' @param trend_re_rate Numeric. Rate for recruitment trend (if `apply_re_trend = TRUE`).
-#' @param apply_mu_trend Logical. Apply movement trend.
-#' @param trend_mu_rate Numeric. Rate for movement trend (if `apply_mu_trend = TRUE`).
-#' @param age_mu_devs Numeric array (`n_stocks x n_regions x (n_regions - 1) x n_ages`). Movement deviations for user-specified rates.
-#'
+#' @param onto_move_pars Numeric array (`n_stocks x n_regions x (n_regions - 1) x 4`). Parameters controlling age-specific movement patterns. 
+#' @param apply_re_trend Logical. Whether to apply a temporal trend to the movement random effects (i.e., year-to-year deviations).
+#' @param trend_re_rate Numeric. Annual rate of change applied to the random effects when `apply_re_trend = TRUE`.
+#' @param apply_mu_trend Logical. Whether to apply a temporal trend to the movement mean (`mu`), representing the expected movement rate over time.
+#' @param trend_mu_rate Numeric. Annual rate of change applied to the movement mean when `apply_mu_trend = TRUE`.
+#' @param age_mu_devs Numeric array (`n_stocks x n_regions x (n_regions - 1) x n_ages`). User-specified deviations in mean movement rates across ages.
 #' @return A list containing:
 #'   \itemize{
 #'     \item `$basic_info` - General biological and fishery details.
@@ -124,15 +116,13 @@
 
 generate_basic_info <- function(n_stocks = 2,
                                 n_regions = 2,
-                                n_indices = 2,
                                 n_fleets = 2,
+                                n_indices = 2,
                                 n_seasons = 5,
                                 base.years = 1:20,
                                 n_feedback_years = 0,
                                 life_history = "medium",
                                 n_ages = 12,
-                                Fbar_ages = 12,
-                                recruit_model = 2,
                                 F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time = 0.5, user_F = NULL),
                                 catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa = 1),
                                 index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2,
@@ -161,7 +151,7 @@ generate_basic_info <- function(n_stocks = 2,
     length(unique(c(...))) == 1
   }
   
-  if (!check_dimensions(n_stocks, n_regions, n_indices, n_fleets)) cat("\n Note: n_stocks, n_regions, n_fleets, n_indices are not the same.\n")
+  if (!check_dimensions(n_stocks, n_regions, n_fleets, n_indices)) cat("\n Note: n_stocks, n_regions, n_fleets, n_indices are not the same.\n")
   
   basic_info = list()
   basic_info$bias_correct_process = bias.correct.process
@@ -185,7 +175,7 @@ generate_basic_info <- function(n_stocks = 2,
   na = n_ages
   ny = length(basic_info$years)
   
-  basic_info$recruit_model = recruit_model
+  # basic_info$recruit_model = recruit_model
   
   basic_info$n_stocks  = as.integer(n_stocks)
   basic_info$n_regions = as.integer(n_regions)
@@ -262,6 +252,10 @@ generate_basic_info <- function(n_stocks = 2,
         F_vals <- matrix(F.year1 * Fmin, nby, n_fleets)
         F_vals[1:mid, ] <- F.year1 * Fmax
       }
+      else if (Fhist == "F-L-H") {
+        F_vals <- matrix(F.year1 * Fmin, nby, n_fleets)
+        F_vals[-(1:mid), ] <- F.year1 * Fmax
+      }
     }
   }
   
@@ -273,11 +267,12 @@ generate_basic_info <- function(n_stocks = 2,
   
   F_info = list(F = F_vals, F_config = 2)
   
-  if (is.null(Fbar_ages)) {
-    basic_info$Fbar_ages = as.integer(na)
-  } else {
-    basic_info$Fbar_ages = as.integer(Fbar_ages)
-  }
+  # if (is.null(Fbar_ages)) {
+  #   basic_info$Fbar_ages = as.integer(na)
+  # } else {
+  #   basic_info$Fbar_ages = as.integer(Fbar_ages)
+  # }
+  basic_info$Fbar_ages = as.integer(na)
   
   # Maturity at age
   if (is.null(user_maturity)) {
@@ -693,8 +688,8 @@ generate_basic_info <- function(n_stocks = 2,
     n_seasons = n_seasons,
     life_history = life_history,
     n_ages = n_ages,
-    Fbar_ages = Fbar_ages,
-    recruit_model = recruit_model,
+    #Fbar_ages = Fbar_ages,
+    #recruit_model = recruit_model,
     
     # Fishing Mortality Information (from F_info)
     F.year1 = F.year1,

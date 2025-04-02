@@ -6,26 +6,26 @@
 #' Note: NAA_where has to be specified in basic_info using \code{\link{generate_NAA_where}}.
 #' @param move.type Movement type
 #'   \itemize{
-#'     \item \code{1} single stock movement (i.e. only stock 1 can move), region-specific movement rate
-#'     \item \code{2} bidirectional movement (i.e. all stocks can move), region-specific movement rate (default)
+#'     \item \code{1} single stock movement (i.e. only stock 1 can move), with region-specific movement rates
+#'     \item \code{2} bidirectional movement (i.e. all stocks can move), with region-specific movement rates (default)
 #'     \item \code{3} no movement
 #'   }
-#' @param move.rate Movement rate (default = c(0.3, 0.1))
+#' @param move.rate Movement rates (default = c(0.3, 0.1))
 #' @param move.re Movement random effects
 #'   \itemize{
 #'     \item \code{"constant"} constant movement rate across years and ages (default).
-#'     \item \code{"iid_y"} movement rate deviations vary by year, but uncorrelated.
-#'     \item \code{"iid_a"} movement rate deviations vary by age, but uncorrelated.
+#'     \item \code{"iid_y"} movement rate deviations vary by year, but uncorrelated (IID).
+#'     \item \code{"iid_a"} movement rate deviations vary by age, but uncorrelated (IID).
 #'     \item \code{"ar1_y"} movement rate deviations correlated by year (AR1).
 #'     \item \code{"ar1_a"} movement rate deviations correlated by age (AR1).
 #'     \item \code{"iid_y","iid_a"} vector, movement rate deviations vary by year and ages, but uncorrelated (2D-IID).
 #'     \item \code{"ar1_y","ar1_a"} vector, movement rate deviations vary by year and ages (2D-AR1).
 #'   }
-#' @param move.sigma Sigma for movement random effects (default = 0.2)
+#' @param move.sigma Standard deviation for movement random effects (default = 0.2)
 #' @param prior.sigma Standard deviation for normal priors on mean movement (default = 0.2) 
 #' @param move.rho_a Correlation for movement random effects by ages, only used if move.re = "ar1_a" (default = 0.5)
 #' @param move.rho_y Correlation for movement random effects by years, only used if move.re = "ar1_y" (default = 0.5)
-#' @param use.prior Logical, whether to use priors (default = FALSE)
+#' @param use.prior Logical, whether to use priors for movement estimation (default = FALSE)
 #' @param move_dyn Movement dynamics. 0 = natal homing, 1 = meta-population
 #' 
 #' @return A named list with the following components:

@@ -11,8 +11,8 @@ generate_NAA_where(basic_info = basic_info, move.type = 2)
 
 \item{move.type}{Movement type:
 \itemize{
-  \item \code{1} unidirectional movement 
-  \item \code{2} bidirectional movement (default)
+  \item \code{1} single stock movement (i.e. only stock 1 can move), with region-specific movement rates
+  \item \code{2} bidirectional movement (i.e. all stocks can move), with region-specific movement rates (default)
   \item \code{3} no movement
   }}
 }
