@@ -123,7 +123,7 @@ generate_basic_info <- function(n_stocks = 2,
                                 n_feedback_years = 0,
                                 life_history = "medium",
                                 n_ages = 12,
-                                F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time = 0.5, user_F = NULL),
+                                F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time = 0.5, user_F = NULL, F_feedback = NULL),
                                 catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa = 1),
                                 index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2,
                                                   use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
@@ -217,12 +217,13 @@ generate_basic_info <- function(n_stocks = 2,
   nby <- length(base.years)
   
   # Extract relevant values directly from F_info
-  F.year1 <- F_info$F.year1
-  Fhist <- F_info$Fhist
-  Fmax <- F_info$Fmax
-  Fmin <- F_info$Fmin
+  F.year1     <- F_info$F.year1
+  Fhist       <- F_info$Fhist
+  Fmax        <- F_info$Fmax
+  Fmin        <- F_info$Fmin
   change_time <- F_info$change_time
-  user_F <- F_info$user_F
+  user_F      <- F_info$user_F
+  F_feedback  <- F_info$F_feedback
   
   if (!is.null(user_F)) {
     # Check user-specified F matrix
@@ -262,7 +263,11 @@ generate_basic_info <- function(n_stocks = 2,
   if (n_feedback_years > 0) {
     if (n_fleets > 1) F_vals <- rbind(F_vals, F_vals[rep(nby, n_feedback_years), , drop = FALSE])
     else F_vals <- rbind(F_vals, matrix(F_vals[rep(nby, n_feedback_years)], ncol = 1))
-    F_vals[(nby+1):(nby+n_feedback_years),] = 0.1 # assume 0.1
+    if (is.null(F_feedback)) {
+      F_vals[(nby+1):(nby+n_feedback_years),] = 0.1 # assume 0.1
+    } else {
+      F_vals[(nby+1):(nby+n_feedback_years),] = F_feedback
+    }
   }
   
   F_info = list(F = F_vals, F_config = 2)
