@@ -33,8 +33,15 @@ year_end    <- 20  # end year in the burn-in period
 MSE_years   <- 3     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
-info <- generate_basic_info(base.years = year_start:year_end,
-                            n_feedback_years = MSE_years) 
+info <- generate_basic_info(n_stocks = 2,
+                            n_regions = 2,
+                            n_indices = 4,
+                            n_fleets = 4,
+                            n_seasons = 4,
+                            base.years = year_start:year_end,
+                            n_feedback_years = MSE_years,
+                            life_history = "medium",
+                            n_ages = 12) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -131,11 +138,13 @@ assess.years    <- seq(terminal.year, tail(om$years,1)-assess.interval,by = asse
 
 There are several options for catch apportionment:
 
-#### Option 1 (weight_type = 1): Assign equal weights to all regions.
+#### Option 1 (weight_type = 1 with method = "equal"): Assign equal weights to all regions.
 ```{r, eval = FALSE}
 mod = list()
 
-n_stocks = n_regions = n_fleets = n_indices = 1
+n_stocks = n_regions = 1
+
+n_fleets = n_indices = 2
 
 sel_em <- list(model=rep("logistic",n_fleets+n_indices),
                initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
@@ -154,15 +163,32 @@ mod[[1]] = loop_through_fn(om = om_with_data,
                            age_comp_em = "multinomial",
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 1, method = "equal", weight_years = 3),
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 1) # Uniform: Assign equal weights to all regions 
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE
+                           )
 ```
 
-#### Option 2 (weight_type = 2): User specified weights for catch apportionment.
+#### Option 2 (weight_type = 2 with method = "fleet_region"): Use regional catch totals to compute weights.
 ```{r, eval = FALSE}
 mod[[2]] = loop_through_fn(om = om_with_data,
                            em_info = info, 
@@ -174,16 +200,31 @@ mod[[2]] = loop_through_fn(om = om_with_data,
                            age_comp_em = "multinomial",
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 2, method = "fleet_region", weight_years = 3),
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 2, # User defined
-                           user_weights = c(0.4,0.6)) 
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) 
 ```
 
-#### Option 3 (weight_type = 3): Weights are calculated using regional catch averaged over x years.
+#### Option 3 (weight_type = 3, with method = "index_equal"): Use survey-based regional weighting, then assigns equally among fleets in the same region
 
 ```{r, eval = FALSE}
 mod[[3]] = loop_through_fn(om = om_with_data,
@@ -196,16 +237,31 @@ mod[[3]] = loop_through_fn(om = om_with_data,
                            age_comp_em = "multinomial",
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 3, method = "index_equal", weight_years = 3, survey_pointer = 1), # use index 1
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 3, # Catch history
-                           weight_years = 10) # average over the most recent 10 years
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE)
 ```
 
-#### Option 4 (weight_type = 4): Weights are calculated using regional surveyed biomass averaged over x years.
+#### Option 4 (weight_type = 4 with method = "user_defined_fleets"): Use manually specified weights for each region or each fleet 
 
 ```{r, eval = FALSE}
 mod[[4]] = loop_through_fn(om = om_with_data,
@@ -218,16 +274,31 @@ mod[[4]] = loop_through_fn(om = om_with_data,
                            age_comp_em = "multinomial",
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 4, method = "user_defined_fleets", user_weights = c(0.4,0.4,0.1,0.1)), # user-specified
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 4, # survey average
-                           weight_years = 5) # average over the most recent 5 years
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) # average over the most recent 5 years
 ```
 
-#### Option 5 (weight_type = 5): Weights are calculated using regional recruitment.
+#### Option 5 (weight_type = 4): Weights are calculated using regional recruitment (which is equal in this case).
 
 ```{r, eval = FALSE}
 mod[[5]] = loop_through_fn(om = om_with_data,
@@ -240,10 +311,50 @@ mod[[5]] = loop_through_fn(om = om_with_data,
                            age_comp_em = "multinomial",
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 4, method = "user_defined_regions", user_weights = c(0.5,0.5)), # user-specified
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 5) # recruitment
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) # average over the most recent 5 years
 ```
+
+#### Plot catch
+
+```{r, eval = FALSE}
+
+fleet1catch_m1 <- mod[[1]]$om$rep$pred_catch[,1] # fleet1catch in model 1
+fleet1catch_m2 <- mod[[2]]$om$rep$pred_catch[,1] # fleet1catch in model 2
+fleet1catch_m3 <- mod[[3]]$om$rep$pred_catch[,1] # fleet1catch in model 3
+fleet1catch_m4 <- mod[[4]]$om$rep$pred_catch[,1] # fleet1catch in model 4
+fleet1catch_m5 <- mod[[5]]$om$rep$pred_catch[,1] # fleet1catch in model 5
+
+plot(fleet1catch_m1, col = "red", type = "o", ylab = "Catch", xlab = "Year", main = "Fleet 1 Catch", ylim = c(0, 5000))
+lines(fleet1catch_m2, col = "blue", type = "o")
+lines(fleet1catch_m3, col = "green", type = "o")
+lines(fleet1catch_m4, col = "purple", type = "o")
+lines(fleet1catch_m5, col = "orange", type = "o")
+
+legend("topright", legend=c("M 1", "M 2", "M 3", "M 4", "M 5"),
+       col=c("red", "blue", "green", "purple", "orange"), lty=c(1,1), cex=0.8)
+
+```
+![Figure
+1](Example_plots/plot_ex10.png){width="600"}
+

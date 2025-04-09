@@ -46,7 +46,7 @@ info <- generate_basic_info(n_stocks = 2,
                             life_history = "medium",
                             n_ages = 12,
                             F_info = list(F.year1 = 0.2, Fhist = "F-H-L", 
-                                          Fmax = 2, Fmin = 1, change_time = 0.5, user_F = NULL),
+                                          Fmax = 2, Fmin = 1, change_time = 0.5),
                             catch_info = list(catch_cv = 0.1, catch_Neff = 100),
                             index_info = list(index_cv = 0.1, index_Neff = 100, 
                                               fracyr_indices = 0.625, q = 0.2),
@@ -95,7 +95,7 @@ sigma        <- "rec+1"
 re_cor       <- "iid"
 ini.opt      <- "equilibrium" # option <- c("age-specific-fe", "equilibrium")
 Rec_sig      <- 0.5 # (sigma for recruitment)
-NAA_sig      <- 0.5 # (sigma for NAA)
+NAA_sig      <- 0.2 # (sigma for NAA)
 
 sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages
 sigma_vals[,,1] = Rec_sig
@@ -115,8 +115,7 @@ NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
                recruit_model = 2,  # rec random around the mean
                recruit_pars = mean_rec_par, 
                sigma_vals = sigma_vals,  
-               N1_pars = N1_pars,
-               NAA_where = basic_info$NAA_where) # NAA_where must be specified in basic_info!
+               N1_pars = N1_pars) 
 ```
 
 ### 6. Generate wham input
@@ -176,8 +175,9 @@ minimum percent of F40% to use for calculating catch in projections
 Please see `advice()` function for more details.
 
 ```{r, eval=FALSE}
-hcr.type <- 3
-hcr.opts <- list(max_percent = 75, min_percent = 0.01, BThresh_up = 0.5, BThresh_low = 0) 
+hcr <- list()
+hcr$hcr.type = 3
+hcr$hcr.opts <- list(max_percent = 75, min_percent = 0.01, BThresh_up = 0.5, BThresh_low = 0) 
 ```
 
 #### EM1: One panmictic model with catch aggregated and with NAA random effects
@@ -205,12 +205,22 @@ mods[[1]] = loop_through_fn(om = om_with_data,
                                           separate.em.type = 1, 
                                           do.move = FALSE, 
                                           est.move = FALSE),
+                            aggregate_catch_info = list(n_fleets = 1, 
+                                                        fleet_pointer = c(1,1), 
+                                                        use_catch_weighted_waa=TRUE, 
+                                                        catch_Neff = 100, 
+                                                        catch_cv = 0.1),
+                            aggregate_index_info = list(n_indices = 1, 
+                                                        index_pointer = c(1,1), 
+                                                        use_catch_weighted_waa=TRUE, 
+                                                        index_Neff = 100, 
+                                                        index_cv = 0.1),
+                            hcr = hcr,
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
                             year.use = 20,
-                            seed = 123,
-                            save.sdrep = FALSE)
+                            seed = 123)
 ```
 
 #### EM2: One assessment model (spatially-implicit fleets-as-areas) with NAA random effects
@@ -237,6 +247,7 @@ mods[[2]] = loop_through_fn(om = om_with_data,
                                           separate.em.type = 2, 
                                           do.move = FALSE, 
                                           est.move = FALSE),
+                            hcr = hcr,
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
@@ -269,16 +280,13 @@ mods[[3]] = loop_through_fn(om = om_with_data,
                                           separate.em.type = 3, 
                                           do.move = FALSE, 
                                           est.move = FALSE),
+                            hcr = hcr,
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, 
-                            hcr.type = hcr.type,
-                            hcr.opts = hcr.opts,
-                            seed = 123,
-                            save.sdrep = FALSE)
+                            year.use = 20,
+                            seed = 123)
 
-saveRDS(mods, "Mods.rds")
 ```
 
 ### 11. Compare model performance
@@ -290,19 +298,19 @@ par(mfrow = c(1,2))
 SSB_s1_m1 <- mods[[1]]$om$rep$SSB[,1] # Stock 1 SSB in model 1
 SSB_s1_m2 <- mods[[2]]$om$rep$SSB[,1] # Stock 1 SSB in model 2
 SSB_s1_m3 <- mods[[3]]$om$rep$SSB[,1] # Stock 1 SSB in model 3
-plot(SSB_s1_m1[14:23], col = "red", type = "o", ylab = "SSB", xlab = "Year") # Extract SSB from last 10 years
-lines(SSB_s1_m2[14:23], col = "blue", type = "o")
-lines(SSB_s1_m3[14:23], col = "green", type = "o")
+plot(SSB_s1_m1[1:23], col = "red", type = "o", ylab = "SSB", xlab = "Year") 
+lines(SSB_s1_m2[1:23], col = "blue", type = "o")
+lines(SSB_s1_m3[1:23], col = "green", type = "o")
 
 legend("topright", legend=c("EM 1", "EM 2", "EM 3"),
        col=c("red", "blue", "green"), lty=c(1,1), cex=0.8)
 
-Catch_r1_m1 <- mods[[1]]$om$rep$pred_catch[,1] # Stock 1 SSB in model 1
-Catch_r1_m2 <- mods[[2]]$om$rep$pred_catch[,1] # Stock 1 SSB in model 2
-Catch_r1_m3 <- mods[[3]]$om$rep$pred_catch[,1] # Stock 1 SSB in model 2
-plot(Catch_r1_m1[14:23], col = "red", type = "o", ylab = "Catch", xlab = "Year") # Extract catch from last 10 years
-lines(Catch_r1_m2[14:23], col = "blue", type = "o")
-lines(Catch_r1_m3[14:23], col = "green", type = "o")
+Catch_r1_m1 <- mods[[1]]$om$rep$pred_catch[,1] # Region 1 Catch in model 1
+Catch_r1_m2 <- mods[[2]]$om$rep$pred_catch[,1] # Region 1 Catch in model 2
+Catch_r1_m3 <- mods[[3]]$om$rep$pred_catch[,1] # Region 1 Catch in model 2
+plot(Catch_r1_m1[1:23], col = "red", type = "o", ylab = "Catch", xlab = "Year") # Extract catch from last 10 years
+lines(Catch_r1_m2[1:23], col = "blue", type = "o")
+lines(Catch_r1_m3[1:23], col = "green", type = "o")
 
 ```
 ![Figure

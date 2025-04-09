@@ -43,7 +43,6 @@ information, survey information, and fishing history.
 ```{r, eval=FALSE}
 year_start  <- 1  # starting year in the burn-in period
 year_end    <- 20  # end year in the burn-in period
-MSE_years   <- 0     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
 info <- generate_basic_info(n_stocks = 2,
@@ -52,33 +51,9 @@ info <- generate_basic_info(n_stocks = 2,
                             n_fleets = 2,
                             n_seasons = 4,
                             base.years = year_start:year_end,
-                            n_feedback_years = MSE_years,
                             life_history = "medium",
                             n_ages = 12,
-                            Fbar_ages = 12,
-                            recruit_model = 2,
-                            F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.4, Fmin = 0.2, change_time = 0.5, user_F = NULL),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-                            index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.625, q = 0.2),
-                            fracyr_spawn = 0.625,
-                            fracyr_seasons = NULL,
-                            fleet_pointer = NULL,
-                            index_pointer = NULL,
-                            user_waa = NULL,
-                            user_maturity = NULL,
-                            bias.correct.process = FALSE,
-                            bias.correct.observation = FALSE,
-                            bias.correct.BRPs = FALSE,
-                            mig_type = 0,
-                            XSPR_R_opt = 2,
-                            move_dyn = 0, # natal homing is assumed
-                            onto_move = 0,
-                            onto_move_pars = NULL,
-                            apply_re_trend = 0,
-                            trend_re_rate = NULL,
-                            apply_mu_trend = 0,
-                            trend_mu_rate = NULL, 
-                            age_mu_devs = NULL) 
+                            fracyr_spawn = 0.625) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -88,84 +63,12 @@ F_info = info$F # collect fishing information
 # see more details using ?generate_basic_info
 ```
 
-### 3. Specify movement type and movement rate
-
-Natal homing movement dynamics is assumed. That means, all fish must go back to their natal home before the spawning season.
-But they can move between regions outside their spawning season.
-
-Users have options to choose different types of movement by using the
-`generate_NAA_where()` function:
-
--   1: single stock movement (only stock 1 can move)
--   2: bidirectional (all stocks can move)
--   3: no movement
-
-Users can also specify the movement rate for each stock by using the
-`generate_move()` function. Movement can be either constant or
-years/ages varying (treated as random effects).
-
-Below are some examples:
-
-#### 3a. Specify movement type and movement rate (default: bidirectional)
-
-```{r, eval=FALSE}
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-# Note: the default is "bidirectional" movement (e.g. stock 1 move to region 2 and stock 2 move to region 1)
-
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "constant") # Note: default is move = 0.3 (constant) for stock1 and 0.1 (constant) for the other stocks
-```
-
-#### 3b. Specify movement type and movement rate (unidirectional)
-
-```{r, eval=FALSE}
-# DO NOT RUN #
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 1) # unidirectional movement 
-
-move <- generate_move(basic_info = basic_info, move.type = 1, move.rate = c(0.3, 0), move.re = "constant") # Note: default is 0.3 for stock1 and 0 for the rest of stocks
-```
-
-#### 3c. Specify movement type and movement rate (iid_y)
-
-```{r, eval=FALSE}
-# DO NOT RUN #
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_y", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across years
-```
-
-#### 3d. Specify movement type and movement rate (iid_a)
-
-```{r, eval=FALSE}
-# DO NOT RUN #
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "iid_a", move.sigma = 0.5) # movement rate is iid (sigma = 0.5) across ages
-```
-
-#### 3e. Specify movement type and movement rate (ar1_y)
-
-```{r, eval=FALSE}
-# DO NOT RUN #
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_y", move.sigma = 0.5, move.rho_y = 0.5) # movement rate is ar1 (sigma = 0.5, rho_y = 0.5) across years
-```
-
-#### 3f. Specify movement type and movement rate (ar1_a)
-
-```{r, eval=FALSE}
-# DO NOT RUN #
-basic_info <- generate_NAA_where(basic_info = basic_info, move.type = 2)
-
-move <- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3, 0.1), move.re = "ar1_a", move.sigma = 0.5, move.rho_a = 0.5) # movement rate is ar1 (sigma = 0.5, rho_a = 0.5) across ages
-```
-
-### 4. Configure selecitvity and natural mortality
+### 3. Configure selecitvity and natural mortality
 
 The default for selectivity and natural mortality is constant. Modeling
 selectivity and natural mortality as time and/or age varying (treated as
-random effects) is optional. More details can be found in the vignettes
-of single-wham (<https://timjmiller.github.io/wham/>).
+random effects) is optional. More details can be found in the vignettes here
+(<https://timjmiller.github.io/wham/>).
 
 ```{r, eval=FALSE}
 n_stocks  <- as.integer(basic_info['n_stocks'])
@@ -184,7 +87,7 @@ sel <- list(model=rep("logistic",n_fleets+n_indices),
 M <- list(model="constant",initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
 ```
 
-### 5. Configure numbers-at-age (NAA)
+### 4. Configure numbers-at-age (NAA)
 
 Recruitment is assumed to vary around the mean (default), but users are
 allowed to use "Beverton-Holt" or "Ricker" stock-recruitment functions.
@@ -195,32 +98,20 @@ More details can be found in the vignettes of single-wham
 sigma        <- "rec+1"
 re_cor       <- "iid"
 ini.opt      <- "equilibrium" # option <- c("age-specific-fe", "equilibrium")
-Rec_sig      <- 0.5 # (sigma for recruitment)
-NAA_sig      <- 0.5 # (sigma for NAA)
+Rec_sig      <- 0.2 # (sigma for recruitment)
+NAA_sig      <- 0.1 # (sigma for NAA)
 
-sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n_regions x n_ages
-sigma_vals[,,1] = Rec_sig
-
-# Set initial NAA for each stock
-log_N1    <- rep(10,n_stocks)
-log_N1[1] <- log(exp(10)*2) # N1_stock1 is 2 times higher than N1_stock2
-N1_pars   <- generate_ini_N1(log_N1,basic_info,ini.opt)
-
-# Set mean recruitment para. for each stock
-mean_rec_par <- list()
-for (i in 1:n_stocks) mean_rec_par[[i]] <- exp(log_N1[i])
+sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # input sigma for NAA
+sigma_vals[,,1] = Rec_sig # input sigma for Rec
 
 NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
                sigma=rep(sigma,n_stocks),
                cor=rep(re_cor,n_stocks),
                recruit_model = 2,  # rec random around the mean
-               recruit_pars = mean_rec_par, 
-               sigma_vals = sigma_vals,  
-               N1_pars = N1_pars,
-               NAA_where = basic_info$NAA_where) # NAA_where must be specified in basic_info!
+               sigma_vals = sigma_vals) # NAA_where must be specified in basic_info!
 ```
 
-### 6. Generate wham input
+### 5. Generate wham input
 
 Here we use `prepare_wham_input()` function to generate a wham input
 using the basic information we set above:
@@ -230,20 +121,19 @@ input <- prepare_wham_input(basic_info = basic_info,
                             selectivity = sel, 
                             M = M, 
                             NAA_re = NAA_re, 
-                            move = move,
                             catch_info = catch_info, 
                             index_info = index_info, 
                             F = F_info)
 ```
 
-### 7. Generate operating model
+### 6. Generate operating model
 
 ```{r, eval=FALSE}
 om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
 # Note: do.fit must be FALSE (no modeling fitting yet)
 ```
 
-### 8. Self-test
+### 7. Self-test
 
 Create a function to generate data and perform a self-test:
 
@@ -255,7 +145,7 @@ sim_fn <- function(om, self.fit = FALSE){
   # Note: process error and observation error are both turned on when simulating datasets 
   # To turn them off, use basic_info$simulate_process_error = 0 and basic_info$simulate_observation_error = 0
   if(self.fit) {
-    fit <- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = FALSE)
+    fit <- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = TRUE)
     return(fit)
   } else return(input) 
 }
@@ -271,12 +161,12 @@ We use `check_convergence()` function to check the model convergence:
 check_convergence(self_sim_fit) # check the model convergence
 ```
 
-### 9. Create HTML file to view output plots in browser (optional)
+### 8. Create HTML file to view output plots in browser (optional)
 
 ```{r, eval=FALSE}
 plot_wham_output(self_sim_fit, out.type = "html")
 
-# 10. Create a sub directory and saves .png files (optional)
+# Create a sub directory and saves .png files (optional)
 
 # report.dir <- "report"
 # if (file.exists(main.dir, report.dir)){
@@ -286,24 +176,29 @@ plot_wham_output(self_sim_fit, out.type = "html")
 # plot_wham_output(self_sim_fit, dir.main = file.path(main.dir, report.dir),out.type = 'png')
 ```
 
-### 10. Cross-test
+### 9 Cross-test
 
 Different NAA configuration is used in the estimation model:
 
 ```{r, eval=FALSE}
 # EM with different NAA configuration
-sigma      <- "rec+1"
-re_cor     <- "2dar1" # Misspecification here
-
+sigma      <- "rec"
+re_cor     <- "ar1" # Misspecification here
 ini.opt    <- "equilibrium"
+
 NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
                sigma=rep(sigma,n_stocks),
                cor=rep(re_cor,n_stocks),
-               NAA_where = basic_info$NAA_where)
+               recruit_model = 2)
                
 # Generate wham input
-input <- prepare_wham_input(basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, move = move,
-                            catch_info = catch_info, index_info = index_info, F = F_info)
+input <- prepare_wham_input(basic_info = basic_info, 
+                            selectivity = sel, 
+                            M = M, 
+                            NAA_re = NAA_re,
+                            catch_info = catch_info, 
+                            index_info = index_info, 
+                            F = F_info)
 
 # Generate EM
 em <- fit_wham(input, do.fit = F, do.brps = F, MakeADFun.silent = TRUE)
@@ -316,28 +211,28 @@ sim_fn2 <- function(om, em, cross.fit = FALSE){
   input <- em$input
   input$data <- om$simulate(complete=TRUE)
   if(cross.fit) {
-    fit <- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = FALSE)
+    fit <- fit_wham(input, do.osa = FALSE, do.retro = FALSE, MakeADFun.silent = TRUE)
     return(fit)
   } else return(input) 
 }
 
-set.seed(12345)
+set.seed(123)
 cross_sim_fit <- sim_fn2(om, em, cross.fit = TRUE)
 ```
 
 Check model convergence:
 
 ```{r, eval=FALSE}
-check_convergence(cross_sim_fit)
+check_convergence(cross_sim_fit) # just an example, do not expect model convergence
 ```
 
-### 11. Create HTML file to view output plots in browser (optional)
+### 10. Create HTML file to view output plots in browser (optional)
 
 ```{r, eval=FALSE}
 plot_wham_output(cross_sim_fit, out.type = "html")
 ```
 
-### 12. Generate 100 replicates for self-tests (optional)
+### 11. Generate 100 replicates for self-tests (optional)
 
 Parameters (including random effects parameters) associated with
 population dynamics are now defined in the operating model. Users can
@@ -393,7 +288,7 @@ SSB <- lapply(1:nsim, function(x){
 print(SSB)
 ```
 
-### 13. Generate 100 replicates for cross-tests (optional)
+### 12. Generate 100 replicates for cross-tests (optional)
 
 ```{r, eval=FALSE}
 nsim <- 100

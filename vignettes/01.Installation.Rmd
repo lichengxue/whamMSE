@@ -28,18 +28,17 @@ stocks with different life-history traits across different regions.
 
 ## 1. Install "whamMSE" package
 
-Users must install the **meta-population** wham (including natal homing functionality) first with all required dependencies:
-
-``` r
-install.packages("devtools") 
-devtools::install_github("lichengxue/wham-devel", dependencies=TRUE) # "meta-population" version of wham
-```
-
-Users can also download wham (only natal homing functionality) from Tim Miller's github:
+Users can install multi-wham from Tim Miller's github:
 
 ``` r
 install.packages("devtools") 
 devtools::install_github("timjmiller/wham", dependencies=TRUE, ref="devel")
+```
+
+Users can also install the **meta-population** version of multi-wham:
+
+``` r
+devtools::install_github("lichengxue/wham-devel", dependencies=TRUE) # "meta-population" version of wham
 ```
 
 Now users can install "whamMSE":

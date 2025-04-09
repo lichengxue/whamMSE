@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Specify Catch Apportionment</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2024-12-03</h4>
+<h4 class="date">Last update: 2025-04-09</h4>
 
 </div>
 
@@ -1586,8 +1586,15 @@ year_end    &lt;- 20  # end year in the burn-in period
 MSE_years   &lt;- 3     # number of years in the feedback loop
 # Note: no need to include MSE_years in simulation-estimation 
 
-info &lt;- generate_basic_info(base.years = year_start:year_end,
-                            n_feedback_years = MSE_years) 
+info &lt;- generate_basic_info(n_stocks = 2,
+                            n_regions = 2,
+                            n_indices = 4,
+                            n_fleets = 4,
+                            n_seasons = 4,
+                            base.years = year_start:year_end,
+                            n_feedback_years = MSE_years,
+                            life_history = &quot;medium&quot;,
+                            n_ages = 12) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -1666,12 +1673,14 @@ assess.years    &lt;- seq(terminal.year, tail(om$years,1)-assess.interval,by = a
 <div id="using-panmictic-assessment-model" class="section level3">
 <h3>10. Using panmictic assessment model</h3>
 <p>There are several options for catch apportionment:</p>
-<div id="option-1-weight_type-1-assign-equal-weights-to-all-regions." class="section level4">
-<h4>Option 1 (weight_type = 1): Assign equal weights to all
-regions.</h4>
+<div id="option-1-weight_type-1-with-method-equal-assign-equal-weights-to-all-regions." class="section level4">
+<h4>Option 1 (weight_type = 1 with method = “equal”): Assign equal
+weights to all regions.</h4>
 <pre class="r"><code>mod = list()
 
-n_stocks = n_regions = n_fleets = n_indices = 1
+n_stocks = n_regions = 1
+
+n_fleets = n_indices = 2
 
 sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
                initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
@@ -1690,16 +1699,33 @@ mod[[1]] = loop_through_fn(om = om_with_data,
                            age_comp_em = &quot;multinomial&quot;,
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 1, method = &quot;equal&quot;, weight_years = 3),
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 1) # Uniform: Assign equal weights to all regions </code></pre>
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE
+                           )</code></pre>
 </div>
-<div id="option-2-weight_type-2-user-specified-weights-for-catch-apportionment." class="section level4">
-<h4>Option 2 (weight_type = 2): User specified weights for catch
-apportionment.</h4>
+<div id="option-2-weight_type-2-with-method-fleet_region-use-regional-catch-totals-to-compute-weights." class="section level4">
+<h4>Option 2 (weight_type = 2 with method = “fleet_region”): Use
+regional catch totals to compute weights.</h4>
 <pre class="r"><code>mod[[2]] = loop_through_fn(om = om_with_data,
                            em_info = info, 
                            random = random,
@@ -1710,17 +1736,33 @@ apportionment.</h4>
                            age_comp_em = &quot;multinomial&quot;,
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 2, method = &quot;fleet_region&quot;, weight_years = 3),
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 2, # User defined
-                           user_weights = c(0.4,0.6)) </code></pre>
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) </code></pre>
 </div>
-<div id="option-3-weight_type-3-weights-are-calculated-using-regional-catch-averaged-over-x-years." class="section level4">
-<h4>Option 3 (weight_type = 3): Weights are calculated using regional
-catch averaged over x years.</h4>
+<div id="option-3-weight_type-3-with-method-index_equal-use-survey-based-regional-weighting-then-assigns-equally-among-fleets-in-the-same-region" class="section level4">
+<h4>Option 3 (weight_type = 3, with method = “index_equal”): Use
+survey-based regional weighting, then assigns equally among fleets in
+the same region</h4>
 <pre class="r"><code>mod[[3]] = loop_through_fn(om = om_with_data,
                            em_info = info, 
                            random = random,
@@ -1731,17 +1773,32 @@ catch averaged over x years.</h4>
                            age_comp_em = &quot;multinomial&quot;,
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 3, method = &quot;index_equal&quot;, weight_years = 3, survey_pointer = 1), # use index 1
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 3, # Catch history
-                           weight_years = 10) # average over the most recent 10 years</code></pre>
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE)</code></pre>
 </div>
-<div id="option-4-weight_type-4-weights-are-calculated-using-regional-surveyed-biomass-averaged-over-x-years." class="section level4">
-<h4>Option 4 (weight_type = 4): Weights are calculated using regional
-surveyed biomass averaged over x years.</h4>
+<div id="option-4-weight_type-4-with-method-user_defined_fleets-use-manually-specified-weights-for-each-region-or-each-fleet" class="section level4">
+<h4>Option 4 (weight_type = 4 with method = “user_defined_fleets”): Use
+manually specified weights for each region or each fleet</h4>
 <pre class="r"><code>mod[[4]] = loop_through_fn(om = om_with_data,
                            em_info = info, 
                            random = random,
@@ -1752,17 +1809,32 @@ surveyed biomass averaged over x years.</h4>
                            age_comp_em = &quot;multinomial&quot;,
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 4, method = &quot;user_defined_fleets&quot;, user_weights = c(0.4,0.4,0.1,0.1)), # user-specified
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 4, # survey average
-                           weight_years = 5) # average over the most recent 5 years</code></pre>
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) # average over the most recent 5 years</code></pre>
 </div>
-<div id="option-5-weight_type-5-weights-are-calculated-using-regional-recruitment." class="section level4">
-<h4>Option 5 (weight_type = 5): Weights are calculated using regional
-recruitment.</h4>
+<div id="option-5-weight_type-4-weights-are-calculated-using-regional-recruitment-which-is-equal-in-this-case." class="section level4">
+<h4>Option 5 (weight_type = 4): Weights are calculated using regional
+recruitment (which is equal in this case).</h4>
 <pre class="r"><code>mod[[5]] = loop_through_fn(om = om_with_data,
                            em_info = info, 
                            random = random,
@@ -1773,12 +1845,49 @@ recruitment.</h4>
                            age_comp_em = &quot;multinomial&quot;,
                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
                                          do.move = FALSE, est.move = FALSE),
+                           aggregate_catch_info = list(n_fleets = 2, # 2 aggregated fleets
+                                                       fleet_pointer = c(1,2,1,2), 
+                                                       # fleet 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # fleet 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE, 
+                                                       catch_Neff = c(100,100), # use ESS = 100 for aggregate fleet
+                                                       catch_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate fleet
+                           aggregate_index_info = list(n_indices = 2, # 2 aggregated indices
+                                                       index_pointer = c(1,2,1,2), 
+                                                       # index 1 (in region 1) and 3 (in region 2) will be aggregated, 
+                                                       # index 2 (in region 1) and 4 (in region 2) will be aggregated 
+                                                       use_catch_weighted_waa=TRUE,
+                                                       index_Neff = c(100,100), # use ESS = 100 for aggregate index
+                                                       index_cv = c(0.1,0.1)), # use CV = 0.1 for aggregate index
+                           catch_alloc = list(weight_type = 4, method = &quot;user_defined_regions&quot;, user_weights = c(0.5,0.5)), # user-specified
                            assess_years = assess.years, 
                            assess_interval = assess.interval, 
                            base_years = base.years,
-                           year.use = 20, # number of years of data you want to use in the assessment model
-                           hcr.type = 1,
-                           weight_type = 5) # recruitment</code></pre>
+                           year.use = 20,
+                           seed = 123,
+                           save.sdrep = TRUE,
+                           save.last.em = TRUE) # average over the most recent 5 years</code></pre>
+</div>
+<div id="plot-catch" class="section level4">
+<h4>Plot catch</h4>
+<pre class="r"><code>fleet1catch_m1 &lt;- mod[[1]]$om$rep$pred_catch[,1] # fleet1catch in model 1
+fleet1catch_m2 &lt;- mod[[2]]$om$rep$pred_catch[,1] # fleet1catch in model 2
+fleet1catch_m3 &lt;- mod[[3]]$om$rep$pred_catch[,1] # fleet1catch in model 3
+fleet1catch_m4 &lt;- mod[[4]]$om$rep$pred_catch[,1] # fleet1catch in model 4
+fleet1catch_m5 &lt;- mod[[5]]$om$rep$pred_catch[,1] # fleet1catch in model 5
+
+plot(fleet1catch_m1, col = &quot;red&quot;, type = &quot;o&quot;, ylab = &quot;Catch&quot;, xlab = &quot;Year&quot;, main = &quot;Fleet 1 Catch&quot;, ylim = c(0, 5000))
+lines(fleet1catch_m2, col = &quot;blue&quot;, type = &quot;o&quot;)
+lines(fleet1catch_m3, col = &quot;green&quot;, type = &quot;o&quot;)
+lines(fleet1catch_m4, col = &quot;purple&quot;, type = &quot;o&quot;)
+lines(fleet1catch_m5, col = &quot;orange&quot;, type = &quot;o&quot;)
+
+legend(&quot;topright&quot;, legend=c(&quot;M 1&quot;, &quot;M 2&quot;, &quot;M 3&quot;, &quot;M 4&quot;, &quot;M 5&quot;),
+       col=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;, &quot;purple&quot;, &quot;orange&quot;), lty=c(1,1), cex=0.8)</code></pre>
+<div class="float">
+<img src="data:image/png;base64,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" width="600" alt="Figure 1" />
+<div class="figcaption">Figure 1</div>
+</div>
 </div>
 </div>
 

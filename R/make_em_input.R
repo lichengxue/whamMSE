@@ -128,8 +128,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
                           filter_indices = NULL,
                           reduce_region_info = NULL,
                           update_catch_info = NULL,
-                          update_index_info = NULL
-                          ) {
+                          update_index_info = NULL) {
   
   if (is.null(em.opt)) stop("em.opt must be specified!")
   
@@ -216,7 +215,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       # Fleets-as-areas
       n_fleets <- data$n_fleets
       n_indices <- data$n_indices
-      if(length(filter_indices) != n_indices) stop("Length of filter_indices must = n_indices!")
+      if(!is.null(filter_indices) && length(filter_indices) != n_indices) stop("Length of filter_indices must = n_indices!")
       fleet_regions <- em_info$catch_info$fleet_regions
       index_regions <- em_info$index_info$index_regions
 

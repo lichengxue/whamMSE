@@ -195,12 +195,11 @@ example:
 
 | Model | Type  | Move  | Random effects | Reference point  | Description |
 |:----------|:----------|:----------|:----------|:----------|:----------|
-| EM1   | Panmictic (catch aggregated)         | No              | NAA, Rec       | No global SPR-based | Fleet aggregated across regions                                        |
-| EM2   | Spatially implicit (fleets-as-areas) | No              | NAA, Rec           | No global SPR-based | Multiple fleets account for spatial difference in fleet structure |
-| EM3   | Separate                   | No              | NAA, Rec            | No global SPR-based | Separate single stock assessment model                              |
+| EM1   | Panmictic (catch aggregated)         | No              | NAA, Rec       | global SPR-based | Fleet aggregated across regions                                        |
+| EM2   | Spatially implicit (fleets-as-areas) | No              | NAA, Rec           | global SPR-based | Multiple fleets account for spatial difference in fleet structure |
+| EM3   | Separate panmictic                  | No              | NAA, Rec            | No global SPR-based | Separate single stock assessment model                              |
 | EM4   | Spatially disaggregated              | No              | NAA, Rec            | Global SPR-based    | Spatially disaggregated without movement                               |
-| EM5   | Spatially explicit                   | Yes (fix.)      | NAA, Rec  | Global SPR-based    | Spatially explicit with movement fixed as known                                        |
-| EM6   | Spatially explicit                   | Yes (Est.)      | NAA, Rec, Movement  | Global SPR-based    | Spatially explicit with movement estimated using a prior                                        |
+| EM5   | Spatially explicit                   | Yes (Est.)      | NAA, Rec, Movement  | Global SPR-based    | Spatially explicit with movement estimated using a prior                                        |
 
 ### 11. Perform managament strategy evaluation
 
@@ -232,8 +231,10 @@ mods[[1]] = loop_through_fn(om = om_with_data,
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 1, 
-                                          do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 1, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE), # here to choose panmictic 
                             aggregate_catch_info = list(n_fleets = 1, 
                                                         fleet_pointer = c(1,1), 
                                                         use_catch_weighted_waa=TRUE, 
@@ -248,9 +249,7 @@ mods[[1]] = loop_through_fn(om = om_with_data,
                             assess_interval = assess.interval, 
                             base_years = base.years,
                             year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123,
-                            save.sdrep = FALSE, 
-                            save.last.em = TRUE)
+                            seed = 123) # Must use the same seed (same as step 8) to generate random effects 
 ```
 
 #### EM2:
@@ -277,14 +276,15 @@ mods[[2]] = loop_through_fn(om = om_with_data,
                             NAA_re_em = NAA_re_em, 
                             move_em = NULL,
                             age_comp_em = "multinomial",
-                            em.opt = list(separate.em = TRUE, separate.em.type = 2, 
-                                          do.move = FALSE, est.move = FALSE),
+                            em.opt = list(separate.em = TRUE, 
+                                          separate.em.type = 2, 
+                                          do.move = FALSE, 
+                                          est.move = FALSE), # option to choose spatially implicit
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
                             year.use = 20, # number of years of data you want to use in the assessment model
-                            seed = 123,
-                            save.sdrep = FALSE)
+                            seed = 123) 
 ```
 
 #### EM3:
@@ -311,16 +311,14 @@ mods[[3]] = loop_through_fn(om = om_with_data,
                             move_em = NULL,
                             age_comp_em = "multinomial",
                             em.opt = list(separate.em = TRUE, 
-                                          separate.em.type = 1, 
+                                          separate.em.type = 3, 
                                           do.move = FALSE, 
-                                          est.move = FALSE),
+                                          est.move = FALSE), # option to choose separate panmictic  
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, 
-                            hcr.type = 1,
-                            seed = 123,
-                            save.sdrep = FALSE)
+                            year.use = 20, # number of years of data you want to use in the assessment model
+                            seed = 123)
 ```
 
 #### EM4:
@@ -353,15 +351,12 @@ mods[[4]] = loop_through_fn(om = om_with_data,
                             em.opt = list(separate.em = FALSE, 
                                           separate.em.type = 3, 
                                           do.move = FALSE, 
-                                          est.move = FALSE),
+                                          est.move = FALSE), # option to choose spatially disaggregated
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
                             year.use = 20, # number of years of data you want to use in the assessment model
-                            hcr.type = 1, 
-                            seed = 123,
-                            save.sdrep = FALSE, 
-                            save.last.em = TRUE)
+                            seed = 123)
 ```
 
 #### EM5:
@@ -394,15 +389,12 @@ mods[[5]] = loop_through_fn(om = om_with_data,
                             em.opt = list(separate.em = FALSE, 
                                           separate.em.type = 3, 
                                           do.move = TRUE,
-                                          est.move = FALSE),
+                                          est.move = TRUE), # option to choose spatially explicit
                             assess_years = assess.years, 
                             assess_interval = assess.interval, 
                             base_years = base.years,
-                            year.use = 20, 
-                            hcr.type = 1, 
-                            seed = 123,
-                            save.sdrep = FALSE, 
-                            save.last.em = TRUE)
+                            year.use = 20, # number of years of data you want to use in the assessment model
+                            seed = 123)
 ```
 
 ### 12. Compare model performance
@@ -415,7 +407,7 @@ Vignettes: Output-Analysis). For now we just extract some key quantities
 
 par(mfrow = c(1,2))
 SSB_s1 <- lapply(mods, function(mod) mod$om$rep$SSB[,1])
-plot(SSB_s1[[1]][14:23], type = "l", col = "blue", ylab = "SSB", xlab = "Year", ylim = c(40000,80000)) # only extract SSB from the last 10 years
+plot(SSB_s1[[1]][14:23], type = "l", col = "blue", ylab = "SSB", xlab = "Year", ylim = c(20000,80000), main = "Stock 1") # only extract SSB from the last 10 years
 colors <- c("red","green","purple","orange")
 for (i in 2:5) {
   lines(SSB_s1[[i]][14:23], col = colors[i-1],lty = i)
@@ -423,7 +415,7 @@ for (i in 2:5) {
 legend("topleft",legend = paste0("EM ", 1:5), col = c("blue",colors),lty=1:5, cex=0.8)
 
 Catch_s1 <- lapply(mods, function(mod) mod$om$rep$pred_catch[,1])
-plot(Catch_s1[[1]][14:23], type = "l", col = "blue", ylab = "Catch", xlab = "Year", ylim = c(4000,15000))
+plot(Catch_s1[[1]][14:23], type = "l", col = "blue", ylab = "Catch", xlab = "Year", ylim = c(1000,15000), main = "Stock 2")
 colors <- c("red","green","purple","orange")
 for (i in 2:5) {
   lines(Catch_s1[[i]][14:23], col = colors[i-1],lty = i)

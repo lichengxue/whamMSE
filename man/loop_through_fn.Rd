@@ -12,10 +12,9 @@ loop_through_fn(
   sel_em = NULL,
   NAA_re_em = NULL,
   move_em = NULL,
-  age_comp_em = NULL,
+  age_comp_em = "multinomial",
   em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move =
     FALSE),
-  global_waa = TRUE,
   aggregate_catch_info = NULL,
   aggregate_index_info = NULL,
   aggregate_weights_info = NULL,
@@ -224,7 +223,8 @@ The expected components include:
       \item `"index_equal"` - Use survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
       \item `"index_gear"` - Use survey-based regional weighting, then assigns based on gear-specific weights (use when weight_type = 3).
       \item `"index_multiple"` - Use multiple survey-based regional weighting, then assigns equally among fleets in the same region (use when weight_type = 3).
-      \item `"user_defined"` - Use manually specified weights for each region or each fleet (use when weight_type = 4).
+      \item `"user_defined_fleets"` - Catch allocation is based on user-defined weights for each fleet.
+      \item `"user_defined_regions"` - Catch is allocated based on user-defined weights for regions, then equally distributed among fleets within the region.
     }
   \item `$user_weights` - Numeric vector (`n_regions` or `n_fleets`). Optional. User-defined weights summing to 1 (use when weight_type = 4).
   \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.

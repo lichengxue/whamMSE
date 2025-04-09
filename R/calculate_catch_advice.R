@@ -223,8 +223,9 @@ calculate_catch_advice <- function(om,
       final_advice <- weight_matrix * sum(advice)
     }
   }
-  
-  if (weight_type == 4 && method == "user_defined" && !is.null(user_weights)) {
+
+  if (weight_type == 4 && method %in% c("user_defined_fleets","user_defined_regions") && !is.null(user_weights)) {
+    n_regions = om$input$data$n_regions
     if (sum(user_weights) != 1) stop("Sum of weights is not 1!")
     if (length(user_weights) == n_fleets) {
       weight_matrix <- matrix(user_weights, n_years, n_fleets, byrow = TRUE)

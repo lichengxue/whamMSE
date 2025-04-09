@@ -10,6 +10,8 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2025-4-09", title = "Vignettes Updated", content = "Vignettes have been updated"),
+  list(date = "2025-4-09", title = "New functionality added", content = "Many new functionalities have been released"),
   list(date = "2025-1-28", title = "Code Updated", content = "Code updated"),
   list(date = "2024-12-03", title = "Vignettes Updated", content = "Vignettes have been updated"),
   list(date = "2024-11-29", title = "Catch apportionment", content = "Options for catch apportionment have been updated"),

@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Parallel Computing</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2025-01-28</h4>
+<h4 class="date">Last update: 2025-04-09</h4>
 
 </div>
 
@@ -1591,17 +1591,7 @@ info &lt;- generate_basic_info(n_stocks = 2,
                             n_fleets = 2,
                             n_seasons = 4,
                             base.years = year_start:year_end,
-                            n_feedback_years = MSE_years,
-                            life_history = &quot;medium&quot;,
-                            n_ages = 12,
-                            Fbar_ages = 12,
-                            recruit_model = 2,
-                            F_info = list(F.year1 = 0.2, Fhist = &quot;F-H-L&quot;, 
-                                          Fmax = 2, Fmin = 1, change_time = 0.5, user_F = NULL),
-                            catch_info = list(catch_cv = 0.1, catch_Neff = 100),
-                            index_info = list(index_cv = 0.1, index_Neff = 100, 
-                                              fracyr_indices = 0.625, q = 0.2),
-                            fracyr_spawn = 0.625) 
+                            n_feedback_years = MSE_years) 
 
 basic_info = info$basic_info # collect basic information
 catch_info = info$catch_info # collect fleet catch information
@@ -1732,15 +1722,27 @@ foreach (i = 1:10) %dopar% {
                          NAA_re_em = NAA_re_em, 
                          move_em = NULL,
                          age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = TRUE, separate.em.type = 1, 
-                                       do.move = FALSE, est.move = FALSE),
+                         em.opt = list(separate.em = TRUE, 
+                                       separate.em.type = 1, 
+                                       do.move = FALSE, 
+                                       est.move = FALSE),
+                         aggregate_catch_info = list(n_fleets = 1,
+                                                     fleet_pointer = c(1,1),
+                                                     use_catch_weighted_waa=TRUE,
+                                                     catch_Neff = 100,
+                                                     catch_cv = 0.1),
+                         aggregate_index_info = list(n_indices = 1, 
+                                                     index_pointer = c(1,1), 
+                                                     use_catch_weighted_waa=TRUE, 
+                                                     index_Neff = 100, 
+                                                     index_cv = 0.1),
                          assess_years = assess.years, 
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
-                         hcr.type = 1,
                          seed = 123+i,
-                         save.sdrep = FALSE)
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   
   saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod1_%03d.RDS&quot;,i)))
 
@@ -1784,9 +1786,9 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20,
-                         hcr.type = 1,
                          seed = 123+i,
-                         save.sdrep = FALSE)
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   
   saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod2_%03d.RDS&quot;,i)))
   
@@ -1829,9 +1831,9 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
-                         hcr.type = 1,
                          seed = 123+i,
-                         save.sdrep = FALSE)
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod3_%03d.RDS&quot;,i)))
 }
 
@@ -1875,9 +1877,9 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20,
-                         hcr.type = 1,
                          seed = 123+i,
-                         save.sdrep = FALSE)
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   
   saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod4_%03d.RDS&quot;,i)))
 }
@@ -1922,9 +1924,9 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
-                         hcr.type = 1,
                          seed = 123+i,
-                         save.sdrep = FALSE)
+                         save.sdrep = FALSE,
+                         save.last.em = TRUE)
   
   saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod5_%03d.RDS&quot;,i)))
 }
@@ -1969,7 +1971,6 @@ foreach (i = 1:10) %dopar% {
                          assess_interval = assess.interval, 
                          base_years = base.years,
                          year.use = 20, 
-                         hcr.type = 1,
                          seed = 123+i,
                          save.sdrep = FALSE,
                          save.last.em = TRUE)
