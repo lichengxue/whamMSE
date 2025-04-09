@@ -15,7 +15,7 @@
 #' @param life_history Character. Fish life history, parameters obtained from 
 #'   \href{https://doi.org/10.1139/cjfas-2016-0381}{Wiedenmann et al. 2017}. Options:
 #'   \itemize{
-#'     \item `"median"` - Median-lived species (default).
+#'     \item `"medium"` - Median-lived species (default).
 #'     \item `"short"` - Short-lived species.
 #'     \item `"long"` - Long-lived species.
 #'   }
@@ -127,11 +127,14 @@ generate_basic_info <- function(n_stocks = 2,
                                 catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa = 1),
                                 index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2,
                                                   use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
+                                # data$waa <- array(NA,dim = c(data$n_fleets + data$n_regions + data$n_indices + data$n_stocks, data$n_years_model, data$n_ages))
+                                # user_waa = NULL, # user-specified same waa across fleets and indices
+                                # global_waa = FALSE, # user-specified different waa across fleets and indices
+                                user_waa = NULL, # if waa for fleet/index changes over years then details about waa should be saved here
                                 fracyr_spawn = 0.5,
                                 fracyr_seasons = NULL,
                                 fleet_regions = NULL,
                                 index_regions = NULL,
-                                user_waa = NULL,
                                 user_maturity = NULL,
                                 bias.correct.process = FALSE,
                                 bias.correct.observation = FALSE,
@@ -282,6 +285,8 @@ generate_basic_info <- function(n_stocks = 2,
   # Maturity at age
   if (is.null(user_maturity)) {
     maturity <- Generate_Maturity(life_history, na)
+    basic_info$maturity <- array(NA, dim = c(n_stocks, ny, na))
+    for (i in 1:n_stocks) basic_info$maturity[i, , ] <- t(matrix(maturity, na, ny))
   } else {
     if (is.matrix(user_maturity) && ncol(user_maturity) == na && nrow(user_maturity) == n_stocks) {
       maturity <- user_maturity
@@ -292,38 +297,69 @@ generate_basic_info <- function(n_stocks = 2,
       maturity <- user_maturity
       basic_info$maturity <- array(NA, dim = c(n_stocks, ny, na))
       for (i in 1:n_stocks) basic_info$maturity[i, , ] <- t(matrix(maturity, na, ny))
+    } 
+    else if (is.array(user_maturity) && all(dim(user_maturity) == c(n_stocks, ny, na))) {
+      basic_info$maturity = user_maturity
     } else {
-      stop("user_maturity must have length equal to n_ages!")
+      user_maturity = array(NA, dim = c(n_stocks, ny, na))
+      warnings("user_maturity must have correct dimensions!")
     }
   } 
+  
+  user_maturity = basic_info$maturity
   
   # Weight at age
   nwaa <- n_fleets + n_regions + n_indices + n_stocks
   basic_info$waa <- array(NA, dim = c(nwaa, ny, na))
   
   if (is.null(user_waa)) {
+    
     W <- Generate_WAA(life_history, na)
     for (i in 1:nwaa) basic_info$waa[i, , ] <- t(matrix(W, na, ny))
+    basic_info$waa_pointer_fleets   <- 1:n_fleets
+    basic_info$waa_pointer_totcatch <- (n_fleets + 1):(n_fleets + n_regions)
+    basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
+    basic_info$waa_pointer_ssb      <- (n_fleets + n_regions + n_indices + 1):(n_fleets + n_regions + n_indices + n_stocks)
+    basic_info$waa_pointer_M        <- basic_info$waa_pointer_ssb
+    
+    user_waa$waa                  <- basic_info$waa
+    user_waa$waa_pointer_fleets   <- basic_info$waa_pointer_fleets
+    user_waa$waa_pointer_totcatch <- basic_info$waa_pointer_totcatch
+    user_waa$waa_pointer_indices  <- basic_info$waa_pointer_indices
+    user_waa$waa_pointer_ssb      <- basic_info$waa_pointer_ssb 
+    user_waa$waa_pointer_M        <- basic_info$waa_pointer_M 
+
   } else {
-    if (length(user_waa) == na) {
-      W <- user_waa
-      for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W, simplify = FALSE))
-    } else if (is.matrix(user_waa) && dim(user_waa)[1] == nwaa && dim(user_waa)[2] == na) {
-      W <- user_waa
-      for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W[i,], simplify = FALSE))
-    } else {
-      warnings("Dimension of W should be either a vector of n_ages or a matrix with nrow = c(n_fleets + n_regions + n_indices + n_stocks) and ncol = n_ages!")
-    }
+    
+    if(is.null(user_waa$waa)) stop("waa must be specified! (dim = c(n_fleets + n_regions + n_indices + n_stocks, n_years_model, n_ages))")
+    if(is.null(user_waa$waa_pointer_fleets)) stop("waa_pointer_fleets must be specified! (dim = n_fleets)")
+    if(is.null(user_waa$waa_pointer_totcatch)) stop("waa_pointer_totcatch must be specified! (dim = n_regions)")
+    if(is.null(user_waa$waa_pointer_indices)) stop("waa_pointer_indices must be specified! (dim = n_indices)")
+    if(is.null(user_waa$waa_pointer_ssb)) stop("waa_pointer_ssb must be specified! (dim = n_regions)")
+    if(is.null(user_waa$waa_pointer_M)) stop("waa_pointer_M must be specified! (dim = n_regions)")
+    
+    basic_info$waa                  <- user_waa$waa
+    basic_info$waa_pointer_fleets   <- user_waa$waa_pointer_fleets
+    basic_info$waa_pointer_totcatch <- user_waa$waa_pointer_totcatch
+    basic_info$waa_pointer_indices  <- user_waa$waa_pointer_indices
+    basic_info$waa_pointer_ssb      <- user_waa$waa_pointer_ssb
+    basic_info$waa_pointer_M        <- user_waa$waa_pointer_M
   }
   
-  user_waa = basic_info$waa[,1,]
+  # else {
+  #   if (length(user_waa) == na) {
+  #     W <- user_waa
+  #     for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W, simplify = FALSE))
+  #   } else if (is.matrix(user_waa) && dim(user_waa)[1] == nwaa && dim(user_waa)[2] == na) {
+  #     W <- user_waa
+  #     for (i in 1:nwaa) basic_info$waa[i, , ] <- do.call(rbind, replicate(ny, W[i,], simplify = FALSE))
+  #   } else {
+  #     warnings("Dimension of W should be either a vector of n_ages or a matrix with nrow = c(n_fleets + n_regions + n_indices + n_stocks) and ncol = n_ages!")
+  #   }
+  # }
   
-  basic_info$waa_pointer_fleets   <- 1:n_fleets
-  basic_info$waa_pointer_totcatch <- (n_fleets + 1):(n_fleets + n_regions)
-  basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
-  basic_info$waa_pointer_ssb      <- (n_fleets + n_regions + n_indices + 1):(n_fleets + n_regions + n_indices + n_stocks)
-  basic_info$waa_pointer_M        <- basic_info$waa_pointer_ssb
-  
+  #waa_info = list(waa = NULL, waa_pointer_fleets = NULL, waa_pointer_totcatch = NULL, waa_pointer_indices = NULL, waa_pointer_ssb = NULL, waa_pointer_M = NULL)
+
   # Catch information
   if (is.null(catch_info)) {
     # If catch_info is not provided, set default values
@@ -693,8 +729,6 @@ generate_basic_info <- function(n_stocks = 2,
     n_seasons = n_seasons,
     life_history = life_history,
     n_ages = n_ages,
-    #Fbar_ages = Fbar_ages,
-    #recruit_model = recruit_model,
     
     # Fishing Mortality Information (from F_info)
     F.year1 = F.year1,

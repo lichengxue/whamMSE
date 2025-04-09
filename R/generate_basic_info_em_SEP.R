@@ -1,4 +1,4 @@
-#' Generate Basic Information for an Estimation Model
+#' Generate Basic Information for Separate Independent Estimation Models
 #'
 #' This helper function generates basic biological and fishery information
 #' for simulation-estimation and management strategy evaluation (MSE).
@@ -21,7 +21,7 @@
 #'
 #' @seealso `generate_basic_info`, `prepare_wham_input`
 #'
-generate_basic_info_em <- function(em_info, 
+generate_basic_info_em_SEP <- function(em_info, 
                                    em_years, 
                                    n_stocks = NULL, 
                                    n_regions = NULL, 
@@ -121,7 +121,7 @@ generate_basic_info_em <- function(em_info,
       if (is.null(n_fleets)) n_fleets <- em_info$par_inputs$n_fleets
       
       n_indices_om = em_info$par_inputs$n_indices
-    
+      
       # Generate basic info using provided or default values from em_info
       basic_info <- generate_basic_info(
         n_stocks = n_stocks,
@@ -201,6 +201,6 @@ generate_basic_info_em <- function(em_info,
       stop("filter_indices is not specified correctly!")
     }
   }
-
+  
   return(basic_info)
 }

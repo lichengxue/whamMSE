@@ -17,9 +17,11 @@ make_em_input(
   age_comp_em,
   aggregate_catch_info = NULL,
   aggregate_index_info = NULL,
-  reduce_region_info = NULL,
+  aggregate_weights_info = NULL,
   filter_indices = NULL,
-  global_waa = TRUE
+  reduce_region_info = NULL,
+  update_catch_info = NULL,
+  update_index_info = NULL
 )
 }
 \arguments{
@@ -93,6 +95,26 @@ make_em_input(
   \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
    }}
 
+\item{aggregate_weights_info}{List (optional). Specifies how to compute weighted averages for
+weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+Used for aggregating across fleets or indices to form total/stock/regional summaries.
+\itemize{
+  \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+    }
+  \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+    }
+}}
+
+\item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model}
+
 \item{reduce_region_info}{List (optional). Remove specific regions from the assessment model. If `NULL`, no modifications are applied.
 The expected components include:
 \itemize{
@@ -114,7 +136,19 @@ The expected components include:
     }
 }}
 
-\item{filter_indices}{Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model}
+\item{update_catch_info}{List (optional). Update catch CV and Neff in the EM.
+The expected components include:
+\itemize{
+  \item `$agg_catch_sigma` Matrix. Either full (n_years x n_fleets) or subset (length(ind_em) x n_fleets).
+  \item `$catch_Neff` Matrix. Same dimension as `agg_catch_sigma`.
+}}
+
+\item{update_index_info}{List (optional). Update index CV and Neff in the EM.
+The expected components include:
+\itemize{
+  \item `$agg_index_sigma` Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
+  \item `$index_Neff` Matrix. Same dimension as `agg_index_sigma`.
+}}
 }
 \value{
 List. A `wham` input object prepared for stock assessment.

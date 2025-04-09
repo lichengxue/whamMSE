@@ -31,6 +31,23 @@
 #'     \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
 #'     \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
 #'      }
+#' @param aggregate_weights_info List (optional). Specifies how to compute weighted averages for
+#' weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+#' Used for aggregating across fleets or indices to form total/stock/regional summaries.
+#' \itemize{
+#'   \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+#'     }
+#'   \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+#'     }
+#' }
 #' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
 #'
 #' @return List. An updated `em_info` object with:
@@ -47,43 +64,11 @@
 #' - If `aggregate_catch_info` or `aggregate_index_info` are missing values, they are replaced with the first element of `em_info$par_inputs`.
 #' - Weight-at-age (`waa`) is aggregated based on fleet or index weights, using either **catch-weighted averages or equal proportions**.
 #'
-#' @examples
-#' \dontrun{
-#' # Example usage
-#' new_em_info <- make_aggregate_data(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em)
-#' }
-#'
 #' @export
 #' 
-make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em) {
+make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggregate_index_info, aggregate_weights_info) {
   
   data <- om$input$data
-  
-  # Function to Aggregate Parameters (Handles Single Values & Group Averaging)
-  # aggregate_parameters <- function(values, pointers, default_values) {
-  #   # Ignore 0s in pointers
-  #   valid_pointers <- pointers[pointers > 0]
-  #   unique_groups <- unique(valid_pointers)
-  #   
-  #   # If `values` is NULL, replace with the first element of `default_values`
-  #   if (is.null(values)) {
-  #     values <- rep(default_values[1], length(pointers))
-  #   }
-  #   
-  #   # Ensure `values` and `pointers` have the same length
-  #   if (length(values) != length(pointers)) {
-  #     stop("Length of `values` and `pointers` must be the same")
-  #   }
-  #   
-  #   aggregated_values <- numeric(length(unique_groups))
-  #   
-  #   for (i in seq_along(unique_groups)) {
-  #     group_indices <- which(pointers == unique_groups[i])  # Find all non-zero fleet groups
-  #     aggregated_values[i] <- mean(values[group_indices], na.rm = TRUE)  # Compute mean for each group
-  #   }
-  #   
-  #   return(aggregated_values)
-  # }
   
   aggregate_parameters <- function(values, pointers, default_values) {
     # Ignore 0s in pointers
@@ -91,21 +76,25 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
     unique_groups <- unique(valid_pointers)
     
     # If `values` is NULL, replace with the first element of `default_values`
+    
     if (is.null(values)) {
       values <- rep(default_values[1], length(pointers))
     }
     
     # If values already match unique pointers, return directly
+    
     if (length(values) == length(unique_groups)) {
       return(values)
     }
     
     # Ensure `values` and `pointers` have the same length before proceeding
+    
     if (length(values) != length(pointers)) {
       stop("Length of `values` and `pointers` must be the same")
     }
     
     # Otherwise, compute aggregated values
+    
     aggregated_values <- numeric(length(unique_groups))
     
     for (i in seq_along(unique_groups)) {
@@ -117,6 +106,7 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   }
   
   # ---- Define fleet_pointer & index_pointer BEFORE Aggregation ---- #
+  
   fleet_pointer <- aggregate_catch_info$fleet_pointer
   valid_fleets <- unique(fleet_pointer[fleet_pointer > 0])
   
@@ -124,6 +114,7 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   valid_indices <- unique(index_pointer[index_pointer > 0])
   
   # Aggregate catch-related parameters
+  
   em_info$par_inputs$catch_cv <- aggregate_parameters(aggregate_catch_info$catch_cv, fleet_pointer, em_info$par_inputs$catch_cv)
   em_info$par_inputs$catch_Neff <- aggregate_parameters(aggregate_catch_info$catch_Neff, fleet_pointer, em_info$par_inputs$catch_Neff)
   em_info$par_inputs$use_agg_catch <- aggregate_parameters(aggregate_catch_info$use_agg_catch, fleet_pointer, em_info$par_inputs$use_agg_catch)
@@ -140,6 +131,7 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   em_info$par_inputs$units_index_paa <- aggregate_parameters(aggregate_index_info$units_index_paa, index_pointer, em_info$par_inputs$units_index_paa)
   
   # ---- Set Defaults for Missing Parameters (Using `em_info$par_inputs`) ---- #
+  
   if (is.null(aggregate_catch_info$n_fleets)) aggregate_catch_info$n_fleets <- em_info$par_inputs$n_fleets
   if (is.null(aggregate_index_info$n_indices)) aggregate_index_info$n_indices <- em_info$par_inputs$n_indices
   
@@ -148,30 +140,13 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   n_ages <- em_info$par_inputs$n_ages
   
   # ---- Aggregate Catch Data ---- #
+  
   fleet_pointer <- aggregate_catch_info$fleet_pointer
   valid_fleets <- unique(fleet_pointer[fleet_pointer > 0])
   
   agg_catch <- matrix(NA, length(ind_em), length(valid_fleets))
   agg_catch_paa <- array(0, dim = c(length(valid_fleets), length(ind_em), n_ages))  # Initialize with zeros
   use_catch_paa <- em_info$par_inputs$use_catch_paa[valid_fleets]  
-  
-  # for (f in seq_along(valid_fleets)) {
-  #   fleet_group <- which(fleet_pointer == valid_fleets[f])
-  #   fleet_catch <- data$agg_catch[ind_em, fleet_group, drop = FALSE]
-  #   total_catch <- rowSums(fleet_catch)  
-  #   agg_catch[, f] <- total_catch  
-  #   
-  #   if (use_catch_paa[f] == 1) {
-  #     catch_paa <- data$catch_paa[fleet_group, ind_em, , drop = FALSE]  
-  #     weighted_paa <- array(0, dim = c(length(ind_em), n_ages))  
-  #     
-  #     for (i in seq_along(fleet_group)) {
-  #       weighted_paa <- weighted_paa + (catch_paa[i, , ] * fleet_catch[, i])  
-  #     }
-  #     
-  #     agg_catch_paa[f, , ] <- t(apply(weighted_paa, 1, function(row) ifelse(sum(row) > 0, row / sum(row), 0)))  
-  #   }
-  # }
   
   for (f in seq_along(valid_fleets)) {
     fleet_group <- which(fleet_pointer == valid_fleets[f])  # Get fleets belonging to group f
@@ -205,30 +180,13 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   }
   
   # ---- Aggregate Index Data ---- #
+  
   index_pointer <- aggregate_index_info$index_pointer
   valid_indices <- unique(index_pointer[index_pointer > 0])
   
   agg_indices <- matrix(NA, length(ind_em), length(valid_indices))
   agg_index_paa <- array(0, dim = c(length(valid_indices), length(ind_em), n_ages))  # Initialize with zeros
   use_index_paa <- em_info$par_inputs$use_index_paa[valid_indices]  
-  
-  # for (f in seq_along(valid_indices)) {
-  #   index_group <- which(index_pointer == valid_indices[f])
-  #   index_catch <- data$agg_indices[ind_em, index_group, drop = FALSE]
-  #   total_index_catch <- rowSums(index_catch)  
-  #   agg_indices[, f] <- total_index_catch  
-  #   
-  #   if (use_index_paa[f] == 1) {
-  #     index_paa <- data$index_paa[index_group, ind_em, , drop = FALSE]  
-  #     weighted_index_paa <- array(0, dim = c(length(ind_em), n_ages))  
-  #     
-  #     for (i in seq_along(index_group)) {
-  #       weighted_index_paa <- weighted_index_paa + (index_paa[i, , ] * index_catch[, i])  
-  #     }
-  #     
-  #     agg_index_paa[f, , ] <- t(apply(weighted_index_paa, 1, function(row) ifelse(sum(row) > 0, row / sum(row), 0)))  
-  #   }
-  # }
   
   for (f in seq_along(valid_indices)) {
     index_group <- which(index_pointer == valid_indices[f])  # Get indices belonging to group f
@@ -261,31 +219,11 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
     }
   }
   
-  # ---- Store in `em_info` ---- #
-  # em_info$catch_info$agg_catch <- agg_catch
-  # em_info$catch_info$catch_paa <- agg_catch_paa  
-  # 
-  # em_info$index_info$agg_indices <- agg_indices
-  # em_info$index_info$index_paa <- agg_index_paa  
-  
-  # ---- Aggregate Parameters ---- #
-  # em_info$par_inputs$catch_cv <- aggregate_catch_info$catch_cv[valid_fleets]
-  # em_info$par_inputs$catch_Neff <- aggregate_catch_info$catch_Neff[valid_fleets]
-  # em_info$par_inputs$use_agg_catch <- aggregate_catch_info$use_agg_catch[valid_fleets]
-  # em_info$par_inputs$use_catch_paa <- use_catch_paa
-  # 
-  # em_info$par_inputs$index_cv <- aggregate_index_info$index_cv[valid_indices]
-  # em_info$par_inputs$index_Neff <- aggregate_index_info$index_Neff[valid_indices]
-  # em_info$par_inputs$use_indices <- aggregate_index_info$use_indices[valid_indices]
-  # em_info$par_inputs$use_index_paa <- use_index_paa
-  
   em_info$par_inputs$n_fleets <- n_fleets
   em_info$par_inputs$fleet_regions <- rep(1, n_fleets)
   
   em_info$par_inputs$n_indices <- n_indices
   em_info$par_inputs$index_regions <- rep(1, n_indices)
-  
-  # ---- Final Updates ---- #
   
   # ---- Exclude fleets and indices marked with `0` in pointers ---- #
   if (is.null(aggregate_catch_info$fleet_pointer)) warnings("aggregate_catch_info$fleet_pointer is not specified!")
@@ -299,198 +237,225 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   index_pointer <- aggregate_index_info$index_pointer
   valid_indices <- unique(index_pointer[index_pointer > 0])
   
-  # ---- Compute WAA Weights ---- #
+  # ---- Compute Fleet WAA Weights ---- #
+  
   fleet_weights <- list()
+  
   for (f in valid_fleets) {
+    
     if (aggregate_catch_info$use_catch_weighted_waa) {
+      
       agg_catch_filtered <- data$agg_catch[ind_em, which(fleet_pointer == f), drop = FALSE]
       
-      # Ensure weight vector has correct sum
-      mean_catch <- if (is.matrix(agg_catch_filtered)) colMeans(agg_catch_filtered, na.rm = TRUE) else mean(agg_catch_filtered, na.rm = TRUE)
-      fleet_weights[[f]] <- mean_catch / sum(mean_catch, na.rm = TRUE)  # Normalize weights so they sum to 1
+      if (ncol(agg_catch_filtered) > 1) {
+        fleet_weights[[f]] <- agg_catch_filtered/rowSums(agg_catch_filtered)
+      } else {
+        fleet_weights[[f]] <- matrix(1, nrow = nrow(agg_catch_filtered), ncol = 1)
+      }
     } else {
-      fleet_weights[[f]] <- rep(1 / length(valid_fleets), length(valid_fleets))  # Equal weights
+      
+      if (ncol(agg_catch_filtered) > 1) {
+        fleet_weights[[f]][] <- 1/ncol(agg_catch_filtered)
+      } else {
+        fleet_weights[[f]][] <- 1
+      }
     }
   }
+  
+  # ---- Compute Index WAA Weights ---- #
   
   index_weights <- list()
+  
   for (f in valid_indices) {
+    
     if (aggregate_index_info$use_catch_weighted_waa) {
+      
       agg_indices_filtered <- data$agg_indices[ind_em, which(index_pointer == f), drop = FALSE]
       
-      # Ensure weight vector has correct sum
-      mean_index <- if (is.matrix(agg_indices_filtered)) colMeans(agg_indices_filtered, na.rm = TRUE) else mean(agg_indices_filtered, na.rm = TRUE)
-      index_weights[[f]] <- mean_index / sum(mean_index, na.rm = TRUE)  # Normalize weights
+      if (ncol(agg_indices_filtered) > 1) {
+        index_weights[[f]] <- agg_indices_filtered/rowSums(agg_indices_filtered)
+      } else {
+        index_weights[[f]] <- matrix(1, nrow = nrow(agg_indices_filtered), ncol = 1)
+      }
     } else {
-      index_weights[[f]] <- rep(1 / length(valid_indices), length(valid_indices))  # Equal weights
+      
+      if (ncol(agg_indices_filtered) > 1) {
+        index_weights[[f]][] <- 1/ncol(agg_indices_filtered)
+      } else {
+        index_weights[[f]][] <- 1
+      }
     }
   }
   
-  # ---- Aggregate WAA ---- #
+  
+  # ---- Aggregate Fleet WAA (Weighted Average) ---- #
+  
   aggregated_fleet_waa = list()
+  
   for (f in unique(valid_fleets)) {
-    if (is.null(em_info$par_inputs$user_waa)) {
-      aggregated_fleet_waa[[f]] <- as.matrix(em_info$basic_info$waa[which(fleet_pointer == f), 1, ])
-      if (ncol(aggregated_fleet_waa[[f]]) > 1) {
-        aggregated_fleet_waa[[f]] <- colSums(aggregated_fleet_waa[[f]] * fleet_weights[[f]])
-      } else {
-        aggregated_fleet_waa[[f]] <- sum(aggregated_fleet_waa[[f]] * fleet_weights[[f]])
-      }
-    } else {
-      aggregated_fleet_waa[[f]] <- as.matrix(em_info$par_inputs$user_waa[which(fleet_pointer == f), ])
-      if (ncol(aggregated_fleet_waa[[f]]) > 1) {
-        aggregated_fleet_waa[[f]] <- colSums(aggregated_fleet_waa[[f]] * fleet_weights[[f]])
-      } else {
-        aggregated_fleet_waa[[f]] <- sum(aggregated_fleet_waa[[f]] * fleet_weights[[f]])
-      }
+    
+    waa_pointer_fleets <- em_info$par_inputs$user_waa$waa_pointer_fleets
+    waa_mat <- em_info$par_inputs$user_waa$waa[waa_pointer_fleets,ind_em,]
+    waa_mat <- waa_mat[fleet_pointer == f,,]
+    
+    weights <- fleet_weights[[f]]
+    
+    if (length(dim(waa_mat)) == 2) {
+      
+      waa_mat <- array(waa_mat, dim = c(1, dim(waa_mat)))
+      
     }
+    
+    weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
+    
+    aggregated <- apply(weighted_waa, c(2,3), sum)
+    
+    aggregated_fleet_waa[[f]] <- array(aggregated, dim = c(1, dim(aggregated)))
+    
   }
   
-  aggregated_region_waa = list()
-  for (f in 1) {  # Assuming n_regions = 1
-    ind = length(fleet_pointer) + 1:em_info$basic_info$n_regions
-    if (is.null(em_info$par_inputs$user_waa)) {
-      aggregated_region_waa[[f]] <- as.matrix(em_info$basic_info$waa[ind, 1, ])
-      if (ncol(aggregated_region_waa[[f]]) > 1) {
-        aggregated_region_waa[[f]] <- colMeans(aggregated_region_waa[[f]])
-      } else {
-        aggregated_region_waa[[f]] <- mean(aggregated_region_waa[[f]])
-      }
-    } else {
-      aggregated_region_waa[[f]] <- as.matrix(em_info$par_inputs$user_waa[ind, ])
-      if (ncol(aggregated_region_waa[[f]]) > 1) {
-        aggregated_region_waa[[f]] <- colMeans(aggregated_region_waa[[f]])
-      } else {
-        aggregated_region_waa[[f]] <- mean(aggregated_region_waa[[f]])
-      }
-    }
+  if (f == 1) {
+    aggregated_fleet_waa = aggregated_fleet_waa[[1]]
+  } else {
+    aggregated_fleet_waa = abind::abind(aggregated_fleet_waa[1:f], along = 1)
   }
+  
+  # ---- Aggregate Index WAA (Weighted Average) ---- #
   
   aggregated_index_waa = list()
+  
   for (f in unique(valid_indices)) {
-    ind = length(fleet_pointer) + 1:em_info$basic_info$n_regions + which(index_pointer == f)
-    if (is.null(em_info$par_inputs$user_waa)) {
-      aggregated_index_waa[[f]] <- as.matrix(em_info$basic_info$waa[ind, 1, ])
-      if (ncol(aggregated_index_waa[[f]]) > 1) {
-        aggregated_index_waa[[f]] <- colMeans(aggregated_index_waa[[f]])
-      } else {
-        aggregated_index_waa[[f]] <- mean(aggregated_index_waa[[f]])
-      }
-    } else {
-      aggregated_index_waa[[f]] <- as.matrix(em_info$par_inputs$user_waa[ind, ])
-      if (ncol(aggregated_index_waa[[f]]) > 1) {
-        aggregated_index_waa[[f]] <- colSums(aggregated_index_waa[[f]] * index_weights[[f]])
-      } else {
-        aggregated_index_waa[[f]] <- sum(aggregated_index_waa[[f]] * index_weights[[f]])
-      }
+    
+    waa_pointer_indices <- em_info$par_inputs$user_waa$waa_pointer_indices
+    waa_mat <- em_info$par_inputs$user_waa$waa[waa_pointer_indices,ind_em,]
+    waa_mat <- waa_mat[index_pointer == f,,]
+
+    weights <- index_weights[[f]]
+    
+    if (length(dim(waa_mat)) == 2) {
+      
+      waa_mat <- array(waa_mat, dim = c(1, dim(waa_mat)))
+      
+    }
+    
+    weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
+    
+    aggregated <- apply(weighted_waa, c(2,3), sum)
+    
+    aggregated_index_waa[[f]] <- array(aggregated, dim = c(1, dim(aggregated)))
+    
+  }
+  
+  if (f == 1) {
+    aggregated_index_waa = aggregated_index_waa[[1]]
+  } else {
+    aggregated_index_waa = abind::abind(aggregated_index_waa[1:f], along = 1)
+  }
+    
+  # ---- Aggregate Regional WAA (Weighted Average) ---- #
+  
+  waa_pointer_totcatch <- em_info$par_inputs$user_waa$waa_pointer_totcatch
+  waa_mat <- em_info$par_inputs$user_waa$waa[waa_pointer_totcatch,ind_em,]
+  
+  if (length(dim(waa_mat)) == 2) {
+    
+    waa_mat <- array(waa_mat, dim = c(1, dim(waa_mat)))
+    
+  }
+  
+  ssb_waa_weights = aggregate_weights_info$ssb_waa_weights
+  
+  if(is.null(ssb_waa_weights)) {
+    weights <- matrix(1/dim(waa_mat)[1], nrow = dim(waa_mat)[1], ncol = dim(waa_mat)[2])
+  } else {
+    if(ssb_waa_weights$fleet) {
+      pointer = ssb_waa_weights$pointer
+      weights = t(fleet_weights[[pointer]])
+    }
+    if(ssb_waa_weights$index) {
+      pointer = ssb_waa_weights$pointer
+      weights = t(index_weights[[pointer]])
     }
   }
   
-  aggregated_stock_waa = list()
-  for (f in 1) {
-    ind = length(fleet_pointer) + em_info$basic_info$n_regions + length(index_pointer) + 1:em_info$basic_info$n_stocks
-    if (is.null(em_info$par_inputs$user_waa)) {
-      aggregated_stock_waa[[f]] <- as.matrix(em_info$basic_info$waa[ind, 1, ])
-      if (ncol(aggregated_stock_waa[[f]]) > 1) {
-        aggregated_stock_waa[[f]] <- colMeans(aggregated_stock_waa[[f]])
-      } else {
-        aggregated_stock_waa[[f]] <- mean(aggregated_stock_waa[[f]])
-      }
-    } else {
-      aggregated_stock_waa[[f]] <- as.matrix(em_info$par_inputs$user_waa[ind, ])
-      if (ncol(aggregated_stock_waa[[f]]) > 1) {
-        aggregated_stock_waa[[f]] <- colMeans(aggregated_stock_waa[[f]])
-      } else {
-        aggregated_stock_waa[[f]] <- mean(aggregated_stock_waa[[f]])
-      }
-    }
+  weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
+  
+  aggregated <- apply(weighted_waa, c(2,3), sum)
+  
+  aggregated_region_waa <- array(aggregated, dim = c(1, dim(aggregated)))
+  
+  # ---- Aggregate Stock WAA (Weighted Average) ---- #
+  
+  waa_pointer_ssb <- em_info$par_inputs$user_waa$waa_pointer_ssb
+  waa_mat <- em_info$par_inputs$user_waa$waa[waa_pointer_ssb,ind_em,]
+  
+  if (length(dim(waa_mat)) == 2) {
+    
+    waa_mat <- array(waa_mat, dim = c(1, dim(waa_mat)))
+    
   }
   
+  ssb_waa_weights = aggregate_weights_info$ssb_waa_weights
   
+  if(is.null(ssb_waa_weights)) {
+    weights <- matrix(1/dim(waa_mat)[1], nrow = dim(waa_mat)[1], ncol = dim(waa_mat)[2])
+  } else {
+    if(ssb_waa_weights$fleet) {
+      pointer = ssb_waa_weights$pointer
+      weights = t(fleet_weights[[pointer]])
+    }
+    if(ssb_waa_weights$index) {
+      pointer = ssb_waa_weights$pointer
+      weights = t(index_weights[[pointer]])
+    }
+  }
+
+  weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
   
-  # ---- Compute WAA Weights ---- #
-  # fleet_weights <- list()
-  # for (f in valid_fleets) {
-  #   if (aggregate_catch_info$use_catch_weighted_waa) {
-  #     agg_catch_filtered <- data$agg_catch[ind_em, which(fleet_pointer == f), drop = FALSE]
-  #     
-  #     # Ensure weight vector has correct sum
-  #     mean_catch <- if (is.matrix(agg_catch_filtered)) colMeans(agg_catch_filtered, na.rm = TRUE) else mean(agg_catch_filtered, na.rm = TRUE)
-  #     fleet_weights[[f]] <- mean_catch / sum(mean_catch, na.rm = TRUE)  # Normalize weights so they sum to 1
-  #   } else {
-  #     fleet_weights[[f]] <- rep(1 / length(valid_fleets), length(valid_fleets))  # Equal weights
-  #   }
-  # }
-  # 
-  # index_weights <- list()
-  # for (f in valid_indices) {
-  #   if (aggregate_index_info$use_catch_weighted_waa) {
-  #     agg_indices_filtered <- data$agg_indices[ind_em, which(index_pointer == f), drop = FALSE]
-  #     
-  #     # Ensure weight vector has correct sum
-  #     mean_index <- if (is.matrix(agg_indices_filtered)) colMeans(agg_indices_filtered, na.rm = TRUE) else mean(agg_indices_filtered, na.rm = TRUE)
-  #     index_weights[[f]] <- mean_index / sum(mean_index, na.rm = TRUE)  # Normalize weights
-  #   } else {
-  #     index_weights[[f]] <- rep(1 / length(valid_indices), length(valid_indices))  # Equal weights
-  #   }
-  # }
-  # 
-  # # ---- Aggregate WAA ---- #
-  # aggregated_fleet_waa = list()
-  # for (f in unique(valid_fleets)) {
-  #   if(is.null(em_info$par_inputs$user_waa)) {
-  #     aggregated_fleet_waa[[f]] <- em_info$basic_info$waa[which(fleet_pointer == f),1,]
-  #     if (is.matrix(aggregated_fleet_waa[[f]])) aggregated_fleet_waa[[f]] <- colSums(em_info$basic_info$waa[which(fleet_pointer == f),1, ]*fleet_weights[[f]])
-  #   } else {
-  #     aggregated_fleet_waa[[f]] <- em_info$par_inputs$user_waa[which(fleet_pointer == f), ]
-  #     if (is.matrix(aggregated_fleet_waa[[f]])) aggregated_fleet_waa[[f]] <- colSums(em_info$par_inputs$user_waa[which(fleet_pointer == f), ]*fleet_weights[[f]])
-  #   }
-  # }
-  # 
-  # aggregated_region_waa = list()
-  # for (f in 1) { # Assuming n_regions = 1
-  #   ind = length(fleet_pointer) + 1:em_info$basic_info$n_regions
-  #   if(is.null(em_info$par_inputs$user_waa)) {
-  #     aggregated_region_waa[[f]] <- em_info$basic_info$waa[ind,1, ]
-  #     if (is.matrix(aggregated_region_waa[[f]])) aggregated_region_waa[[f]] <- colMeans(as.matrix(aggregated_region_waa[[f]]))
-  #   } else {
-  #     aggregated_region_waa[[f]] <- em_info$par_inputs$user_waa[, ]
-  #     if (is.matrix(aggregated_region_waa[[f]])) aggregated_region_waa[[f]] <- colMeans(as.matrix(aggregated_region_waa[[f]]))
-  #   }
-  # }
-  # 
-  # aggregated_index_waa = list()
-  # for (f in unique(valid_indices)) {
-  #   ind = length(fleet_pointer) + 1:em_info$basic_info$n_regions + which(index_pointer == f)
-  #   if(is.null(em_info$par_inputs$user_waa)) {
-  #     aggregated_index_waa[[f]] <- em_info$basic_info$waa[ind,1, ]
-  #     if (is.matrix(aggregated_index_waa[[f]])) aggregated_index_waa[[f]] <- colMeans(as.matrix(aggregated_index_waa[[f]]))
-  #   } else {
-  #     aggregated_index_waa[[f]] <- em_info$par_inputs$user_waa[ind, ]
-  #     if (is.matrix(aggregated_index_waa[[f]])) aggregated_index_waa[[f]] <- colSums(em_info$par_inputs$user_waa[which(index_pointer == f), ]*index_weights[[f]])
-  #   }
-  # }
-  # 
-  # aggregated_stock_waa = list()
-  # for (f in 1) {
-  #   ind = length(fleet_pointer) + em_info$basic_info$n_regions + length(index_pointer) + 1:em_info$basic_info$n_stocks
-  #   if(is.null(em_info$par_inputs$user_waa)) {
-  #     aggregated_stock_waa[[f]] <- em_info$basic_info$waa[ind,1, ]
-  #     if (is.matrix(aggregated_stock_waa[[f]])) aggregated_stock_waa[[f]] <- colMeans(as.matrix(aggregated_stock_waa[[f]]))
-  #   } else {
-  #     aggregated_stock_waa[[f]] <- em_info$par_inputs$user_waa[ind, ]
-  #     if (is.matrix(aggregated_stock_waa[[f]])) aggregated_stock_waa[[f]] <- colMeans(as.matrix(aggregated_stock_waa[[f]]))
-  #   }
-  # }
+  aggregated <- apply(weighted_waa, c(2,3), sum)
+  
+  aggregated_stock_waa <- array(aggregated, dim = c(1, dim(aggregated)))
   
   # Store the aggregated WAA back into `em_info`
-  em_info$par_inputs$user_waa <- do.call(rbind,c(aggregated_fleet_waa,aggregated_region_waa,aggregated_index_waa,aggregated_stock_waa))
-  em_info$basic_info$waa = em_info$par_inputs$user_waa
+  waa_list <- list(aggregated_fleet_waa, aggregated_region_waa,
+                   aggregated_index_waa, aggregated_stock_waa)
+  
+  em_info$par_inputs$user_waa$waa <- abind::abind(waa_list, along = 1)
+  em_info$basic_info$waa = em_info$par_inputs$user_waa$waa
   
   # Average MAA to get global MAA
-  maturity <- em_info$par_inputs$user_maturity
-  if(is.vector(maturity)) em_info$par_inputs$user_maturity = maturity
-  if(is.matrix(maturity)) em_info$par_inputs$user_maturity = colMeans(maturity)
+  
+  maturity <- em_info$par_inputs$user_maturity[,ind_em,]
+  
+  if (length(dim(maturity)) == 2) {
+    
+    maturity <- array(maturity, dim = c(1, dim(maturity)))
+    
+  }
+  
+  maturity_weights = aggregate_weights_info$maturity_weights
+    
+  if(is.null(maturity_weights)) {
+    weights <- matrix(1/dim(maturity)[1], nrow = dim(maturity)[1], ncol = dim(maturity)[2])
+  } else {
+    if(maturity_weights$fleet) {
+      pointer = maturity_weights$pointer
+      weights = t(fleet_weights[[pointer]])
+    }
+    if(maturity_weights$index) {
+      pointer = maturity_weights$pointer
+      weights = t(index_weights[[pointer]])
+    }
+  }
+  
+  weighted_maturity <- maturity * array(weights, dim = dim(maturity))
+  
+  aggregated <- apply(weighted_maturity, c(2,3), sum)
+  
+  aggregated_maturity <- array(aggregated, dim = c(1, dim(aggregated)))
+  
+  em_info$par_inputs$user_maturity <- aggregated_maturity
+  em_info$basic_info$maturity <- aggregated_maturity
   
   em_info$par_inputs$n_regions = n_regions = 1
   em_info$par_inputs$n_stocks = n_stocks = 1 
@@ -503,11 +468,17 @@ make_aggregate_data <- function(om, em_info, aggregate_catch_info, aggregate_ind
   em_info$par_inputs$agg_indices <- agg_indices
   em_info$par_inputs$index_paa <- agg_index_paa  
   
-  em_info$basic_info$waa_pointer_fleets   <- n_fleets
+  em_info$basic_info$waa_pointer_fleets   <- 1:n_fleets
   em_info$basic_info$waa_pointer_totcatch <- n_fleets + n_regions
   em_info$basic_info$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
   em_info$basic_info$waa_pointer_ssb      <- (n_fleets + n_regions + n_indices + 1):(n_fleets + n_regions + n_indices + 1)
   em_info$basic_info$waa_pointer_M        <- em_info$basic_info$waa_pointer_ssb
+  
+  em_info$par_inputs$user_waa$waa_pointer_fleets   <- 1:n_fleets
+  em_info$par_inputs$user_waa$waa_pointer_totcatch <- n_fleets + n_regions
+  em_info$par_inputs$user_waa$waa_pointer_indices  <- (n_fleets + n_regions + 1):(n_fleets + n_regions + n_indices)
+  em_info$par_inputs$user_waa$waa_pointer_ssb      <- (n_fleets + n_regions + n_indices + 1):(n_fleets + n_regions + n_indices + 1)
+  em_info$par_inputs$user_waa$waa_pointer_M        <- em_info$par_inputs$user_waa$waa_pointer_ssb
   
   # return(list(em_info = em_info, agg_catch = agg_catch, catch_paa = catch_paa, agg_indices = agg_indices, index_paa = index_paa))
   return(em_info)

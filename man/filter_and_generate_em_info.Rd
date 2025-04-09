@@ -6,11 +6,13 @@
 \usage{
 filter_and_generate_em_info(
   em_info,
+  em.opt,
+  ind_em,
   fleet_regions,
   index_regions,
   filter_indices = NULL,
   reduce_region_info = NULL,
-  em.opt
+  aggregate_weights_info = NULL
 )
 }
 \arguments{
@@ -50,6 +52,24 @@ filter_and_generate_em_info(
           Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
       }
   }}
+
+\item{aggregate_weights_info}{List (optional). Specifies how to compute weighted averages for
+weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+Used for aggregating across fleets or indices to form total/stock/regional summaries.
+\itemize{
+  \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+    }
+  \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+    }
+}}
 }
 \value{
 A list containing modified `em_info` lists for each region with filtered fleets, indices, renumbered index regions, and extracted weight-at-age (WAA) matrices.

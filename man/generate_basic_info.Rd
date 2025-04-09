@@ -15,16 +15,16 @@ generate_basic_info(
   life_history = "medium",
   n_ages = 12,
   F_info = list(F.year1 = 0.2, Fhist = "constant", Fmax = 0.2, Fmin = 0.2, change_time =
-    0.5, user_F = NULL),
+    0.5, user_F = NULL, F_feedback = NULL),
   catch_info = list(catch_cv = 0.1, catch_Neff = 100, use_agg_catch = 1, use_catch_paa =
     1),
   index_info = list(index_cv = 0.1, index_Neff = 100, fracyr_indices = 0.5, q = 0.2,
     use_indices = 1, use_index_paa = 1, units_indices = 2, units_index_paa = 2),
+  user_waa = NULL,
   fracyr_spawn = 0.5,
   fracyr_seasons = NULL,
   fleet_regions = NULL,
   index_regions = NULL,
-  user_waa = NULL,
   user_maturity = NULL,
   bias.correct.process = FALSE,
   bias.correct.observation = FALSE,
@@ -59,7 +59,7 @@ generate_basic_info(
 \item{life_history}{Character. Fish life history, parameters obtained from 
 \href{https://doi.org/10.1139/cjfas-2016-0381}{Wiedenmann et al. 2017}. Options:
 \itemize{
-  \item `"median"` - Median-lived species (default).
+  \item `"medium"` - Median-lived species (default).
   \item `"short"` - Short-lived species.
   \item `"long"` - Long-lived species.
 }}
@@ -103,6 +103,8 @@ generate_basic_info(
   \item `"$units_index_paa"` – Vector of length `n_indices`, or a single value applied to all indices, where 1 = biomass and 2 = numbers for index age composition data.
 }}
 
+\item{user_waa}{Numeric vector/matrix. Optional. User-defined weight-at-age vector/matrix.}
+
 \item{fracyr_spawn}{Numeric. Fraction of the year when spawning occurs.}
 
 \item{fracyr_seasons}{Numeric vector. Optional. User-defined seasonal fractions summing to 1.}
@@ -110,8 +112,6 @@ generate_basic_info(
 \item{fleet_regions}{Integer vector. Optional. User-defined region allocation for each fleet.}
 
 \item{index_regions}{Integer vector. Optional. User-defined region allocation for each index.}
-
-\item{user_waa}{Numeric vector/matrix. Optional. User-defined weight-at-age vector/matrix.}
 
 \item{user_maturity}{Numeric vector. Optional. User-defined maturity-at-age vector/matrix.}
 

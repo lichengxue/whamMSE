@@ -24,8 +24,20 @@ get_F_from_Catch <- function(om, Catch, year, method = "nlminb", by_fleet = FALS
   
   rep = om$rep
   NAA = rep$NAA[,,year,]
+  if(is.vector(NAA)) {
+    NAA = rep$NAA[,,year,, drop = FALSE]
+    NAA = array(NAA, dim = dim(NAA)[c(1,2,4)])
+  }
   log_M = log(rep$MAA[,,year,])
+  if(is.vector(log_M)) {
+    log_M = rep$MAA[,,year,, drop = FALSE]
+    log_M = array(log_M, dim = dim(log_M)[c(1,2,4)])
+  }
   mu = rep$mu[,,,year,,]
+  if(is.matrix(mu)) {
+    mu = rep$mu[,,,year,,,drop = FALSE]
+    mu = array(mu, dim = dim(mu)[c(1:3,5:6)])
+  }
   sel = rbind(rep$FAA[,year,]/max(exp(rep$log_FAA_tot[year,])))
   fracyr_seasons = om$input$data$fracyr_seasons
   if(length(fracyr_seasons) == 1) mu = array(mu, dim = c(dim(mu)[1:2],1,dim(mu)[3:4]))
@@ -34,6 +46,10 @@ get_F_from_Catch <- function(om, Catch, year, method = "nlminb", by_fleet = FALS
   can_move = om$input$data$can_move
   mig_type = om$input$data$mig_type
   waacatch = om$input$data$waa[(1:om$input$data$n_fleets), year,]
+  if(is.vector(waacatch)) {
+    waacatch = om$input$data$waa[(1:om$input$data$n_fleets), year,]
+    waacatch = t(waacatch)
+  }
   
   n_fleets <- length(Catch)
   

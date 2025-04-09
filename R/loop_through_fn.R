@@ -60,6 +60,23 @@
 #'     \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
 #'     \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
 #'      }
+#' @param aggregate_weights_info List (optional). Specifies how to compute weighted averages for
+#' weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+#' Used for aggregating across fleets or indices to form total/stock/regional summaries.
+#' \itemize{
+#'   \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+#'     }
+#'   \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+#'     }
+#' }
 #' @param reduce_region_info List (optional). Remove specific regions from the assessment model. If `NULL`, no modifications are applied.
 #'   The expected components include:
 #'   \itemize{
@@ -81,6 +98,20 @@
 #'       }
 #'   }
 #' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model. For example, c(1,0,1,1) indicates Index 1 (include) and 2 (exclude) in region 1, Index 3 (include) and 4 (include) in region 2
+#' @param agg_index_sigma Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
+#' @param index_Neff Matrix. Same dimension as `agg_index_sigma`.
+#' @param update_catch_info List (optional). Update catch CV and Neff in the EM.
+#'   The expected components include:
+#'   \itemize{
+#'     \item `$agg_catch_sigma` Matrix. Either full (n_years x n_fleets) or subset (length(ind_em) x n_fleets).
+#'     \item `$catch_Neff` Matrix. Same dimension as `agg_catch_sigma`.
+#'   }
+#' @param update_index_info List (optional). Update index CV and Neff in the EM.
+#'   The expected components include:
+#'   \itemize{
+#'     \item `$agg_index_sigma` Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
+#'     \item `$index_Neff` Matrix. Same dimension as `agg_index_sigma`.
+#'   }
 #' @param assess_years Vector of years when assessments are conducted.
 #' @param assess_interval Integer. The interval between assessments in the MSE feedback loop.
 #' @param base_years Vector of years used in the burn-in period.
@@ -181,8 +212,11 @@ loop_through_fn <- function(om,
                             global_waa = TRUE,
                             aggregate_catch_info = NULL,
                             aggregate_index_info = NULL,
+                            aggregate_weights_info = NULL,
                             reduce_region_info = NULL,
                             filter_indices = NULL,
+                            update_catch_info = NULL,
+                            update_index_info = NULL,
                             assess_years = NULL, 
                             assess_interval = NULL, 
                             base_years = NULL, 
@@ -243,8 +277,8 @@ loop_through_fn <- function(om,
                                 em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
-                                filter_indices = filter_indices,
-                                global_waa) # turn off for panmictic model for now
+                                aggregate_weights_info = aggregate_weights_info,
+                                filter_indices = filter_indices)
       
       #cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
       
@@ -265,6 +299,8 @@ loop_through_fn <- function(om,
         cat("\nNow using the EM to project catch...\n")
         
         em.advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        
+        if(is.vector(em.advice)) em.advice = matrix(em.advice, byrow = TRUE)
         
         cat("\nProject catch from assessment model is ", em.advice, "\n")
         
@@ -430,7 +466,8 @@ loop_through_fn <- function(om,
                                 aggregate_index_info = aggregate_index_info,
                                 filter_indices = filter_indices,
                                 reduce_region_info = reduce_region_info,
-                                global_waa = global_waa) # turn off for panmictic model for now
+                                update_catch_info = update_catch_info,
+                                update_index_info = update_index_info) 
       
       cat("\nNow fitting assessment model...\n")
       
@@ -464,7 +501,14 @@ loop_through_fn <- function(om,
         advice <- advice.tmp
       }
       
-      if(is.vector(advice)) advice <- as.matrix(t(advice))
+      if(is.vector(advice)) {
+        if(assess_interval == 1) {
+          advice <- as.matrix(t(advice))
+        } else {
+          advice <- matrix(advice, byrow = T)
+        }
+      }
+        
       colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
       rownames(advice) <- paste0("Year_", y + 1:assess_interval)
       

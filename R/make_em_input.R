@@ -62,6 +62,24 @@
 #'     \item `$index_pointer` Integer vector (`n_indices`). Defines index grouping (0 = exclude).
 #'     \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
 #'      }
+#' @param aggregate_weights_info List (optional). Specifies how to compute weighted averages for
+#' weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+#' Used for aggregating across fleets or indices to form total/stock/regional summaries.
+#' \itemize{
+#'   \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+#'     }
+#'   \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+#'     \itemize{
+#'       \item `$fleet` Logical. Whether to use fleet-specific weights.
+#'       \item `$index` Logical. Whether to use index-specific weights.
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+#'     }
+#' }
+#' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model 
 #' @param reduce_region_info List (optional). Remove specific regions from the assessment model. If `NULL`, no modifications are applied.
 #'   The expected components include:
 #'   \itemize{
@@ -82,8 +100,18 @@
 #'           User-specified deviations in mean movement rates across ages.
 #'       }
 #'   }
-#' @param filter_indices Integer (0/1) vector (optional). User-specified which indices are excluded from the assessment model 
-#' 
+#' @param update_catch_info List (optional). Update catch CV and Neff in the EM.
+#'   The expected components include:
+#'   \itemize{
+#'     \item `$agg_catch_sigma` Matrix. Either full (n_years x n_fleets) or subset (length(ind_em) x n_fleets).
+#'     \item `$catch_Neff` Matrix. Same dimension as `agg_catch_sigma`.
+#'   }
+#' @param update_index_info List (optional). Update index CV and Neff in the EM.
+#'   The expected components include:
+#'   \itemize{
+#'     \item `$agg_index_sigma` Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
+#'     \item `$index_Neff` Matrix. Same dimension as `agg_index_sigma`.
+#'   }
 #' @return List. A `wham` input object prepared for stock assessment.
 #' 
 #' @export
@@ -96,9 +124,11 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
                           age_comp_em,
                           aggregate_catch_info = NULL,
                           aggregate_index_info = NULL,
-                          reduce_region_info = NULL,
+                          aggregate_weights_info = NULL,
                           filter_indices = NULL,
-                          global_waa = TRUE
+                          reduce_region_info = NULL,
+                          update_catch_info = NULL,
+                          update_index_info = NULL
                           ) {
   
   if (is.null(em.opt)) stop("em.opt must be specified!")
@@ -138,24 +168,12 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       n_indices <- ifelse(is.null(aggregate_index_info$n_indices), 1, aggregate_index_info$n_indices)
       n_stocks = n_regions = 1
       
-      em_info = make_aggregate_data(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em)
+      em_info = make_aggregate_data(om, em_info, ind_em, aggregate_catch_info, aggregate_index_info, aggregate_weights_info)
       
       agg_catch = em_info$par_inputs$agg_catch
       catch_paa = em_info$par_inputs$catch_paa
       agg_indices = em_info$par_inputs$agg_indices
       index_paa = em_info$par_inputs$index_paa
-      
-      # if (is.null(aggregate_catch_info$n_fleets)) aggregate_catch_info$n_fleets = n_fleets
-      # if (is.null(aggregate_index_info$n_indices)) aggregate_index_info$n_indices = n_indices
-      # if (is.null(aggregate_catch_info$fleet_pointer)) aggregate_catch_info$fleet_pointer = rep(1,om$input$data$n_fleets)
-      # if (is.null(aggregate_index_info$index_pointer)) aggregate_index_info$index_pointer = rep(1,om$input$data$n_indices)
-      # if (is.null(aggregate_catch_info$use_catch_weighted_waa)) aggregate_catch_info$use_catch_weighted_waa = TRUE 
-      # if (is.null(aggregate_index_info$use_catch_weighted_waa)) aggregate_index_info$use_catch_weighted_waa = TRUE 
-      
-      # em_info = info
-      # em_info <- update_em_with_basic_info(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em)
-      #   
-      # em_info <- aggregate_em_data(data, em_info, aggregate_catch_info, aggregate_index_info, ind_em, n_fleets, n_indices)
       
       # Override any movement or trend information
       em_info$par_inputs$move_dyn <- 0
@@ -188,17 +206,9 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         F = F_info
       )
       
-      if (!global_waa) {
-        waa_info <- basic_info[grepl("waa", names(basic_info))]
-        em_input <- update_waa(em_input, waa_info = waa_info)
-      }
+      waa_info <- info$par_inputs$user_waa
+      em_input <- update_waa(em_input, waa_info = waa_info)
       
-      # if (global_maa) {
-      #   maturity <- basic_info$maturity
-      #   em_input$data$mature[1,,] = colMeans(maturity[,1,])
-      # } else {
-      #   stop("For a panmictic assessment model, global_maa is forced to be TRUE")
-      # }
     }
     
     if (em.opt$separate.em.type == 2) {
@@ -206,10 +216,17 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       # Fleets-as-areas
       n_fleets <- data$n_fleets
       n_indices <- data$n_indices
+      if(length(filter_indices) != n_indices) stop("Length of filter_indices must = n_indices!")
       fleet_regions <- em_info$catch_info$fleet_regions
       index_regions <- em_info$index_info$index_regions
 
-      em_info <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices = filter_indices, em.opt)
+      em_info <- filter_and_generate_em_info(em_info, 
+                                             em.opt = em.opt, 
+                                             ind_em, 
+                                             fleet_regions, 
+                                             index_regions, 
+                                             filter_indices = filter_indices, 
+                                             aggregate_weights_info = aggregate_weights_info)
       
       if (!is.null(filter_indices) & any(filter_indices == 0)) {
         n_indices = sum(filter_indices != 0)
@@ -255,17 +272,8 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         F = info$F
       )
       
-      if (!global_waa) {
-        waa_info <- basic_info[grepl("waa", names(basic_info))]
-        em_input <- update_waa(em_input, waa_info = waa_info)
-      }
-      
-      # if (global_maa) {
-      #   maturity <- basic_info$maturity
-      #   em_input$data$mature[1,,] = colMeans(maturity[,1,])
-      # } else {
-      #   stop("For a FAA assessment model, global_maa is forced to be TRUE")
-      # }
+      waa_info <- info$par_inputs$user_waa
+      em_input <- update_waa(em_input, waa_info = waa_info)
       
     }
     
@@ -278,7 +286,12 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       index_regions <- data$index_regions
       
       em_input <- list()
-      em_info_new <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices, em.opt)
+      em_info_new <- filter_and_generate_em_info(em_info, 
+                                                 em.opt = em.opt, 
+                                                 ind_em, 
+                                                 fleet_regions, 
+                                                 index_regions, 
+                                                 filter_indices)
       
       for (r in 1:data$n_regions) {
         
@@ -330,7 +343,11 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     }
   } 
   
-  if (!em.opt$separate.em) { # Spatially explicit
+  ##############################################
+  ############# Spatially explicit #############
+  ##############################################
+  
+  if (!em.opt$separate.em) { 
     
     n_fleets <- data$n_fleets
     n_indices <- data$n_indices
@@ -339,7 +356,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     
     remove_regions <- reduce_region_info$remove_regions
     
-    em_info <- filter_and_generate_em_info(em_info, fleet_regions, index_regions, filter_indices = filter_indices, reduce_region_info = reduce_region_info, em.opt = em.opt)
+    em_info <- filter_and_generate_em_info(em_info, 
+                                           em.opt = em.opt, 
+                                           ind_em, 
+                                           fleet_regions, 
+                                           index_regions, 
+                                           filter_indices = filter_indices,
+                                           reduce_region_info = reduce_region_info)
     
     if (!is.null(filter_indices) & any(filter_indices == 0)) {
       n_indices = sum(filter_indices != 0)
@@ -347,12 +370,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
     } 
     
     # If remove_regions = NULL
-    if(is.null(remove_regions)) {
+    if (is.null(remove_regions)) {
       
       n_stocks = om$input$data$n_stocks
       n_regions = om$input$data$n_regions
       
-      info <- generate_basic_info_em(em_info, em_years,
+      info <- generate_basic_info_em(em_info, 
+                                     em_years,
                                      n_stocks = n_stocks, 
                                      n_regions = n_regions, 
                                      n_fleets = n_fleets, 
@@ -386,10 +410,21 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
           F = info$F
         )
         
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
+        waa_info <- info$par_inputs$user_waa
+        em_input <- update_waa(em_input, waa_info = waa_info)
+        
+        if(!is.null(update_catch_info)) {
+          agg_catch_sigma = update_catch_info$agg_catch_sigma
+          catch_Neff = update_catch_info$catch_Neff
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
+        
+        if(!is.null(update_index_info)) {
+          agg_index_sigma = update_index_info$agg_index_sigma
+          index_Neff = update_index_info$index_Neff
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
+        }
+        
       } else {
         
         # No movement
@@ -399,6 +434,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         basic_info$apply_re_trend <- 0
         basic_info$apply_mu_trend <- 0
         
+        basic_info$NAA_where = NULL
         # No movement
         em_input <- prepare_wham_input(
           basic_info = basic_info,
@@ -412,15 +448,26 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
           F = info$F
         )
         
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
+        waa_info <- info$par_inputs$user_waa
+        em_input <- update_waa(em_input, waa_info = waa_info)
+        
+        if(!is.null(update_catch_info)) {
+          agg_catch_sigma = update_catch_info$agg_catch_sigma
+          catch_Neff = update_catch_info$catch_Neff
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
+        
+        if(!is.null(update_index_info)) {
+          agg_index_sigma = update_index_info$agg_index_sigma
+          index_Neff = update_index_info$index_Neff
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
+        }
+        
       }
     } 
     
     # If there is "remove_regions" 
-    if(!is.null(remove_regions)) {
+    if (!is.null(remove_regions)) {
       n_stocks = if(!is.null(em_info$par_inputs$n_stocks))em_info$par_inputs$n_stocks
       n_regions = if(!is.null(em_info$par_inputs$n_regions))em_info$par_inputs$n_regions
       n_fleets = if(!is.null(em_info$par_inputs$n_fleets))em_info$par_inputs$n_fleets
@@ -437,7 +484,7 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
       basic_info <- info$basic_info
       id_fleets = info$fleets_to_remove
       id_indices = info$indices_to_remove
-      if(id_indices == 0) id_indices = numeric(0)
+      if(id_indices == 0 || is.null(id_indices)) id_indices = numeric(0)
       
       if(length(id_fleets) > 0) {
         info$catch_info$agg_catch <- data$agg_catch[ind_em, -id_fleets , drop = FALSE]
@@ -495,10 +542,20 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
           F = info$F
         )
         
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
+        em_input <- update_waa(em_input, waa_info = em_info$par_inputs$user_waa)
+        
+        if(!is.null(update_catch_info)) {
+          agg_catch_sigma = update_catch_info$agg_catch_sigma
+          catch_Neff = update_catch_info$catch_Neff
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
+        
+        if(!is.null(update_index_info)) {
+          agg_index_sigma = update_index_info$agg_index_sigma
+          index_Neff = update_index_info$index_Neff
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
+        }
+        
       } else {
         
         # No movement
@@ -507,6 +564,8 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         basic_info$onto_move <- NULL
         basic_info$apply_re_trend <- 0
         basic_info$apply_mu_trend <- 0
+        
+        basic_info$NAA_where = NULL
         
         # No movement
         em_input <- prepare_wham_input(
@@ -521,9 +580,18 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
           F = info$F
         )
         
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input <- update_waa(em_input, waa_info = waa_info)
+        em_input <- update_waa(em_input, waa_info = em_info$par_inputs$user_waa)
+        
+        if(!is.null(update_catch_info)) {
+          agg_catch_sigma = update_catch_info$agg_catch_sigma
+          catch_Neff = update_catch_info$catch_Neff
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
+        }
+        
+        if(!is.null(update_index_info)) {
+          agg_index_sigma = update_index_info$agg_index_sigma
+          index_Neff = update_index_info$index_Neff
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
         }
       }
     }

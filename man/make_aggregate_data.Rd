@@ -7,15 +7,18 @@
 make_aggregate_data(
   om,
   em_info,
+  ind_em,
   aggregate_catch_info,
   aggregate_index_info,
-  ind_em
+  aggregate_weights_info
 )
 }
 \arguments{
 \item{om}{List. The operating model containing observed data, including:}
 
 \item{em_info}{List. The estimation model information, including:}
+
+\item{ind_em}{Vector. Indices specifying the years for which the estimation model should use data.}
 
 \item{aggregate_catch_info}{List (optional). User-specified catch aggregation settings for panmictic models using aggregate catch.
 \itemize{
@@ -43,7 +46,23 @@ make_aggregate_data(
   \item `$use_index_weighted_waa` Logical. Whether to use weighted weight-at-age based on survey catches.
    }}
 
-\item{ind_em}{Vector. Indices specifying the years for which the estimation model should use data.}
+\item{aggregate_weights_info}{List (optional). Specifies how to compute weighted averages for
+weight-at-age (`waa`) and maturity-at-age during data aggregation (For panmictic and fleets-as-areas models only).
+Used for aggregating across fleets or indices to form total/stock/regional summaries.
+\itemize{
+  \item `$ssb_waa_weights` List. Settings for weighting weight-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+    }
+  \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
+    \itemize{
+      \item `$fleet` Logical. Whether to use fleet-specific weights.
+      \item `$index` Logical. Whether to use index-specific weights.
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+    }
+}}
 }
 \value{
 List. An updated `em_info` object with:
@@ -65,11 +84,4 @@ region, index, and stock structure.
 - **Aggregated parameters** (`catch_cv`, `index_cv`, `q`, etc.) will return **vectors of length equal to the number of aggregated fleets or indices**.
 - If `aggregate_catch_info` or `aggregate_index_info` are missing values, they are replaced with the first element of `em_info$par_inputs`.
 - Weight-at-age (`waa`) is aggregated based on fleet or index weights, using either **catch-weighted averages or equal proportions**.
-}
-\examples{
-\dontrun{
-# Example usage
-new_em_info <- make_aggregate_data(om, em_info, aggregate_catch_info, aggregate_index_info, ind_em)
-}
-
 }
