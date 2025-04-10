@@ -2,7 +2,7 @@
 % Please edit documentation in R/update_input_index_info.R
 \name{update_input_index_info}
 \alias{update_input_index_info}
-\title{Update Index CV and Neff in Input List (with Optional Row Subsetting)}
+\title{Update Index Information in Input List (with Optional Row Subsetting)}
 \usage{
 update_input_index_info(
   input,
@@ -23,6 +23,18 @@ update_input_index_info(
 \item{agg_index_sigma}{Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).}
 
 \item{index_Neff}{Matrix. Same dimension as `agg_index_sigma`.}
+
+\item{remove_agg}{Integer vector.}
+
+\item{remove_agg_pointer}{Integer vector.}
+
+\item{remove_agg_years}{Integer vector,matrix.}
+
+\item{remove_paa}{Integer vector.}
+
+\item{remove_paa_pointer}{Integer vector.}
+
+\item{remove_paa_years}{Integer vector,matrix.}
 
 \item{ind_em}{Integer vector or NULL. Row indices of years to update. If NULL, updates all rows.}
 }

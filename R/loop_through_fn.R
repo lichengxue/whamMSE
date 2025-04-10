@@ -468,6 +468,8 @@ loop_through_fn <- function(om,
                                 update_catch_info = update_catch_info,
                                 update_index_info = update_index_info) 
       
+      if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
+      
       cat("\nNow fitting assessment model...\n")
       
       if (em.opt$do.move) {
