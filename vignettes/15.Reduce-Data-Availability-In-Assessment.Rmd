@@ -19,9 +19,8 @@ This vignette introduces how to run MSE with reduced data availability in assess
 
 ```{r, eval=FALSE}
 library(wham)
-# library(whamMSE)
-devtools::document("C:/Users/chengxue.li/whamMSE/") # "whamMSE" package
-devtools::load_all("C:/Users/chengxue.li/whamMSE/") # "whamMSE" package
+library(whamMSE)
+
 main.dir = here::here()
 ```
 
