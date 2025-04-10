@@ -415,13 +415,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         if(!is.null(update_catch_info)) {
           agg_catch_sigma = update_catch_info$agg_catch_sigma
           catch_Neff = update_catch_info$catch_Neff
-          em_input = update_input_catch_info(input = em_input, agg_catch_sigma = agg_catch_sigma, catch_Neff = catch_Neff, ind_em = ind_em)
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
         
         if(!is.null(update_index_info)) {
           agg_index_sigma = update_index_info$agg_index_sigma
           index_Neff = update_index_info$index_Neff
-          em_input = update_input_index_info(input = em_input, agg_index_sigma = agg_index_sigma, index_Neff = index_Neff, ind_em = ind_em)
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
         }
         
       } else {
@@ -453,13 +453,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         if(!is.null(update_catch_info)) {
           agg_catch_sigma = update_catch_info$agg_catch_sigma
           catch_Neff = update_catch_info$catch_Neff
-          em_input = update_input_catch_info(input = em_input, agg_catch_sigma = agg_catch_sigma, catch_Neff = catch_Neff, ind_em = ind_em)
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
         
         if(!is.null(update_index_info)) {
           agg_index_sigma = update_index_info$agg_index_sigma
           index_Neff = update_index_info$index_Neff
-          em_input = update_input_index_info(input = em_input, agg_index_sigma = agg_index_sigma, index_Neff = index_Neff, ind_em = ind_em)
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
         }
         
       }
@@ -546,13 +546,13 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         if(!is.null(update_catch_info)) {
           agg_catch_sigma = update_catch_info$agg_catch_sigma
           catch_Neff = update_catch_info$catch_Neff
-          em_input = update_input_catch_info(input = em_input, agg_catch_sigma = agg_catch_sigma, catch_Neff = catch_Neff, ind_em = ind_em)
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
         
         if(!is.null(update_index_info)) {
           agg_index_sigma = update_index_info$agg_index_sigma
           index_Neff = update_index_info$index_Neff
-          em_input = update_input_index_info(input = em_input, agg_index_sigma = agg_index_sigma, index_Neff = index_Neff, ind_em = ind_em)
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
         }
         
       } else {
@@ -584,15 +584,14 @@ make_em_input <- function(om, em_info, M_em, sel_em, NAA_re_em, move_em,
         if(!is.null(update_catch_info)) {
           agg_catch_sigma = update_catch_info$agg_catch_sigma
           catch_Neff = update_catch_info$catch_Neff
-          em_input = update_input_catch_info(input = em_input, agg_catch_sigma = agg_catch_sigma, catch_Neff = catch_Neff, ind_em = ind_em)
+          em_input = update_input_catch_info(em_input, agg_catch_sigma, catch_Neff, ind_em)
         }
         
         if(!is.null(update_index_info)) {
           agg_index_sigma = update_index_info$agg_index_sigma
           index_Neff = update_index_info$index_Neff
-          em_input = update_input_index_info(input = em_input, agg_index_sigma = agg_index_sigma, index_Neff = index_Neff, ind_em = ind_em)
+          em_input = update_input_index_info(em_input, agg_index_sigma, index_Neff, ind_em)
         }
-        
       }
     }
     

@@ -271,6 +271,7 @@ loop_through_fn <- function(om,
       
       if (add.years && i != 1) year.use = year.use + assess_interval
         
+      # Note em_info$par_inputs$user_waa for fleet 1 is wrong!
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
                                 NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
                                 em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,

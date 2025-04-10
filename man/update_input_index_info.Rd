@@ -4,7 +4,18 @@
 \alias{update_input_index_info}
 \title{Update Index CV and Neff in Input List (with Optional Row Subsetting)}
 \usage{
-update_input_index_info(input, agg_index_sigma, index_Neff, ind_em = NULL)
+update_input_index_info(
+  input,
+  agg_index_sigma,
+  index_Neff,
+  remove_agg = FALSE,
+  remove_agg_pointer = NULL,
+  remove_agg_years = NULL,
+  remove_paa = FALSE,
+  remove_paa_pointer = NULL,
+  remove_paa_years = NULL,
+  ind_em = NULL
+)
 }
 \arguments{
 \item{input}{List. Must contain `input$data`.}
