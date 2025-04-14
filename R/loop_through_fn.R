@@ -10,6 +10,7 @@
 #' @param sel_em Configuration of selectivity in the assessment model.
 #' @param NAA_re_em Configuration of numbers-at-age (NAA) in the assessment model.
 #' @param move_em Configuration of movement in the assessment model.
+#' @param catchability_em Configuration of catchability (q) in the assessment model.
 #' @param age_comp_em Character. The likelihood distribution of age composition data in the assessment model. Options include:
 #'   \itemize{
 #'     \item \code{"multinomial"} (default)
@@ -207,6 +208,7 @@ loop_through_fn <- function(om,
                             sel_em = NULL, 
                             NAA_re_em = NULL, 
                             move_em = NULL, 
+                            catchability_em = NULL,
                             age_comp_em = "multinomial", 
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
                                           do.move = FALSE, est.move = FALSE), 
@@ -257,6 +259,7 @@ loop_through_fn <- function(om,
   converge_list <- list()
   catch_advice <- list()
   em_full <- list()
+  em_input_list <- list()
   
   if(is.null(age_comp_em)) age_comp_em = "multinomial"
   if(is.null(em_info)) stop("em_info must be specified!")
@@ -272,8 +275,9 @@ loop_through_fn <- function(om,
       if (add.years && i != 1) year.use = year.use + assess_interval
         
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
-                                em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, catchability_em = catchability_em, 
+                                em.opt = em.opt, em_years = em.years, year.use = year.use, 
+                                age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
                                 aggregate_weights_info = aggregate_weights_info,
@@ -340,6 +344,9 @@ loop_through_fn <- function(om,
           }
           if (!save.last.em) em_full[[1]] <- list()
         }
+        
+        em_input_list[[i]] <- em_input
+        
       } else if (em.opt$separate.em.type == 2) {
         
         cat("\nNow fitting assessment model...\n")
@@ -384,6 +391,9 @@ loop_through_fn <- function(om,
           }
           if (!save.last.em) em_full[[1]] <- list()
         }
+        
+        em_input_list[[i]] <- em_input
+        
       } else if (em.opt$separate.em.type == 3) {
         
         em_list[[i]] <- list()
@@ -394,6 +404,7 @@ loop_through_fn <- function(om,
         opt_list[[i]] <- list()
         converge_list[[i]] <- list()
         em_full[[i]] <- list()
+        em_input_list[[i]] <- list()
         
         advice <- NULL
         em <- list()
@@ -445,6 +456,7 @@ loop_through_fn <- function(om,
             }
             if (!save.last.em) em_full[[1]][[s]] <- list()
           }
+          em_input_list[[i]][[s]] <- em_input[[s]]
         }
       }
     }
@@ -459,8 +471,9 @@ loop_through_fn <- function(om,
       if (add.years && i != 1) year.use = year.use + assess_interval
       
       em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, em.opt = em.opt,
-                                em_years = em.years, year.use = year.use, age_comp_em = age_comp_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, catchability_em = catchability_em,
+                                em.opt = em.opt, em_years = em.years, year.use = year.use, 
+                                age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
                                 filter_indices = filter_indices,
@@ -483,43 +496,50 @@ loop_through_fn <- function(om,
         em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
       }
       
-      cat("\nNow checking convergence of assessment model...\n")
-      conv <- check_conv(em)$conv
-      pdHess <- check_conv(em)$pdHess
-      if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
-      
-      cat("\nNow generating catch advice...\n")
-      advice <- advice_fn(em, pro.yr = assess_interval, hcr)
-      if(!is.null(reduce_region_info$remove_regions)) {
-        remove_regions = reduce_region_info$remove_regions
-        fleets_to_remove <- which(om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
-        fleets_to_keep <- which(!om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
-        advice.tmp <- matrix(0, nrow = assess_interval, ncol = length(om$input$data$fleet_regions))
-        advice.tmp[,fleets_to_keep] = advice
-        if (!is.null(reduce_region_info$fleet_catch)){
-          advice.tmp[,fleets_to_remove] = reduce_region_info$fleet_catch # this can be a vector then the value will be filled by vertical and then by horizontal, OR can be a matrix (nrow = assess_interval x ncol = n_fleets_to_keep).
-        }
-        advice <- advice.tmp
-      }
-      
-      if(is.vector(advice)) {
-        if(assess_interval == 1) {
-          advice <- as.matrix(t(advice))
-        } else {
-          advice <- matrix(advice, byrow = T)
-        }
-      }
+      if (assess_interval != 0) {
+        cat("\nNow checking convergence of assessment model...\n")
+        conv <- check_conv(em)$conv
+        pdHess <- check_conv(em)$pdHess
+        if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
-      colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
-      rownames(advice) <- paste0("Year_", y + 1:assess_interval)
-      
-      cat("Catch Advice \n",advice,"\n")
-      
-      interval.info <- list(catch = advice, years = y + 1:assess_interval)
-      
-      cat("\nNow calculating F at age in the OM given the catch advice...\n")
-      om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
-      
+        cat("\nNow generating catch advice...\n")
+        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        if(!is.null(reduce_region_info$remove_regions)) {
+          remove_regions = reduce_region_info$remove_regions
+          fleets_to_remove <- which(om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
+          fleets_to_keep <- which(!om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
+          advice.tmp <- matrix(0, nrow = assess_interval, ncol = length(om$input$data$fleet_regions))
+          advice.tmp[,fleets_to_keep] = advice
+          if (!is.null(reduce_region_info$fleet_catch)){
+            advice.tmp[,fleets_to_remove] = reduce_region_info$fleet_catch # this can be a vector then the value will be filled by vertical and then by horizontal, OR can be a matrix (nrow = assess_interval x ncol = n_fleets_to_keep).
+          }
+          advice <- advice.tmp
+        }
+        
+        if(is.vector(advice)) {
+          if(assess_interval == 1) {
+            advice <- as.matrix(t(advice))
+          } else {
+            advice <- matrix(advice, byrow = T)
+          }
+        }
+        
+        colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
+        rownames(advice) <- paste0("Year_", y + 1:assess_interval)
+        
+        cat("Catch Advice \n",advice,"\n")
+        
+        interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        
+        cat("\nNow calculating F at age in the OM given the catch advice...\n")
+        om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
+      } else {
+        cat("\nNow performing simulation-estimation experiments...\n")
+        conv = NULL
+        pdHess = NULL
+        advice = NULL
+      }
+
       em_list[[i]] <- em$rep
       par.est[[i]] <- as.list(em$sdrep, "Estimate")
       par.se[[i]] <- as.list(em$sdrep, "Std. Error")
@@ -537,6 +557,8 @@ loop_through_fn <- function(om,
         }
         if (!save.last.em) em_full[[1]] <- list()
       }
+      
+      em_input_list[[i]] <- em_input
     }
   }
   
@@ -548,5 +570,5 @@ loop_through_fn <- function(om,
   return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 
               adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
               converge_list = converge_list, catch_advice = catch_advice, em_full = em_full,
-              runtime = time.taken, seed.save = seed, em_input = em_input))
+              runtime = time.taken, seed.save = seed, em_input = em_input_list))
 }

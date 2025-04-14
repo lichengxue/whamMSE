@@ -21,7 +21,7 @@
 #'     \item `$NAA_where`
 #'       Specifies recruitment assignments after region reduction.
 #'
-#'     \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
+#'     \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em`, `$catchability_em` 
 #'       Model settings that may change based on region reduction.
 #'
 #'     \item `$onto_move_list`
@@ -382,7 +382,10 @@ filter_and_generate_em_info <- function(em_info, em.opt, ind_em,
       em_info_new$par_inputs$user_waa$waa_pointer_indices   <- em_info_new$basic_info$waa_pointer_indices
       em_info_new$par_inputs$user_waa$waa_pointer_ssb       <- em_info_new$basic_info$waa_pointer_ssb
       em_info_new$par_inputs$user_waa$waa_pointer_M         <- em_info_new$basic_info$waa_pointer_M 
-    } 
+    } else {
+      em_info_new$par_inputs$user_waa$waa = em_info$basic_info$waa[, ind_em, ]
+      em_info_new$basic_info$waa = em_info$basic_info$waa[, ind_em, ]
+    }
     
     # Need to shave to maturity at age time series to match length of ind_em
     em_info_new$par_inputs$user_maturity = em_info_new$par_inputs$user_maturity[, ind_em, ]

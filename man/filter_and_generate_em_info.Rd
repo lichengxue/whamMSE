@@ -36,7 +36,7 @@ filter_and_generate_em_info(
     \item `$NAA_where`
       Specifies recruitment assignments after region reduction.
 
-    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em` 
+    \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em`, `$catchability_em` 
       Model settings that may change based on region reduction.
 
     \item `$onto_move_list`

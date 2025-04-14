@@ -75,7 +75,10 @@ update_waa <- function(input, waa_info = NULL) {
   
   # Update input$data with modified data
   input$data <- data
+
   input$options$waa <- waa_info
-  
+
+  # if(!is.null(ind_em)) input$options$waa <- waa_info$waa[,ind_em,]
+    
   return(input)
 }
