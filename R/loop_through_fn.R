@@ -11,6 +11,7 @@
 #' @param NAA_re_em Configuration of numbers-at-age (NAA) in the assessment model.
 #' @param move_em Configuration of movement in the assessment model.
 #' @param catchability_em Configuration of catchability (q) in the assessment model.
+#' @param ecov_em List of environmental covariate data and parameters
 #' @param age_comp_em Character. The likelihood distribution of age composition data in the assessment model. Options include:
 #'   \itemize{
 #'     \item \code{"multinomial"} (default)
@@ -209,6 +210,7 @@ loop_through_fn <- function(om,
                             NAA_re_em = NULL, 
                             move_em = NULL, 
                             catchability_em = NULL,
+                            ecov_em = NULL,
                             age_comp_em = "multinomial", 
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
                                           do.move = FALSE, est.move = FALSE), 
@@ -274,8 +276,10 @@ loop_through_fn <- function(om,
       
       if (add.years && i != 1) year.use = year.use + assess_interval
         
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, catchability_em = catchability_em, 
+      em_input <- make_em_input(om = om, em_info = em_info, 
+                                M_em = M_em, sel_em = sel_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, 
+                                catchability_em = catchability_em, ecov_em = ecov_em,
                                 em.opt = em.opt, em_years = em.years, year.use = year.use, 
                                 age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
@@ -470,8 +474,10 @@ loop_through_fn <- function(om,
       
       if (add.years && i != 1) year.use = year.use + assess_interval
       
-      em_input <- make_em_input(om = om, em_info = em_info, M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, catchability_em = catchability_em,
+      em_input <- make_em_input(om = om, em_info = em_info, 
+                                M_em = M_em, sel_em = sel_em,
+                                NAA_re_em = NAA_re_em, move_em = move_em, 
+                                catchability_em = catchability_em, ecov_em = ecov_em,
                                 em.opt = em.opt, em_years = em.years, year.use = year.use, 
                                 age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,

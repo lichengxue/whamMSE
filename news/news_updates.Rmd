@@ -10,6 +10,9 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
+  list(date = "2025-4-14", title = "Vignettes Updated", content = "Vignettes have been updated"),
+  list(date = "2025-4-14", title = "Environmental Covariates", content = "Environmental effects can be added into MSE"),
+  list(date = "2025-4-14", title = "Catchability Random Effects", content = "catchability random effects can be added into MSE"),
   list(date = "2025-4-09", title = "Vignettes Updated", content = "Vignettes have been updated"),
   list(date = "2025-4-09", title = "New functionality added", content = "Many new functionalities have been released"),
   list(date = "2025-1-28", title = "Code Updated", content = "Code updated"),

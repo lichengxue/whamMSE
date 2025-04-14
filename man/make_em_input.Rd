@@ -12,6 +12,7 @@ make_em_input(
   NAA_re_em,
   move_em,
   catchability_em,
+  ecov_em,
   em.opt,
   em_years,
   year.use,

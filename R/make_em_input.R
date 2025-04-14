@@ -126,6 +126,7 @@ make_em_input <- function(om,
                           NAA_re_em, 
                           move_em, 
                           catchability_em,
+                          ecov_em,
                           em.opt, 
                           em_years, 
                           year.use,
@@ -201,6 +202,16 @@ make_em_input <- function(om,
       index_info$agg_indices <- agg_indices
       index_info$index_paa <- index_paa
       
+      # Ecov Effect 
+      if(!is.null(ecov_em)) {
+        ecov_em_new <- ecov_em
+        ecov_em_new$year <- ecov_em_new$year[ind_em]
+        ecov_em_new$year <- 1:length(ecov_em_new$year)
+        ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+        ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+        ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      }
+      
       em_input <- prepare_wham_input(
         basic_info = basic_info,
         selectivity = sel_em,
@@ -208,6 +219,7 @@ make_em_input <- function(om,
         NAA_re = NAA_re_em,
         move = NULL,
         catchability = catchability_em,
+        ecov = ecov_em_new,
         age_comp = age_comp_em,
         catch_info = catch_info,
         index_info = index_info,
@@ -267,7 +279,17 @@ make_em_input <- function(om,
       basic_info$apply_mu_trend <- 0
       
       if(is.null(age_comp_em)) age_comp_em = "multinomial"
-        
+      
+      # Ecov Effect 
+      if(!is.null(ecov_em)) {
+        ecov_em_new <- ecov_em
+        ecov_em_new$year <- ecov_em_new$year[ind_em]
+        ecov_em_new$year <- 1:length(ecov_em_new$year)
+        ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+        ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+        ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      }
+      
       em_input <- prepare_wham_input(
         basic_info = basic_info,
         selectivity = sel_em,
@@ -275,6 +297,7 @@ make_em_input <- function(om,
         NAA_re = NAA_re_em,
         move = NULL,
         catchability = catchability_em,
+        ecov = ecov_em_new,
         age_comp = age_comp_em,
         catch_info = info$catch_info,
         index_info = info$index_info,
@@ -332,6 +355,16 @@ make_em_input <- function(om,
         info$index_info$agg_indices <- data$agg_indices[ind_em, relevant_indices, drop = FALSE]
         info$index_info$index_paa <- data$index_paa[relevant_indices, ind_em, , drop = FALSE]
         
+        # Ecov Effect 
+        if(!is.null(ecov_em)) {
+          ecov_em_new <- ecov_em[[s]]
+          ecov_em_new$year <- ecov_em_new$year[ind_em]
+          ecov_em_new$year <- 1:length(ecov_em_new$year)
+          ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+          ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+          ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        }
+        
         em_input[[r]] <- prepare_wham_input(
           basic_info = basic_info,
           selectivity = sel_em,
@@ -339,6 +372,7 @@ make_em_input <- function(om,
           NAA_re = NAA_re_em,
           move = NULL,
           catchability = catchability_em,
+          ecov = ecov_em_new,
           age_comp = age_comp_em,
           catch_info = info$catch_info,
           index_info = info$index_info,
@@ -406,6 +440,16 @@ make_em_input <- function(om,
         info$index_info$index_paa <- data$index_paa[, ind_em, , drop = FALSE]
       }
       
+      # Ecov Effect 
+      if(!is.null(ecov_em)) {
+        ecov_em_new <- ecov_em
+        ecov_em_new$year <- ecov_em_new$year[ind_em]
+        ecov_em_new$year <- 1:length(ecov_em_new$year)
+        ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+        ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+        ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      }
+      
       if (em.opt$do.move) {
         basic_info$NAA_where = om$input$data$NAA_where
         em_input <- prepare_wham_input(
@@ -415,6 +459,7 @@ make_em_input <- function(om,
           NAA_re = NAA_re_em,
           move = move_em,
           catchability = catchability_em,
+          ecov = ecov_em_new,
           age_comp = age_comp_em,
           catch_info = info$catch_info,
           index_info = info$index_info,
@@ -446,6 +491,17 @@ make_em_input <- function(om,
         basic_info$apply_mu_trend <- 0
         
         basic_info$NAA_where = NULL
+        
+        # Ecov Effect 
+        if(!is.null(ecov_em)) {
+          ecov_em_new <- ecov_em
+          ecov_em_new$year <- ecov_em_new$year[ind_em]
+          ecov_em_new$year <- 1:length(ecov_em_new$year)
+          ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+          ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+          ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        }
+        
         # No movement
         em_input <- prepare_wham_input(
           basic_info = basic_info,
@@ -454,6 +510,7 @@ make_em_input <- function(om,
           NAA_re = NAA_re_em,
           move = NULL,
           catchability = catchability_em,
+          ecov = ecov_em_new,
           age_comp = age_comp_em,
           catch_info = info$catch_info,
           index_info = info$index_info,
@@ -543,6 +600,16 @@ make_em_input <- function(om,
       
       if (em.opt$do.move) {
         
+        # Ecov Effect 
+        if(!is.null(ecov_em)) {
+          ecov_em_new <- ecov_em
+          ecov_em_new$year <- ecov_em_new$year[ind_em]
+          ecov_em_new$year <- 1:length(ecov_em_new$year)
+          ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+          ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+          ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        }
+        
         em_input <- prepare_wham_input(
           basic_info = basic_info,
           selectivity = sel_em,
@@ -550,6 +617,7 @@ make_em_input <- function(om,
           NAA_re = NAA_re_em,
           move = move_em,
           catchability = catchability_em,
+          ecov = ecov_em_new,
           age_comp = age_comp_em,
           catch_info = info$catch_info,
           index_info = info$index_info,
@@ -581,6 +649,16 @@ make_em_input <- function(om,
         
         basic_info$NAA_where = NULL
         
+        # Ecov Effect 
+        if(!is.null(ecov_em)) {
+          ecov_em_new <- ecov_em
+          ecov_em_new$year <- ecov_em_new$year[ind_em]
+          ecov_em_new$year <- 1:length(ecov_em_new$year)
+          ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
+          ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
+          ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        }
+        
         # No movement
         em_input <- prepare_wham_input(
           basic_info = basic_info,
@@ -589,6 +667,7 @@ make_em_input <- function(om,
           NAA_re = NAA_re_em,
           move = NULL,
           catchability = catchability_em,
+          ecov = ecov_em_new,
           age_comp = age_comp_em,
           catch_info = info$catch_info,
           index_info = info$index_info,

@@ -13,6 +13,7 @@ loop_through_fn(
   NAA_re_em = NULL,
   move_em = NULL,
   catchability_em = NULL,
+  ecov_em = NULL,
   age_comp_em = "multinomial",
   em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move =
     FALSE),
@@ -57,6 +58,8 @@ loop_through_fn(
 \item{move_em}{Configuration of movement in the assessment model.}
 
 \item{catchability_em}{Configuration of catchability (q) in the assessment model.}
+
+\item{ecov_em}{List of environmental covariate data and parameters}
 
 \item{age_comp_em}{Character. The likelihood distribution of age composition data in the assessment model. Options include:
 \itemize{
