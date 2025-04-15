@@ -13,9 +13,9 @@ generate_ini_N1(
 )
 }
 \arguments{
-\item{log_N1}{a vector (length = n_stocks) of log numbers-at-age1}
+\item{log_N1}{a vector (length = n_stocks) of log number-at-age 1 at equilibrium}
 
-\item{log_N1_F}{a vector (length = n_stocks) of fishing mortality}
+\item{log_N1_F}{a vector (length = n_stocks) of fishing mortality at equilibrium}
 
 \item{user_init_NAA}{a matrix (n_ages x n_stocks) of initial numbers-at-age}
 

@@ -1,7 +1,7 @@
 #' Generate initial numbers-at-age
 #' 
-#' @param log_N1 a vector (length = n_stocks) of log numbers-at-age1
-#' @param log_N1_F a vector (length = n_stocks) of fishing mortality
+#' @param log_N1 a vector (length = n_stocks) of log number-at-age 1 at equilibrium
+#' @param log_N1_F a vector (length = n_stocks) of fishing mortality at equilibrium
 #' @param user_init_NAA a matrix (n_ages x n_stocks) of initial numbers-at-age
 #' @param basic_info (optional) list specifying options for numbers-at-age random effects, initial parameter values, and recruitment model (see details)
 #' @param ini.opt N1_model
