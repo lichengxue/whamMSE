@@ -1,6 +1,8 @@
 #' Generate initial numbers-at-age
 #' 
 #' @param log_N1 a vector (length = n_stocks) of log numbers-at-age1
+#' @param log_N1_F a vector (length = n_stocks) of fishing mortality
+#' @param user_init_NAA a matrix (n_ages x n_stocks) of initial numbers-at-age
 #' @param basic_info (optional) list specifying options for numbers-at-age random effects, initial parameter values, and recruitment model (see details)
 #' @param ini.opt N1_model
 #'       \describe{
@@ -19,9 +21,12 @@
 #' N1_pars <- generate_ini_N1(log_N1 = c(10.6,10), basic_info, ini.opt = "equilibrium") 
 #' }
 #' 
-generate_ini_N1 <- function(log_N1 = c(10.6, 10), 
+generate_ini_N1 <- function(log_N1 = NULL, 
+                            log_N1_F = NULL,
+                            user_init_NAA = NULL,
                             basic_info,
-                            ini.opt = "equilibrium") {
+                            ini.opt = "equilibrium"
+                            ) {
   
   # Validate inputs
   if (!is.list(basic_info)) stop("basic_info must be a list!")
@@ -40,11 +45,20 @@ generate_ini_N1 <- function(log_N1 = c(10.6, 10),
   
   for (s in 1:n_stocks) {
     if (ini.opt == "equilibrium") { # Equilibrium assumption, 2 pars per stock
-      N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(0.1)))
+      if (is.null(log_N1) && is.null(log_N1_F)) {
+        N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(0.1)))
+      } else {
+        N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(log_N1_F[s])))
+      }
     } else if (ini.opt == "age-specific-fe") { # Age-specific fixed effects
       if (is.null(NAA_where)) stop("NAA_where must be specified for age-specific-fe option!")
       
-      init_NAA <- exp(log_N1[s]) * exp(-(0:(n_ages-1)) * 0.2)
+      if(is.null(user_init_NAA)) {
+        init_NAA <- exp(log_N1[s]) * exp(-(0:(n_ages-1)) * 0.2)
+      } else {
+        init_NAA <- user_init_NAA[,s]
+        if(length(init_NAA) != n_ages) stop("Length of user-specified NAA must be equal to the number of ages!")
+      }
       
       for (r in 1:n_regions) {
         for (a in 1:n_ages) {
