@@ -385,10 +385,8 @@ make_em_input <- function(om,
           F = info$F
         )
         
-        if (!global_waa) {
-          waa_info <- basic_info[grepl("waa", names(basic_info))]
-          em_input[[r]] <- update_waa(em_input[[r]], waa_info = waa_info)
-        }
+        waa_info <- basic_info[grepl("waa", names(basic_info))]
+        em_input[[r]] <- update_waa(em_input[[r]], waa_info = waa_info)
       }
     }
   } 
