@@ -14,25 +14,19 @@
 #'   \itemize{
 #'     \item `$remove_regions`
 #'       Specifies which regions should be removed from the model.
-#'
 #'     \item `$reassign`
 #'       Specifies reassignment of surveys from removed regions to non-removed regions.
-#'
 #'     \item `$NAA_where`
 #'       Specifies recruitment assignments after region reduction.
-#'
 #'     \item `$sel_em`, `$M_em`, `$NAA_re_em`, `$move_em`, `$catchability_em` 
 #'       Model settings that may change based on region reduction.
-#'
 #'     \item `$onto_move_list`
 #'       Contains movement-related parameters with the following elements:
 #'       \itemize{
 #'         \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
 #'           Specifies movement rules between stocks and regions. Default = NULL.
-#'
 #'         \item `$onto_move_pars` (array, dimension: `n_stocks × n_regions × (n_regions-1) × 4`)  
 #'           Specifies movement parameters. Default = NULL.
-#'
 #'         \item `$age_mu_devs` (array, dimension: `n_stocks × n_regions × (n_regions-1) × n_ages`)  
 #'           Stores age-based movement deviations. If `onto_move == 5`, values are extracted from `basic_info`.
 #'       }

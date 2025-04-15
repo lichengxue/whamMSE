@@ -55,21 +55,3 @@ This function processes and aggregates catch and index data from the operating m
 for use in the estimation model (`em_info`). It accounts for multiple fleets and indices
 and adjusts aggregation based on fleet and index pointers.
 }
-\examples{
-\dontrun{
-om_data <- some_operating_model$output
-em_info <- some_estimation_model$inputs
-aggregate_catch_info <- list(fleet_pointer = c(1, 2, 3, 1, 2, 3))
-aggregate_index_info <- list(index_pointer = c(1, 1, 2, 2, 3, 3))
-
-aggregated_data <- aggregate_em_data(
-  data = om_data,
-  em_info = em_info,
-  aggregate_catch_info = aggregate_catch_info,
-  aggregate_index_info = aggregate_index_info,
-  ind_em = 1:10,
-  n_fleets = 3,
-  n_indices = 3
-)
-}
-}

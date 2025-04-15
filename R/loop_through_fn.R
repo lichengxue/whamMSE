@@ -370,6 +370,7 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
         } else {
           interval.info <- list(catch = advice, years = y + 1:assess_interval)
+          real_catch = advice
         }
 
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
@@ -441,6 +442,7 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
         } else {
           interval.info <- list(catch = advice, years = y + 1:assess_interval)
+          real_catch = advice
         }
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
@@ -529,6 +531,7 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = real_catch, years = assess_years[i] + 1:assess_interval)
         } else {
           interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
+          real_catch = advice
         }
         
         # set the catch for the next assess_interval years
@@ -654,6 +657,7 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
         } else {
           interval.info <- list(catch = advice, years = y + 1:assess_interval)
+          real_catch = advice
         }
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")

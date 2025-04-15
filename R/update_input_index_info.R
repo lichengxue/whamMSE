@@ -1,20 +1,29 @@
 #' Update Index Information in Input List (with Optional Row Subsetting)
 #'
-#' Updates `input$data$index_Neff` and `input$data$agg_index_sigma` using provided index CV and Neff matrices.
+#' Updates \code{input$data$index_Neff} and \code{input$data$agg_index_sigma} using provided index CV and Neff matrices.
+#' Optionally removes index data (aggregated or PAA) for specified pointers and years, and updates internal flags.
 #'
-#' @param input List. Must contain `input$data`.
-#' @param agg_index_sigma Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
-#' @param index_Neff Matrix. Same dimension as `agg_index_sigma`.
-#' @param remove_agg Integer vector. 
-#' @param remove_agg_pointer Integer vector. 
-#' @param remove_agg_years Integer vector,matrix. 
-#' @param remove_paa Integer vector. 
-#' @param remove_paa_pointer Integer vector. 
-#' @param remove_paa_years Integer vector,matrix. 
-#' @param ind_em Integer vector or NULL. Row indices of years to update. If NULL, updates all rows.
+#' @param input List. A WHAM input list that must contain \code{input$data}.
+#' @param agg_index_sigma Numeric matrix. Aggregated index standard deviations (CVs) to update. 
+#' Can be full size (\code{n_years × n_indices}) or subset rows (\code{length(ind_em) × n_indices}).
+#' @param index_Neff Numeric matrix. Effective sample size for index data. Must match dimensions of \code{agg_index_sigma}.
+#' @param remove_agg Logical. Whether to remove aggregated index observations for specific pointers/years.
+#' @param remove_agg_pointer Integer vector. Index pointers (columns) for which aggregated index data should be removed.
+#' @param remove_agg_years Integer vector or matrix. Years (rows) to remove aggregated index data. If matrix, should be [years × pointers].
+#' @param remove_paa Logical. Whether to remove index PAA observations for specific pointers/years.
+#' @param remove_paa_pointer Integer vector. Index pointers (columns) for which index PAA data should be removed.
+#' @param remove_paa_years Integer vector or matrix. Years (rows) to remove index PAA data. If matrix, should be [years × pointers].
+#' @param ind_em Integer vector or NULL. If provided, only updates rows corresponding to these indices. If NULL, updates all rows.
 #'
-#' @return The updated `input` list.
+#' @return The modified \code{input} list with updated \code{agg_index_sigma}, \code{index_Neff}, and associated index flags.
+#'
+#' @details
+#' If \code{ind_em} is specified, only those rows will be updated in the input matrices. 
+#' Removal of index or PAA observations is handled via internal flags and array zeroing.
+#' The function automatically calls \code{set_osa_obs()} at the end to update OSA flags.
+#'
 #' @export
+#' 
 update_input_index_info <- function(input, agg_index_sigma, index_Neff, 
                                     remove_agg = FALSE, remove_agg_pointer = NULL, remove_agg_years = NULL,
                                     remove_paa = FALSE, remove_paa_pointer = NULL, remove_paa_years = NULL,

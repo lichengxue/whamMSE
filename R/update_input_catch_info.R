@@ -9,6 +9,7 @@
 #'
 #' @return The updated `input` list.
 #' @export
+#' 
 update_input_catch_info <- function(input, agg_catch_sigma, catch_Neff, ind_em = NULL) {
   # Validate dimensions
   if (!all(dim(agg_catch_sigma) == dim(catch_Neff))) {
