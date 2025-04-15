@@ -4,10 +4,20 @@
 \alias{generate_ini_N1}
 \title{Generate initial numbers-at-age}
 \usage{
-generate_ini_N1(log_N1 = c(10.6, 10), basic_info, ini.opt = "equilibrium")
+generate_ini_N1(
+  log_N1 = NULL,
+  log_N1_F = NULL,
+  user_init_NAA = NULL,
+  basic_info,
+  ini.opt = "equilibrium"
+)
 }
 \arguments{
 \item{log_N1}{a vector (length = n_stocks) of log numbers-at-age1}
+
+\item{log_N1_F}{a vector (length = n_stocks) of fishing mortality}
+
+\item{user_init_NAA}{a matrix (n_ages x n_stocks) of initial numbers-at-age}
 
 \item{basic_info}{(optional) list specifying options for numbers-at-age random effects, initial parameter values, and recruitment model (see details)}
 
