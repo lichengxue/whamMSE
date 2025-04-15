@@ -30,7 +30,7 @@ generate_NAA_where <- function(basic_info = basic_info,
   n_regions = basic_info$n_regions
   n_ages = basic_info$n_ages
   
-  if (n_stocks == 1 & n_regions == 1) basic_info$NAA_where = NULL
+  if (n_stocks == 1 & n_regions == 1) basic_info$NAA_where = array(1,dim = c(n_stocks,n_regions,n_ages))
   
   if (n_stocks > 1) {
     basic_info$NAA_where <- array(1, dim = c(n_stocks,n_regions,n_ages))
