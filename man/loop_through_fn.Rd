@@ -254,7 +254,24 @@ The expected components include:
 
 \item{index_Neff}{Matrix. Same dimension as `agg_index_sigma`.}
 
-\item{add_implementation_error}{List. Implementation error to catch advice (default = NULL).}
+\item{add_implementation_error}{List. Implementation error to catch advice (default = NULL).
+\itemize{
+  \item `$method` Character. Type of implementation error distribution to use. Options are:
+    \itemize{
+      \item \code{"lognormal"}: Multiplies catch advice by \code{exp(N(mean, sd))}, where \code{sd} is derived from \code{cv} if not provided.
+      \item \code{"normal"}: Adds error to catch via \code{1 + N(mean, sd)}.
+      \item \code{"uniform"}: Multiplies catch advice by a uniform multiplier between \code{min} and \code{max}.
+      \item \code{"constant"}: Multiplies catch advice by a fixed value (\code{constant_value}).
+      }
+  \item `"mean"` Numeric. The mean of the error distribution. For log-normal, this is on the log scale.
+  \item `"cv"` Numeric. Coefficient of variation. Used only for log-normal error if \code{sd} is not provided.
+  \item `"sd"` Numeric. Standard deviation of the error distribution. Required for \code{"normal"}, optional for \code{"lognormal"}.
+  \item `"min"` Numeric. Minimum multiplier. Used only for \code{"uniform"}.
+  \item `"max"` Numeric. Maximum multiplier. Used only for \code{"uniform"}.
+  \item `"constant_value"` Numeric. A fixed multiplier applied to all entries if \code{method = "constant"}.
+  If \code{constant_value} is not provided and \code{cv} is specified, the multiplier will default
+  to the mean of a log-normal distribution with the given CV. If neither is provided, it defaults to 1.
+  }}
 }
 \value{
 A list containing:
