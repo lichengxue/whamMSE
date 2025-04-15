@@ -210,6 +210,8 @@ make_em_input <- function(om,
         ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
         ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
         ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      } else {
+        ecov_em_new <- NULL
       }
       
       em_input <- prepare_wham_input(
@@ -288,6 +290,8 @@ make_em_input <- function(om,
         ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
         ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
         ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      } else {
+        ecov_em_new <- NULL
       }
       
       em_input <- prepare_wham_input(
@@ -363,6 +367,8 @@ make_em_input <- function(om,
           ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
           ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
           ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        } else {
+          ecov_em_new <- NULL
         }
         
         em_input[[r]] <- prepare_wham_input(
@@ -448,6 +454,8 @@ make_em_input <- function(om,
         ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
         ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
         ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+      } else {
+        ecov_em_new <- NULL
       }
       
       if (em.opt$do.move) {
@@ -500,6 +508,8 @@ make_em_input <- function(om,
           ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
           ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
           ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        } else {
+          ecov_em_new <- NULL
         }
         
         # No movement
@@ -608,6 +618,8 @@ make_em_input <- function(om,
           ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
           ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
           ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        } else {
+          ecov_em_new <- NULL
         }
         
         em_input <- prepare_wham_input(
@@ -657,6 +669,8 @@ make_em_input <- function(om,
           ecov_em_new$mean <- ecov_em_new$mean[ind_em,,drop = FALSE]
           ecov_em_new$logsigma <- ecov_em_new$logsigma[ind_em,,drop = FALSE]
           ecov_em_new$use_obs <- ecov_em_new$use_obs[ind_em,,drop = FALSE]
+        } else {
+          ecov_em_new <- NULL
         }
         
         # No movement

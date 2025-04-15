@@ -34,6 +34,7 @@ loop_through_fn(
   hcr = list(hcr.type = 1, hcr.opts = NULL),
   catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years
     = 1),
+  implementation_error = NULL,
   do.retro = FALSE,
   do.osa = FALSE,
   do.brps = FALSE,
@@ -252,6 +253,8 @@ The expected components include:
 \item{agg_index_sigma}{Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).}
 
 \item{index_Neff}{Matrix. Same dimension as `agg_index_sigma`.}
+
+\item{add_implementation_error}{List. Implementation error to catch advice (default = NULL).}
 }
 \value{
 A list containing:
@@ -265,10 +268,11 @@ A list containing:
     \item{\code{opt_list}}{Optimization results from WHAM.}
     \item{\code{converge_list}}{Convergence diagnostics.}
     \item{\code{catch_advice}}{Projected catch advice over assessment years.}
+    \item{\code{catch_realized}}{Realized catch over assessment years including implementation error.}
     \item{\code{em_full}}{List of full estimation model outputs.}
+    \item{\code{em_input}}{List of input information for the last assessment.}
     \item{\code{runtime}}{Elapsed time for function execution.}
     \item{\code{seed.save}}{Random seed.}
-    \item{\code{em_input}}{List of input information for the last assessment.}
   }
 }
 \description{

@@ -173,6 +173,8 @@
 #'     \item `$weight_years` - Integer. Number of years to average for calculating historical catch weights.
 #'     \item `$survey_pointer` - Integer vector. Specify which survey index type to use for weighting (use when weight_type = 3).
 #'   }
+#'   
+#' @param add_implementation_error List. Implementation error to catch advice (default = NULL).
 #' @param do.retro Logical. Whether to perform retrospective analysis for the assessment model (default = FALSE).
 #' @param do.osa Logical. Whether to calculate one-step-ahead (OSA) residuals for the assessment model (default = FALSE).
 #' @param do.brps Logical. Whether to calculate reference points in the operating model (default = FALSE).
@@ -191,10 +193,11 @@
 #'     \item{\code{opt_list}}{Optimization results from WHAM.}
 #'     \item{\code{converge_list}}{Convergence diagnostics.}
 #'     \item{\code{catch_advice}}{Projected catch advice over assessment years.}
+#'     \item{\code{catch_realized}}{Realized catch over assessment years including implementation error.}
 #'     \item{\code{em_full}}{List of full estimation model outputs.}
+#'     \item{\code{em_input}}{List of input information for the last assessment.}
 #'     \item{\code{runtime}}{Elapsed time for function execution.}
 #'     \item{\code{seed.save}}{Random seed.}
-#'     \item{\code{em_input}}{List of input information for the last assessment.}
 #'   }
 #'   
 #' @export
@@ -230,6 +233,7 @@ loop_through_fn <- function(om,
                             FXSPR_init = NULL,
                             hcr = list(hcr.type = 1, hcr.opts = NULL),
                             catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
+                            implementation_error = NULL,
                             do.retro = FALSE, 
                             do.osa = FALSE, 
                             do.brps = FALSE,
@@ -260,6 +264,7 @@ loop_through_fn <- function(om,
   opt_list <- list()
   converge_list <- list()
   catch_advice <- list()
+  catch_realized <- list()
   em_full <- list()
   em_input_list <- list()
   
@@ -325,8 +330,31 @@ loop_through_fn <- function(om,
         cat("\nNow generating catch advice...\n")
         print(advice)
         
-        interval.info <- list(catch = advice, years = y + 1:assess_interval)
-        
+        if(!is.null(implementation_error)) {
+          cat("\nNow generating implementation error on catch advice...\n")
+          method = implementation_error$method
+          catch_mean = implementation_error$mean
+          catch_cv = implementation_error$cv
+          catch_sd = implementation_error$sd
+          catch_min = implementation_error$min
+          catch_max = implementation_error$max
+          constant_value = implementation_error$constant_value
+          real_catch = add_implementation_error(catch_advice = advice,
+                                                method = method,
+                                                mean = catch_mean,
+                                                cv = catch_cv,
+                                                sd = catch_sd,
+                                                min = catch_min,
+                                                max = catch_max,
+                                                constant_value = constant_value,
+                                                seed = seed)
+          cat("\nRealized catch is...\n")
+          print(real_catch)
+          interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
+        } else {
+          interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        }
+
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
@@ -339,6 +367,7 @@ loop_through_fn <- function(om,
         opt_list[[i]] <- em$opt
         converge_list[[i]] <- conv + pdHess
         catch_advice[[i]] <- advice
+        catch_realized[[i]] <- real_catch
         
         if (save.sdrep) {
           em_full[[i]] <- em
@@ -372,7 +401,30 @@ loop_through_fn <- function(om,
         cat("\nNow generating catch advice...\n")
         print(advice)
         
-        interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        if(!is.null(implementation_error)) {
+          cat("\nNow generating implementation error on catch advice...\n")
+          method = implementation_error$method
+          catch_mean = implementation_error$mean
+          catch_cv = implementation_error$cv
+          catch_sd = implementation_error$sd
+          catch_min = implementation_error$min
+          catch_max = implementation_error$max
+          constant_value = implementation_error$constant_value
+          real_catch = add_implementation_error(catch_advice = advice,
+                                                method = method,
+                                                mean = catch_mean,
+                                                cv = catch_cv,
+                                                sd = catch_sd,
+                                                min = catch_min,
+                                                max = catch_max,
+                                                constant_value = constant_value,
+                                                seed = seed)
+          cat("\nRealized catch is...\n")
+          print(real_catch)
+          interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
+        } else {
+          interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        }
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         
@@ -386,6 +438,7 @@ loop_through_fn <- function(om,
         opt_list[[i]] <- em$opt
         converge_list[[i]] <- conv + pdHess
         catch_advice[[i]] <- advice
+        catch_realized[[i]] <- real_catch
         
         if (save.sdrep) {
           em_full[[i]] <- em
@@ -436,8 +489,33 @@ loop_through_fn <- function(om,
         
         print(advice)
         
+        if(!is.null(implementation_error)) {
+          cat("\nNow generating implementation error on catch advice...\n")
+          method = implementation_error$method
+          catch_mean = implementation_error$mean
+          catch_cv = implementation_error$cv
+          catch_sd = implementation_error$sd
+          catch_min = implementation_error$min
+          catch_max = implementation_error$max
+          constant_value = implementation_error$constant_value
+          real_catch = add_implementation_error(catch_advice = advice,
+                                                method = method,
+                                                mean = catch_mean,
+                                                cv = catch_cv,
+                                                sd = catch_sd,
+                                                min = catch_min,
+                                                max = catch_max,
+                                                constant_value = constant_value,
+                                                seed = seed)
+          cat("\nRealized catch is...\n")
+          print(real_catch)
+          interval.info <- list(catch = real_catch, years = assess_years[i] + 1:assess_interval)
+        } else {
+          interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
+        }
+        
         # set the catch for the next assess_interval years
-        interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
+        # interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
@@ -451,6 +529,7 @@ loop_through_fn <- function(om,
           opt_list[[i]][[s]] <- em[[s]]$opt
           converge_list[[i]] <- sum(conv, pdHess)
           catch_advice[[i]] <- advice
+          catch_realized[[i]] <- real_catch
           
           if (save.sdrep) {
             em_full[[i]][[s]] <- em[[s]]
@@ -535,7 +614,30 @@ loop_through_fn <- function(om,
         
         cat("Catch Advice \n",advice,"\n")
         
-        interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        if(!is.null(implementation_error)) {
+          cat("\nNow generating implementation error on catch advice...\n")
+          method = implementation_error$method
+          catch_mean = implementation_error$mean
+          catch_cv = implementation_error$cv
+          catch_sd = implementation_error$sd
+          catch_min = implementation_error$min
+          catch_max = implementation_error$max
+          constant_value = implementation_error$constant_value
+          real_catch = add_implementation_error(catch_advice = advice,
+                                                method = method,
+                                                mean = catch_mean,
+                                                cv = catch_cv,
+                                                sd = catch_sd,
+                                                min = catch_min,
+                                                max = catch_max,
+                                                constant_value = constant_value,
+                                                seed = seed)
+          cat("\nRealized catch is...\n")
+          print(real_catch)
+          interval.info <- list(catch = real_catch, years = y + 1:assess_interval)
+        } else {
+          interval.info <- list(catch = advice, years = y + 1:assess_interval)
+        }
         
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
@@ -554,6 +656,7 @@ loop_through_fn <- function(om,
       opt_list[[i]] <- em$opt
       converge_list[[i]] <- conv + pdHess
       catch_advice[[i]] <- advice
+      catch_realized[[i]] <- real_catch
       
       if (save.sdrep) {
         em_full[[i]] <- em
@@ -575,6 +678,6 @@ loop_through_fn <- function(om,
   
   return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 
               adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
-              converge_list = converge_list, catch_advice = catch_advice, em_full = em_full,
-              runtime = time.taken, seed.save = seed, em_input = em_input_list))
+              converge_list = converge_list, catch_advice = catch_advice, catch_realized = catch_realized, 
+              em_full = em_full, em_input = em_input_list, runtime = time.taken, seed.save = seed))
 }
