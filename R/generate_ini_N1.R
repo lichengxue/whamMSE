@@ -1,9 +1,7 @@
 #' Generate initial numbers-at-age
 #' 
 #' @param log_N1 a vector (length = n_stocks) of log number-at-age 1 at equilibrium
-#' @param log_N1_F a vector (length = n_stocks) of fishing mortality at equilibrium
-#' @param user_init_NAA a matrix (n_ages x n_stocks) of initial numbers-at-age
-#' @param basic_info (optional) list specifying options for numbers-at-age random effects, initial parameter values, and recruitment model (see details)
+#' @param basic_info list specifying options for numbers-at-age random effects, initial parameter values, and recruitment model (see details)
 #' @param ini.opt N1_model
 #'       \describe{
 #'          \item{"age-specific-fe"}{(default) age- and region-specific fixed effects parameters}
@@ -11,21 +9,15 @@
 #'          \item{"iid-re"}{(default) age- and region-specific iid random effects parameters. 2 parameters: mean and sd for log NAA}
 #'          \item{"ar1-re"}{(default) age- and region-specific random effects parameters. 3 parameters: mean and sd, and cor for log NAA}
 #'       }
+#' @param log_N1_F a vector (length = n_stocks) of fishing mortality at equilibrium
+#' @param user_init_NAA a matrix (n_ages x n_stocks) of initial numbers-at-age
 #' @return an array of numbers-at-age (n_stocks x n_regions x n_ages)
 #' 
 #' @export
-#' 
-#' @examples
-#' \dontrun{
-#' basic_info <- generate_basic_info()
-#' N1_pars <- generate_ini_N1(log_N1 = c(10.6,10), basic_info, ini.opt = "equilibrium") 
-#' }
-#' 
-generate_ini_N1 <- function(log_N1 = NULL, 
+
+generate_ini_N1 <- function(log_N1 = NULL, basic_info, ini.opt = "equilibrium",
                             log_N1_F = NULL,
-                            user_init_NAA = NULL,
-                            basic_info,
-                            ini.opt = "equilibrium"
+                            user_init_NAA = NULL
                             ) {
   
   # Validate inputs
