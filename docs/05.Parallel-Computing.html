@@ -1604,7 +1604,8 @@ F_info = info$F # collect fishing information
 <h3>3. Specify movement type and movement rate</h3>
 <pre class="r"><code>basic_info &lt;- generate_NAA_where(basic_info = basic_info, move.type = 2) # &quot;bidirectional&quot; movement
 
-move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;)</code></pre>
+move &lt;- generate_move(basic_info = basic_info, move.type = 2, move.rate = c(0.3,0.1), move.re = &quot;constant&quot;,
+                      use.prior = TRUE, prior.sigma = 0.5)</code></pre>
 </div>
 <div id="configure-selecitvity-and-natural-mortality" class="section level3">
 <h3>4. Configure selecitvity and natural mortality</h3>
@@ -1693,12 +1694,12 @@ library(foreach)
 
 detectCores() # check how many cores available</code></pre>
 </div>
-<div id="em1" class="section level3">
-<h3>10. EM1</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
+<div id="panmictic" class="section level3">
+<h3>10. Panmictic</h3>
+<pre class="r"><code>cluster &lt;- makeCluster(5) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:5) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -1750,12 +1751,12 @@ foreach (i = 1:10) %dopar% {
 
 stopCluster(cluster)</code></pre>
 </div>
-<div id="em2" class="section level3">
-<h3>11. EM2</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
+<div id="spatially-implicit-fleets-as-areas" class="section level3">
+<h3>11. Spatially implicit (fleets-as-areas)</h3>
+<pre class="r"><code>cluster &lt;- makeCluster(5) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:5) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -1796,12 +1797,12 @@ foreach (i = 1:10) %dopar% {
 
 stopCluster(cluster)</code></pre>
 </div>
-<div id="em3" class="section level3">
-<h3>12. EM3</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
+<div id="separate-panmictic" class="section level3">
+<h3>12. Separate panmictic</h3>
+<pre class="r"><code>cluster &lt;- makeCluster(5) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:5) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -1839,12 +1840,12 @@ foreach (i = 1:10) %dopar% {
 
 stopCluster(cluster)</code></pre>
 </div>
-<div id="em4" class="section level3">
-<h3>13. EM4</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
+<div id="spatially-disaggregated-without-movement" class="section level3">
+<h3>13. Spatially disaggregated without movement</h3>
+<pre class="r"><code>cluster &lt;- makeCluster(5) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:5) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -1886,12 +1887,12 @@ foreach (i = 1:10) %dopar% {
 
 stopCluster(cluster)</code></pre>
 </div>
-<div id="em5" class="section level3">
-<h3>14. EM5</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
+<div id="spatially-explicit-with-movement-fixed-as-known" class="section level3">
+<h3>14. Spatially explicit with movement fixed as known</h3>
+<pre class="r"><code>cluster &lt;- makeCluster(5) 
 registerDoParallel(cluster)
 
-foreach (i = 1:10) %dopar% {
+foreach (i = 1:5) %dopar% {
   
   library(wham)
   library(whamMSE)
@@ -1932,67 +1933,6 @@ foreach (i = 1:10) %dopar% {
 }
 
 stopCluster(cluster)</code></pre>
-</div>
-<div id="em6" class="section level3">
-<h3>15. EM6</h3>
-<pre class="r"><code>cluster &lt;- makeCluster(10) 
-registerDoParallel(cluster)
-
-foreach (i = 1:10) %dopar% {
-  
-  library(wham)
-  library(whamMSE)
-  
-  om_with_data &lt;- update_om_fn(om, seed = 123+i, random = random)
-  
-  n_stocks = n_regions = n_fleets = n_indices = 2
-  
-  sel_em &lt;- list(model=rep(&quot;logistic&quot;,n_fleets+n_indices),
-               initial_pars=c(rep(list(fleet_pars),n_fleets),rep(list(index_pars),n_indices)))
-  
-  NAA_re_em &lt;- list(N1_model=rep(&quot;equilibrium&quot;,n_stocks),
-                  sigma=rep(&quot;rec+1&quot;,n_stocks),
-                  cor=rep(&quot;iid&quot;,n_stocks),
-                  NAA_where = om$input$data$NAA_where)
-  
-  M_em &lt;- list(model=&quot;constant&quot;,initial_means=array(0.2, dim = c(n_stocks,n_regions,n_ages)))
-  
-  mod &lt;- loop_through_fn(om = om_with_data, 
-                         em_info = info,
-                         random = random,
-                         M_em = M_em, 
-                         sel_em = sel_em,
-                         NAA_re_em = NAA_re_em,
-                         move_em = move,
-                         age_comp_em = &quot;multinomial&quot;,
-                         em.opt = list(separate.em = FALSE, separate.em.type = NULL, 
-                                       do.move = TRUE, est.move = TRUE),
-                         assess_years = assess.years, 
-                         assess_interval = assess.interval, 
-                         base_years = base.years,
-                         year.use = 20, 
-                         seed = 123+i,
-                         save.sdrep = FALSE,
-                         save.last.em = TRUE)
-  
-  saveRDS(mod, file.path(sub.dir,sprintf(&quot;Mod6_%03d.RDS&quot;,i)))
-}
-
-stopCluster(cluster)</code></pre>
-</div>
-<div id="collect-simulation-results" class="section level3">
-<h3>16. Collect simulation results</h3>
-<pre class="r"><code>mods = list()
-
-for (nsim in 1:10) {
-  file.names &lt;- file.path(sub.dir,paste0(&quot;Mod&quot;,1:6,sprintf(&quot;_%03d.RDS&quot;,nsim)))
-  mods[[nsim]] &lt;- lapply(file.names, readRDS)
-}
-# Please save the results for Ex6:6.Performance-Analysis-Tools
-
-plot_mse_output(mods, base.mod = 6, out.type = &quot;pdf&quot;) # base.mod = correct EM
-# plot_mse_output(mods,  base.mod = 6, out.type = &quot;png&quot;) # Alternative
-# plot_mse_output(mods,  base.mod = 6, out.type = &quot;html&quot;) # Alternative</code></pre>
 </div>
 
 
