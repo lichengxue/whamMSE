@@ -70,13 +70,13 @@ update_input_index_info <- function(input, agg_index_sigma, index_Neff,
         if(is.vector(remove_paa_years)) {
           y = remove_paa_years
           input$data$use_index_paa[y,j] = 0
-          input$data$index_paa[i,y,] = 0
+          input$data$index_paa[j,y,] = 0
         }
         
         if(is.matrix(remove_paa_years)) {
           y = remove_paa_years[,j]
           input$data$use_index_paa[y,j] = 0
-          input$data$index_paa[i,y,] = 0
+          input$data$index_paa[j,y,] = 0
         }
       }
     }
@@ -85,7 +85,7 @@ update_input_index_info <- function(input, agg_index_sigma, index_Neff,
     # input <- wham::set_indices(input)
     input <- set_osa_obs(input)
     
-
+    
   } else {
     
     # Update only selected rows
