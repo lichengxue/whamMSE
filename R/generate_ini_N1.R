@@ -46,7 +46,11 @@ generate_ini_N1 <- function(log_N1 = NULL,
   for (s in 1:n_stocks) {
     if (ini.opt == "equilibrium") { # Equilibrium assumption, 2 pars per stock
       if (is.null(log_N1) && is.null(log_N1_F)) {
+        N1_pars[s, s, 1:2] <- c(exp(10), exp(log(0.1)))
+      } else if (!is.null(log_N1) && is.null(log_N1_F)) {
         N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(0.1)))
+      } else if (is.null(log_N1) && !is.null(log_N1_F)) {
+        N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(log_N1_F[s])))
       } else {
         N1_pars[s, s, 1:2] <- c(exp(log_N1[s]), exp(log(log_N1_F[s])))
       }
