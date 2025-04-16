@@ -24,6 +24,7 @@ loop_through_fn(
   filter_indices = NULL,
   update_catch_info = NULL,
   update_index_info = NULL,
+  user_SPR_weights_info = NULL,
   assess_years = NULL,
   assess_interval = NULL,
   base_years = NULL,
@@ -141,6 +142,13 @@ loop_through_fn(
 \describe{
   \item{\code{agg_index_sigma}}{Matrix. Aggregated survey index CVs. Can be full (\code{n_years × n_indices}) or a subset of rows (e.g., \code{length(ind_em) × n_indices}).}
   \item{\code{index_Neff}}{Matrix. Effective sample sizes for index data. Must match dimensions of \code{agg_index_sigma}.}
+}}
+
+\item{user_SPR_weights_info}{List. Update SPR weights for calculating biological reference points in the assessment model.
+\describe{
+  \item{\code{method}}{Character. Specifies how weights are assigned to regions or stocks.}.
+  \item{\code{weight_years}}{Integer. Number of years at the end of the time series over which to average catch or index values (default = 1).}
+  \item{\code{index_pointer}}{Integer. Index number used when \code{method = "index_region"}.}
 }}
 
 \item{assess_years}{Integer vector. Assessment years.}

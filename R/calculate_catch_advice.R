@@ -1,7 +1,7 @@
 #' Calculate Catch Advice for Region- and Gear-Specific Fleets
 #'
 #' This function distributes total catch into region- and gear-specific fleets 
-#' based on different weighting methods: "fleet_region", "fleet_gear", "fleet_combined", "fleet_catch", "index_equal", "index_gear", "multiple_index_equal", "multiple_index_gear", or user-specified weights.
+#' based on different weighting methods: "fleet_region", "fleet_gear", "fleet_combined", "fleet_catch", "index_region", "index_gear", "multiple_index_region", "multiple_index_gear", or user-specified weights.
 #'
 #' @param om List. The operating model containing input data, fleet, and index information.
 #' @param advice Matrix or vector. Catch advice of dimension (n_years, n_fleets), 
@@ -32,9 +32,9 @@
 #'         \item "fleet_gear" - Total catch is allocated to each gear type based on historical gear-specific catch. Then, the gear-specific catch is equally distributed among regions that use this gear.
 #'         \item "fleet_combined" - Total catch is allocated based on historical regional and gear-specific catch.
 #'         \item "fleet_catch" - Total catch is allocated based on historical fleet-specific catch within each region.
-#'         \item "index_equal" - Total catch is allocated to each region based on historical survey catch. Then, the regional catch is distributed among fleets based on historical gear-specific catch.
+#'         \item "index_region" - Total catch is allocated to each region based on historical survey catch. Then, the regional catch is distributed among fleets based on historical gear-specific catch.
 #'         \item "index_gear" - Total catch is allocated based on historical region-specific survey catch and then distributed among fleets based on historical gear-specific catch.
-#'         \item "multiple_index_equal" - Total catch is allocated to each region based on historical survey catch from multiple surveys. Then, the regional catch is equally distributed among fleets within the region.
+#'         \item "multiple_index_region" - Total catch is allocated to each region based on historical survey catch from multiple surveys. Then, the regional catch is equally distributed among fleets within the region.
 #'         \item "multiple_index_gear" - Total catch is allocated to each region based on multiple historical survey-based catch estimates, then distributed among fleets within the region based on historical gear-specific catch.
 #'         \item "user_defined_fleets" - Catch allocation is based on user-defined weights for each fleet.
 #'         \item "user_defined_regions" - Catch is allocated based on user-defined weights for regions, then equally distributed among fleets within the region.
@@ -159,7 +159,7 @@ calculate_catch_advice <- function(om,
   
   if (weight_type == 3) {
     
-    if(!method %in% c("index_equal","index_gear","multiple_index_equal"))
+    if(!method %in% c("index_region","index_gear","multiple_index_region"))
       warning("method is not specified correctly!")
     
     # Weighting based on past survey index data
@@ -171,14 +171,14 @@ calculate_catch_advice <- function(om,
     gear_weights <- tapply(gear_catch, fleet_pointer, sum) / sum(gear_catch)
     
     fleet_weights <- rep(0, n_fleets)
-    if (method == "index_equal") {
+    if (method == "index_region") {
       for (region in unique(fleet_regions)) {
         fleets_in_region <- which(fleet_regions == region)
         fleet_weights[fleets_in_region] <- region_weights[region] / length(fleets_in_region)
       }
     } else if (method == "index_gear") {
       fleet_weights <- region_weights[fleet_regions] * gear_weights[fleet_pointer]
-    } else if (method == "multiple_index_equal") {
+    } else if (method == "multiple_index_region") {
       if (length(catch_alloc$survey_pointer) == 1)
         stop("survey_pointer must be > 1!")
       gear_weights_matrix <- matrix(0, nrow = length(unique(fleet_pointer)), ncol = length(catch_alloc$survey_pointer))
@@ -280,7 +280,7 @@ calculate_catch_advice <- function(om,
   # 
   # if (weight_type == 3) { 
   #   
-  #   if(!method %in% c("index_equal","index_gear","multiple_index_equal")) warning("method is not specified correctly!")
+  #   if(!method %in% c("index_region","index_gear","multiple_index_region")) warning("method is not specified correctly!")
   #   
   #   # Weighting based on past survey index data
   #   avg_years <- (final_year - catch_alloc$weight_years + 1):final_year
@@ -293,14 +293,14 @@ calculate_catch_advice <- function(om,
   #   gear_weights <- tapply(gear_catch, fleet_pointer, sum) / sum(gear_catch)
   #   
   #   fleet_weights <- rep(0, n_fleets)
-  #   if (method == "index_equal") {
+  #   if (method == "index_region") {
   #     for (region in unique(fleet_regions)) {
   #       fleets_in_region <- which(fleet_regions == region)
   #       fleet_weights[fleets_in_region] <- region_weights[region] / length(fleets_in_region)
   #     }
   #   } else if (method == "index_gear") {
   #     fleet_weights <- region_weights[fleet_regions] * gear_weights[fleet_pointer]
-  #   } else if (method == "multiple_index_equal") {
+  #   } else if (method == "multiple_index_region") {
   #     if (length(catch_alloc$survey_pointer) == 1) stop("survey_pointer must be > 1!")
   #     gear_weights_matrix <- matrix(0, nrow = length(unique(fleet_pointer)), ncol = length(catch_alloc$survey_pointer))
   #     for (i in 1:length(catch_alloc$survey_pointer)) {

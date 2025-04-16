@@ -147,6 +147,12 @@
 #'         }
 #'         }
 #'   }
+#' @param user_SPR_weights_info List. Update SPR weights for calculating biological reference points in the assessment model.
+#'   \describe{
+#'     \item{\code{method}}{Character. Specifies how weights are assigned to regions or stocks.}.
+#'     \item{\code{weight_years}}{Integer. Number of years at the end of the time series over which to average catch or index values (default = 1).}
+#'     \item{\code{index_pointer}}{Integer. Index number used when \code{method = "index_region"}.}
+#'   }
 #' @param assess_years Integer vector. Assessment years.
 #' @param assess_interval Integer. Interval (years) between assessments.
 #' @param base_years Integer vector. Burn-in period years.
@@ -200,6 +206,7 @@ loop_through_fn <- function(om,
                             filter_indices = NULL,
                             update_catch_info = NULL,
                             update_index_info = NULL,
+                            user_SPR_weights_info = NULL,
                             assess_years = NULL, 
                             assess_interval = NULL, 
                             base_years = NULL, 
@@ -544,6 +551,17 @@ loop_through_fn <- function(om,
                                 reduce_region_info = reduce_region_info,
                                 update_catch_info = update_catch_info,
                                 update_index_info = update_index_info) 
+      
+      if(!is.null(user_SPR_weights_info)) {
+        if(is.null(user_SPR_weights_info$method)) user_SPR_weights_info$method = "equal"
+        if(is.null(user_SPR_weights_info$weight_years)) user_SPR_weights_info$weight_years = 1
+        if(is.null(user_SPR_weights_info$index_pointer)) user_SPR_weights_info$index_pointer = NULL
+        em_input <- update_SPR_weights(em_input, 
+                                       method = user_SPR_weights$weights_method,
+                                       weight_years = user_SPR_weights_info$weight_years, 
+                                       index_pointer = user_SPR_weights_info$index_pointer
+                                       )
+      }
       
       if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
       
