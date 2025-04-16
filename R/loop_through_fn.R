@@ -97,7 +97,8 @@
 #'         \item \code{"fleet_catch"},
 #'         \item \code{"index_equal"}, 
 #'         \item \code{"index_gear"}, 
-#'         \item \code{"index_multiple"}, 
+#'         \item \code{"multiple_index_equal"}, 
+#'         \item \code{"multiple_index_gear"}, 
 #'         \item \code{"user_defined_fleets"}, 
 #'         \item \code{"user_defined_regions"}
 #'       }}
