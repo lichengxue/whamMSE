@@ -49,9 +49,9 @@ where each column represents a gear type. If advice is a vector, it represents t
       \item "fleet_gear" - Total catch is allocated to each gear type based on historical gear-specific catch. Then, the gear-specific catch is equally distributed among regions that use this gear.
       \item "fleet_combined" - Total catch is allocated based on historical regional and gear-specific catch.
       \item "fleet_catch" - Total catch is allocated based on historical fleet-specific catch within each region.
-      \item "index_region" - Total catch is allocated to each region based on historical survey catch. Then, the regional catch is distributed among fleets based on historical gear-specific catch.
+      \item "index_equal" - Total catch is allocated to each region based on historical survey catch. Then, the regional catch is distributed among fleets based on historical gear-specific catch.
       \item "index_gear" - Total catch is allocated based on historical region-specific survey catch and then distributed among fleets based on historical gear-specific catch.
-      \item "multiple_index_region" - Total catch is allocated to each region based on historical survey catch from multiple surveys. Then, the regional catch is equally distributed among fleets within the region.
+      \item "multiple_index_equal" - Total catch is allocated to each region based on historical survey catch from multiple surveys. Then, the regional catch is equally distributed among fleets within the region.
       \item "multiple_index_gear" - Total catch is allocated to each region based on multiple historical survey-based catch estimates, then distributed among fleets within the region based on historical gear-specific catch.
       \item "user_defined_fleets" - Catch allocation is based on user-defined weights for each fleet.
       \item "user_defined_regions" - Catch is allocated based on user-defined weights for regions, then equally distributed among fleets within the region.
@@ -67,5 +67,5 @@ A matrix of dimension (n_years, n_fleets) representing region-specific
 }
 \description{
 This function distributes total catch into region- and gear-specific fleets 
-based on different weighting methods: "fleet_region", "fleet_gear", "fleet_combined", "fleet_catch", "index_region", "index_gear", "multiple_index_region", "multiple_index_gear", or user-specified weights.
+based on different weighting methods: "fleet_region", "fleet_gear", "fleet_combined", "fleet_catch", "index_equal", "index_gear", "multiple_index_equal", "multiple_index_gear", or user-specified weights.
 }
