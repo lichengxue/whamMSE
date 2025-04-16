@@ -1663,7 +1663,7 @@ sigma_vals = array(NAA_sig, dim = c(n_stocks, n_regions, n_ages)) # n_stocks x n
 
 # Set initial NAA for each stock
 log_N1  &lt;- rep(10, n_stocks) # Create difference between stocks
-N1_pars &lt;- generate_ini_N1(log_N1,basic_info,ini.opt)
+N1_pars &lt;- generate_ini_N1(basic_info,ini.opt,log_N1)
 
 NAA_re &lt;- list(N1_model=rep(ini.opt,n_stocks),
                sigma=rep(sigma,n_stocks),

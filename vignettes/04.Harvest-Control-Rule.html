@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Harvest Control Rule</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2025-04-09</h4>
+<h4 class="date">Last update: 2025-04-15</h4>
 
 </div>
 
@@ -1649,7 +1649,7 @@ sigma_vals[,,1] = Rec_sig
 # Set initial NAA for each stock
 log_N1    &lt;- rep(10,n_stocks)
 log_N1[1] &lt;- log(exp(10)*2) # N1_stock1 is 2 times higher than N1_stock2
-N1_pars   &lt;- generate_ini_N1(log_N1,basic_info,ini.opt)
+N1_pars   &lt;- generate_ini_N1(basic_info,ini.opt,log_N1)
 
 # Set mean recruitment para. for each stock
 mean_rec_par &lt;- list()
