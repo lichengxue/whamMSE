@@ -85,11 +85,13 @@
 #'   \itemize{
 #'     \item `$remove_regions` Integer vector (`n_regions`). 0/1 values flagging whether to include regions.
 #'     \item `$reassign` Numeric. Specify reassignment for surveys from the "removed" regions to "remaining" regions.
-#'     \item `$NAA_where`Integer array (`n_stocks × n_regions × n_ages`) 0/1 values flagging whether the stock from a certain age can be present in a specific region.
+#'     \item `$NAA_where_em`Integer array (`n_stocks × n_regions × n_ages`) 0/1 values flagging whether the stock from a certain age can be present in a specific region.
 #'     \item `$sel_em` Selectivity configuration for the "reduced" assessment model.
 #'     \item `$M_em` Natural mortality configuration for the "reduced" assessment model.
 #'     \item `$NAA_re_em` Numbers-at-age configuration for the "reduced" assessment model.
+#'     \item `$catchability_em` Cathability configuration for the "reduced" assessment model.
 #'     \item `$move_em` Movement configuration for the "reduced" assessment model.
+#'     \item `$ecov_em` Environmental covariate configuration for the "reduced" assessment model.
 #'     \item `$onto_move_list` List of ontogenetic movement information for the "reduced" assessment model:
 #'       \itemize{
 #'         \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
@@ -589,13 +591,14 @@ make_em_input <- function(om,
       
       if(is.null(reduce_region_info)) Stop("Users must prepare a list of new model configuration (NAA_where, sel_em, M_em, NAA_re_em, move_em, onto_move_list) if some areas are dropped from the model!")
       
-      basic_info$NAA_where = reduce_region_info$NAA_where
-      sel_em = reduce_region_info$sel_em
-      M_em = reduce_region_info$M_em
-      NAA_re_em = reduce_region_info$NAA_re_em
-      move_em = reduce_region_info$move_em
-      catchability_em = reduce_region_info$catchability_em
-      onto_move_list = reduce_region_info$onto_move_list
+      basic_info$NAA_where = reduce_region_info$NAA_where_em
+      sel_em               = reduce_region_info$sel_em
+      M_em                 = reduce_region_info$M_em
+      NAA_re_em            = reduce_region_info$NAA_re_em
+      move_em              = reduce_region_info$move_em
+      catchability_em      = reduce_region_info$catchability_em
+      ecov_em              = reduce_region_info$ecov_em
+      onto_move_list       = reduce_region_info$onto_move_list
       
       if(n_regions == 1) move_em = NULL # This must be NULL when n_regions = 1
       if(n_regions == 1) basic_info$NAA_where = NULL # This must be NULL when n_regions = 1

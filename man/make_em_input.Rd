@@ -122,11 +122,13 @@ The expected components include:
 \itemize{
   \item `$remove_regions` Integer vector (`n_regions`). 0/1 values flagging whether to include regions.
   \item `$reassign` Numeric. Specify reassignment for surveys from the "removed" regions to "remaining" regions.
-  \item `$NAA_where`Integer array (`n_stocks × n_regions × n_ages`) 0/1 values flagging whether the stock from a certain age can be present in a specific region.
+  \item `$NAA_where_em`Integer array (`n_stocks × n_regions × n_ages`) 0/1 values flagging whether the stock from a certain age can be present in a specific region.
   \item `$sel_em` Selectivity configuration for the "reduced" assessment model.
   \item `$M_em` Natural mortality configuration for the "reduced" assessment model.
   \item `$NAA_re_em` Numbers-at-age configuration for the "reduced" assessment model.
+  \item `$catchability_em` Cathability configuration for the "reduced" assessment model.
   \item `$move_em` Movement configuration for the "reduced" assessment model.
+  \item `$ecov_em` Environmental covariate configuration for the "reduced" assessment model.
   \item `$onto_move_list` List of ontogenetic movement information for the "reduced" assessment model:
     \itemize{
       \item `$onto_move` (array, dimension: `n_stocks × n_regions × (n_regions-1)`)  
