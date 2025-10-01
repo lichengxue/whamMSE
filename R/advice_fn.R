@@ -24,7 +24,19 @@
 #'       }
 #'     }
 #'   }
-#'
+#' @param ecov_em_opts List (optional). Options for projecting environmental
+#'   covariates in the estimation model during catch advice. Allows explicit
+#'   control of Ecov inputs in the projection period. The expected components include:
+#'   \itemize{
+#'     \item `$use_ecov_em` Logical. If `TRUE`, the EM uses user-specified or
+#'       projected Ecov values instead of directly continuing the OM process.
+#'     \item `$lag` Integer. Specifies the lag (in years) to align Ecov values when used in
+#'       recruitment or other population processes. Must be provided if `$use_ecov_em = TRUE`.
+#'     \item `$period` Integer vector (optional). If provided, specifies the projection
+#'       years (indices relative to the Ecov time series) to override with user-defined
+#'       values. If `NULL`, then the entire projection period is replaced.
+#'   }
+#'   If `NULL`, Ecov values for projections are inherited directly from the OM/EM state without override.
 #' @return A matrix containing the projected catch advice for \code{pro.yr} years.
 #'
 #' @examples
@@ -45,7 +57,7 @@
 #'
 #' @seealso \code{\link{project_wham}}
 #' @export
-advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL) {
+advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL, ecov_em_opts = NULL) {
   
   # Ensure hcr and hcr.opts are always lists
   if (is.null(hcr)) {
@@ -77,6 +89,15 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL) {
     cont.move.re <- hcr.opts$cont.move.re
   }
   
+  if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) {
+    if(!is.null(ecov_em_opts$lag)) {
+      id = length(em$input$years)-ecov_em_opts$lag
+      proj_ecov = em$rep$Ecov_x[id:(id+pro.yr-ecov_em_opts$lag),, drop = FALSE]
+    } else {
+      warnings("Must specify lag when use_ecov_em = TRUE")
+    }
+  }
+  
   # Set up projection options
   proj_opts <- list(
     n.yrs = pro.yr,
@@ -86,7 +107,8 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL) {
     percentFMSY = percentFMSY,
     avg.yrs = tail(em$years, avg_yrs),
     cont.M.re = cont.M.re,
-    cont.move.re = cont.move.re
+    cont.move.re = cont.move.re,
+    proj.ecov = proj_ecov
   )
   
   # --- HCR type 1 & 2 ---

@@ -114,6 +114,21 @@
 #'     \item `$agg_index_sigma` Matrix. Either full (n_years x n_indices) or subset (length(ind_em) x n_indices).
 #'     \item `$index_Neff` Matrix. Same dimension as `agg_index_sigma`.
 #'   }
+#'   
+#' @param ecov_em_opts List (optional). Options for projecting environmental
+#'   covariates in the estimation model during catch advice. Allows explicit
+#'   control of Ecov inputs in the projection period. The expected components include:
+#'   \itemize{
+#'     \item `$use_ecov_em` Logical. If `TRUE`, the EM uses user-specified or
+#'       projected Ecov values instead of directly continuing the OM process.
+#'     \item `$lag` Integer. Specifies the lag (in years) to align Ecov values when used in
+#'       recruitment or other population processes. Must be provided if `$use_ecov_em = TRUE`.
+#'     \item `$period` Integer vector (optional). If provided, specifies the projection
+#'       years (indices relative to the Ecov time series) to override with user-defined
+#'       values. If `NULL`, then the entire projection period is replaced.
+#'   }
+#'   If `NULL`, Ecov values for projections are inherited directly from the OM/EM state without override.
+#'   
 #' @return List. A `wham` input object prepared for stock assessment.
 #' 
 #' @export
@@ -139,7 +154,8 @@ make_em_input <- function(om,
                           filter_indices = NULL,
                           reduce_region_info = NULL,
                           update_catch_info = NULL,
-                          update_index_info = NULL) {
+                          update_index_info = NULL,
+                          ecov_em_opts = NULL) {
   
   if (is.null(em.opt)) stop("em.opt must be specified!")
   
@@ -496,6 +512,13 @@ make_em_input <- function(om,
         ecov_em_new$year <- ecov_em_new$year
         ecov_mean <- om$input$data$Ecov_obs
         ecov_em_new$mean <- ecov_mean
+        if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) {
+          if(!is.null(ecov_em_opts$period)) {
+            ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em$mean[ecov_em_opts$period,]
+          } else {
+            ecov_em_new$mean <- ecov_em$mean
+          }
+        } 
         if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
           ecov_em_new$logsigma = ecov_em_new$logsigma
         } else {
@@ -725,6 +748,7 @@ make_em_input <- function(om,
           ecov_em_new$year <- ecov_em_new$year
           ecov_mean <- om$input$data$Ecov_obs
           ecov_em_new$mean <- ecov_mean
+          if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em$mean[ecov_em_opts$period,]
           if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
             ecov_em_new$logsigma = ecov_em_new$logsigma
           } else {
@@ -809,6 +833,7 @@ make_em_input <- function(om,
           ecov_em_new$year <- ecov_em_new$year
           ecov_mean <- om$input$data$Ecov_obs
           ecov_em_new$mean <- ecov_mean
+          if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em$mean[ecov_em_opts$period,]
           if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
             ecov_em_new$logsigma = ecov_em_new$logsigma
           } else {

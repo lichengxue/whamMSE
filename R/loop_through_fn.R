@@ -12,6 +12,19 @@
 #' @param move_em Configuration for movement in the assessment model.
 #' @param catchability_em Configuration for survey catchability in the assessment model.
 #' @param ecov_em Configuration for environmental covariates in the assessment model.
+#' @param ecov_em_opts List (optional). Options for projecting environmental
+#'   covariates in the estimation model during catch advice. Allows explicit
+#'   control of Ecov inputs in the projection period. The expected components include:
+#'   \itemize{
+#'     \item `$use_ecov_em` Logical. If `TRUE`, the EM uses user-specified or
+#'       projected Ecov values instead of directly continuing the OM process.
+#'     \item `$lag` Integer. Specifies the lag (in years) to align Ecov values when used in
+#'       recruitment or other population processes. Must be provided if `$use_ecov_em = TRUE`.
+#'     \item `$period` Integer vector (optional). If provided, specifies the projection
+#'       years (indices relative to the Ecov time series) to override with user-defined
+#'       values. If `NULL`, then the entire projection period is replaced.
+#'   }
+#'   If `NULL`, Ecov values for projections are inherited directly from the OM/EM state without override.
 #' @param age_comp_em Character. Likelihood distribution for age composition data in the assessment model.
 #'   \itemize{
 #'     \item \code{"multinomial"} (default)
@@ -224,6 +237,7 @@ loop_through_fn <- function(om,
                             move_em = NULL, 
                             catchability_em = NULL,
                             ecov_em = NULL,
+                            ecov_em_opts = NULL,
                             age_comp_em = "multinomial", 
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
                                           do.move = FALSE, est.move = FALSE), 
@@ -579,7 +593,8 @@ loop_through_fn <- function(om,
                                 filter_indices = filter_indices,
                                 reduce_region_info = reduce_region_info,
                                 update_catch_info = update_catch_info,
-                                update_index_info = update_index_info) 
+                                update_index_info = update_index_info,
+                                ecov_em_opts = ecov_em_opts) 
       
       if(!is.null(user_SPR_weights_info)) {
         if(is.null(user_SPR_weights_info$method)) user_SPR_weights_info$method = "equal"
@@ -614,7 +629,7 @@ loop_through_fn <- function(om,
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow generating catch advice...\n")
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        advice <- advice_fn(em, pro.yr = assess_interval, hcr, ecov_em_opts)
         if(!is.null(reduce_region_info$remove_regions)) {
           remove_regions = reduce_region_info$remove_regions
           fleets_to_remove <- which(om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
