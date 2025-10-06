@@ -224,6 +224,7 @@ loop_through_fn <- function(om,
                             move_em = NULL, 
                             catchability_em = NULL,
                             ecov_em = NULL,
+                            ecov_em_opts = NULL,
                             age_comp_em = "multinomial", 
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
                                           do.move = FALSE, est.move = FALSE), 
@@ -243,6 +244,7 @@ loop_through_fn <- function(om,
                             by_fleet = TRUE,
                             FXSPR_init = NULL,
                             hcr = list(hcr.type = 1, hcr.opts = NULL),
+                            proj.opts = list(),   # <-- NEW
                             catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
                             implementation_error = NULL,
                             do.retro = FALSE, 
@@ -250,8 +252,7 @@ loop_through_fn <- function(om,
                             do.brps = FALSE,
                             seed = 123, 
                             save.sdrep = FALSE, 
-                            save.last.em = FALSE
-                            ) {
+                            save.last.em = FALSE) {
   
   start.time <- Sys.time()
   
@@ -321,7 +322,10 @@ loop_through_fn <- function(om,
         
         cat("\nNow using the EM to project catch...\n")
         
-        em.advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        advice <- advice_fn(em = em,
+                            pro.yr = assess_interval,
+                            hcr = hcr,
+                            proj.opts = proj.opts)
         
         if(is.vector(em.advice)) em.advice = matrix(em.advice, byrow = TRUE)
         
@@ -404,8 +408,12 @@ loop_through_fn <- function(om,
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow using the EM to project catch...\n")
-        # advice <- advice_fn(em, pro.yr = assess_interval, hcr.type = hcr.type, hcr.opts = hcr.opts)
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        
+        advice <- advice_fn(em = em,
+                            pro.yr = assess_interval,
+                            hcr = hcr,
+                            proj.opts = proj.opts)
+        
         
         if(is.vector(advice)) advice <- as.matrix(t(advice))
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
@@ -493,7 +501,11 @@ loop_through_fn <- function(om,
           pdHess <- check_conv(em[[s]])$pdHess
           if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
           
-          tmp <- advice_fn(em[[s]], pro.yr = assess_interval, hcr)
+          tmp <- advice_fn(em = em[[s]],
+                           pro.yr = assess_interval,
+                           hcr = hcr,
+                           proj.opts = proj.opts)
+          
           advice <- cbind(advice, tmp)
         }
         
@@ -579,7 +591,8 @@ loop_through_fn <- function(om,
                                 filter_indices = filter_indices,
                                 reduce_region_info = reduce_region_info,
                                 update_catch_info = update_catch_info,
-                                update_index_info = update_index_info) 
+                                update_index_info = update_index_info,
+                                ecov_em_opts = ecov_em_opts) 
       
       if(!is.null(user_SPR_weights_info)) {
         if(is.null(user_SPR_weights_info$method)) user_SPR_weights_info$method = "equal"
@@ -608,13 +621,20 @@ loop_through_fn <- function(om,
       }
       
       if (assess_interval != 0) {
+        
         cat("\nNow checking convergence of assessment model...\n")
+        
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
         
         cat("\nNow generating catch advice...\n")
-        advice <- advice_fn(em, pro.yr = assess_interval, hcr)
+        
+        advice <- advice_fn(em = em,
+                            pro.yr = assess_interval,
+                            hcr = hcr,
+                            proj.opts = proj.opts)
+        
         if(!is.null(reduce_region_info$remove_regions)) {
           remove_regions = reduce_region_info$remove_regions
           fleets_to_remove <- which(om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
