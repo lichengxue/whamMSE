@@ -139,7 +139,8 @@ make_em_input <- function(om,
                           filter_indices = NULL,
                           reduce_region_info = NULL,
                           update_catch_info = NULL,
-                          update_index_info = NULL) {
+                          update_index_info = NULL,
+                          ecov_em_opts = NULL) {
   
   if (is.null(em.opt)) stop("em.opt must be specified!")
   
@@ -496,6 +497,7 @@ make_em_input <- function(om,
         ecov_em_new$year <- ecov_em_new$year
         ecov_mean <- om$input$data$Ecov_obs
         ecov_em_new$mean <- ecov_mean
+        if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em[ecov_em_opts$period,]
         if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
           ecov_em_new$logsigma = ecov_em_new$logsigma
         } else {
@@ -725,6 +727,7 @@ make_em_input <- function(om,
           ecov_em_new$year <- ecov_em_new$year
           ecov_mean <- om$input$data$Ecov_obs
           ecov_em_new$mean <- ecov_mean
+          if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em[ecov_em_opts$period,]
           if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
             ecov_em_new$logsigma = ecov_em_new$logsigma
           } else {
@@ -809,6 +812,7 @@ make_em_input <- function(om,
           ecov_em_new$year <- ecov_em_new$year
           ecov_mean <- om$input$data$Ecov_obs
           ecov_em_new$mean <- ecov_mean
+          if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) ecov_em_new$mean[ecov_em_opts$period,] <- ecov_em[ecov_em_opts$period,]
           if (any(ecov_em_new$logsigma %in% c("est_1", "est_re"))) {
             ecov_em_new$logsigma = ecov_em_new$logsigma
           } else {
