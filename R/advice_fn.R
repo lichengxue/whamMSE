@@ -88,7 +88,8 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL, ecov_em_opts = N
   } else {
     cont.move.re <- hcr.opts$cont.move.re
   }
-  
+
+  proj_ecov = NULL
   if(!is.null(ecov_em_opts) && ecov_em_opts$use_ecov_em) {
     if(!is.null(ecov_em_opts$lag)) {
       id = length(em$input$years)-ecov_em_opts$lag
