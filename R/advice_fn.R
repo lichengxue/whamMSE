@@ -140,7 +140,7 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL, proj.opts = list
     percentFMSY    = percentFMSY,
     proj.F         = NULL,
     proj.catch     = NULL,
-    avg.yrs        = 5,
+    # avg.yrs        = 5,
     cont.ecov      = TRUE,
     use.last.ecov  = FALSE,
     avg.ecov.yrs   = NULL,
@@ -168,7 +168,7 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL, proj.opts = list
     avg.yrs.NAA      = NULL
   )
 
-  defaults$avg.yrs = tail(em$years,defaults$avg.yrs)
+  # defaults$avg.yrs = tail(em$years,defaults$avg.yrs)
   
   # Step 4. Merge user overrides -> proj.opts wins over HCR/default
   proj_opts <- modifyList(defaults, proj.opts)
@@ -207,3 +207,4 @@ advice_fn <- function(em, pro.yr = assess.interval, hcr = NULL, proj.opts = list
   return(advice)
 
 }
+
