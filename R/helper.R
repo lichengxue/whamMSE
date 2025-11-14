@@ -256,8 +256,7 @@ plot_ssb_performance <- function(mods, is.nsim, main.dir, sub.dir, var = "SSB",
                                  show.whisker = TRUE,
                                  use.n.years = NULL,
                                  new_model_names = NULL,
-                                 base.model = NULL
-                                 ) {
+                                 base.model = NULL) {
   
   library(dplyr)
   library(tidyr)
@@ -271,37 +270,49 @@ plot_ssb_performance <- function(mods, is.nsim, main.dir, sub.dir, var = "SSB",
   
   Years <- if (!is.nsim) mods[[1]]$om$years else mods[[1]][[1]]$om$years
   
+  # 1) Build wide-format res for LAST N years (same structure as your original code)
   res <- if (!is.nsim) {
     lapply(seq_along(mods), function(i) {
       data.frame(
-        SSB = mods[[i]]$om$rep$SSB,
+        SSB = mods[[i]]$om$rep$SSB,   # <-- IMPORTANT: keep this exactly like your working code
         Model = paste0("Model", i),
         Year = Years,
         Realization = 1
-      ) %>% tail(use.n.years)
+      ) %>% 
+        tail(use.n.years)
     }) %>% bind_rows()
   } else {
     lapply(seq_along(mods), function(r) {
       lapply(seq_along(mods[[r]]), function(m) {
         data.frame(
-          SSB = mods[[r]][[m]]$om$rep$SSB,
+          SSB = mods[[r]][[m]]$om$rep$SSB,  # same here
           Model = paste0("Model", m),
           Year = Years,
           Realization = r
-        ) %>% tail(use.n.years)
+        ) %>% 
+          tail(use.n.years)
       }) %>% bind_rows()
     }) %>% bind_rows()
   }
   
-  # Handle model renaming
+  # 2) Add total/global SSB in WIDE format (exactly like performance2)
+  #    At this point res may have SSB, SSB.1, SSB.2, ...; all of these start with "SSB"
+  res <- res %>%
+    rowwise() %>%
+    mutate(SSB_Global = sum(c_across(starts_with("SSB")), na.rm = TRUE)) %>%
+    ungroup()
+  
+  # 3) Handle model renaming (still wide)
   if (!is.null(new_model_names)) {
     if (length(new_model_names) != length(unique(res$Model))) {
       stop("Length of new_model_names must match the number of models.")
     }
-    res$Model <- factor(res$Model,
-                        levels = paste0("Model", seq_along(new_model_names)),
-                        labels = new_model_names)
-    # if (!is.null(base.model)) base.model <- new_model_names[base.model]
+    res$Model <- factor(
+      res$Model,
+      levels = paste0("Model", seq_along(new_model_names)),
+      labels = new_model_names
+    )
+    
     if (!is.null(base.model)) {
       if (!(base.model %in% new_model_names)) {
         warning("base.model does not match any of the new_model_names. Make sure it's the renamed version (e.g., 'M1').")
@@ -309,62 +320,70 @@ plot_ssb_performance <- function(mods, is.nsim, main.dir, sub.dir, var = "SSB",
     }
   }
   
-  # Pivot longer if multiple SSB variables
-  res <- pivot_longer(res, cols = starts_with(var), names_to = "Label", values_to = var)
+  # 4) Pivot longer so regions + SSB_Global all become Labels
+  res <- pivot_longer(
+    res,
+    cols = starts_with(var),  # var = "SSB": includes SSB, SSB.1, ..., SSB_Global
+    names_to  = "Label",
+    values_to = var
+  )
   
-  # Compute relative difference from base.model if specified
+  # 5) Compute relative difference from base.model if specified
   if (!is.null(base.model)) {
-    base_df <- res %>% filter(Model == base.model) %>%
+    base_df <- res %>% 
+      filter(Model == base.model) %>%
       rename(base_val = !!sym(var)) %>%
       select(Realization, Year, Label, base_val)
     
-    res <- left_join(res, base_df, by = c("Realization", "Year", "Label")) %>%
+    res <- res %>%
+      left_join(base_df, by = c("Realization", "Year", "Label")) %>%
       mutate(!!var := (!!sym(var)) / base_val - 1)
   }
   
-  # Apply mean or median summarization if method is specified
+  # 6) Apply mean or median summarization across the last N years if method is specified
   if (!is.null(method)) {
     res <- res %>%
       group_by(Model, Realization, Label) %>%
-      summarise(!!var := if (method == "mean") mean(!!sym(var)) else median(!!sym(var)),
-                .groups = "drop")
+      summarise(
+        !!var := if (method == "mean") mean(!!sym(var)) else median(!!sym(var)),
+        .groups = "drop"
+      )
   }
   
-  # Add the last column: total SSB by Year and Realization
-  res <- res %>%
-    rowwise() %>%
-    mutate(SSB_Global = sum(c_across(starts_with("SSB")), na.rm = TRUE)) %>%
-    ungroup()
-  
-  # Plot
+  # 7) Plot
   if (plot.style == "boxplot") {
-    p <- ggplot(res, aes(x = Model, y = SSB, color = Model)) +
+    
+    p <- ggplot(res, aes(x = Model, y = !!sym(var), color = Model)) +
       geom_boxplot(lwd = 0.8, outlier.shape = outlier.opt) +
       facet_grid(Label ~ ., scales = "free") +
       scale_color_viridis_d(option = col.opt) +
-      ggtitle(paste0(ifelse(is.null(base.model), var, paste0("Relative ", var, " vs ", base.model)),
-                     ": Last ", use.n.years, " Years")) +
+      ggtitle(paste0(
+        ifelse(is.null(base.model), var, paste0("Relative ", var, " vs ", base.model)),
+        ": Last ", use.n.years, " Years"
+      )) +
       ylab(ifelse(is.null(base.model), var, paste0("Relative ", var, " Difference"))) +
       xlab("Model") +
-      theme_bw() 
+      theme_bw()
+    
   } else if (plot.style == "median_iqr") {
+    
     # Compute summary statistics with 1.5x IQR whiskers
     res_summary <- res %>%
       group_by(Model, Label) %>%
       summarise(
-        q1 = quantile(!!sym(var), 0.25),
+        q1  = quantile(!!sym(var), 0.25),
         med = median(!!sym(var)),
-        q3 = quantile(!!sym(var), 0.75),
+        q3  = quantile(!!sym(var), 0.75),
         iqr = q3 - q1,
         .groups = "drop"
       ) %>%
       mutate(
-        x = as.numeric(factor(Model)),
+        x    = as.numeric(factor(Model)),
         ymin = if (show.whisker) q1 - 1.5 * iqr else NA_real_,
         ymax = if (show.whisker) q3 + 1.5 * iqr else NA_real_
       )
     
-    # Clip whiskers to the observed range
+    # Clip whiskers to observed range
     res_limits <- res %>%
       group_by(Model, Label) %>%
       summarise(
@@ -373,51 +392,61 @@ plot_ssb_performance <- function(mods, is.nsim, main.dir, sub.dir, var = "SSB",
         .groups = "drop"
       )
     
-    res_summary <- left_join(res_summary, res_limits, by = c("Model", "Label")) %>%
+    res_summary <- res_summary %>%
+      left_join(res_limits, by = c("Model", "Label")) %>%
       mutate(
         ymin = pmax(ymin, min_val),
         ymax = pmin(ymax, max_val)
       )
     
     p <- ggplot(res_summary, aes(x = x, color = Model)) +
-      # Whiskers (1.5 x IQR, clipped to observed range)
-      {if (show.whisker) geom_segment(aes(x = x, xend = x, y = ymin, yend = q1)) } +
-      {if (show.whisker) geom_segment(aes(x = x, xend = x, y = q3, yend = ymax)) } +
+      { if (show.whisker) geom_segment(aes(x = x, xend = x, y = ymin, yend = q1)) } +
+      { if (show.whisker) geom_segment(aes(x = x, xend = x, y = q3, yend = ymax)) } +
       
       # IQR box (no fill)
-      geom_rect(aes(xmin = x - 0.3, xmax = x + 0.3, ymin = q1, ymax = q3, col = Model),
-                fill = NA, linewidth = 0.8) +
+      geom_rect(
+        aes(xmin = x - 0.3, xmax = x + 0.3, ymin = q1, ymax = q3, col = Model),
+        fill = NA, linewidth = 0.8
+      ) +
       
       # Median line
-      geom_segment(aes(x = x - 0.3, xend = x + 0.3, y = med, yend = med, color = Model),
-                   linewidth = 0.8) +
+      geom_segment(
+        aes(x = x - 0.3, xend = x + 0.3, y = med, yend = med, color = Model),
+        linewidth = 0.8
+      ) +
       
       scale_x_continuous(breaks = res_summary$x, labels = res_summary$Model) +
       facet_grid(Label ~ ., scales = "free") +
       scale_color_viridis_d(option = col.opt) +
-      ggtitle(paste0(ifelse(is.null(base.model), var, paste0("Relative ", var, " vs ", base.model)),
-                     ": Last ", use.n.years, " Years")) +
+      ggtitle(paste0(
+        ifelse(is.null(base.model), var, paste0("Relative ", var, " vs ", base.model)),
+        ": Last ", use.n.years, " Years"
+      )) +
       ylab(ifelse(is.null(base.model), var, paste0("Relative ", var, " Difference"))) +
       xlab("Model") +
       theme_bw()
+    
   } else {
     stop("Unknown plot.style. Choose 'boxplot' or 'median_iqr'.")
   }
   
-  # Save
-  plot_name <- paste0(var, ifelse(is.null(base.model), "", "_Relative"),
-                      "_last_", use.n.years, "_years.PNG")
+  # 8) Save
+  plot_name <- paste0(
+    var,
+    ifelse(is.null(base.model), "", "_Relative"),
+    "_last_", use.n.years, "_years.PNG"
+  )
   
-  
-  # Create the new subfolder if it doesn't exist
   new_sub_dir <- file.path(main.dir, sub.dir, "Performance_Boxplot")
+  if (!file.exists(new_sub_dir)) dir.create(new_sub_dir, recursive = TRUE)
   
-  if (!file.exists(new_sub_dir)){
-    dir.create(new_sub_dir)
-  }
-  
-  # Save the figure inside the new subfolder
-  ggsave(file.path(new_sub_dir, plot_name), plot = p, width = width, height = height, dpi = dpi)
+  ggsave(
+    file.path(new_sub_dir, plot_name),
+    plot   = p,
+    width  = width,
+    height = height,
+    dpi    = dpi
+  )
   
   return(p)
 }
