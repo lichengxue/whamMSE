@@ -1,44 +1,42 @@
 Package: whamMSE
-Title: Management Strategy Evaluation Tool of Woods Hole Assessment Model (WHAM)
-Type: R package
-Version: 1.0.0
+Title: Management Strategy Evaluation Tool for the Woods Hole Assessment Model (WHAM)
+Type: Package
+Version: 1.1.0
 Author: Chengxue Li <chengxue.li@noaa.gov>
 Maintainer: Chengxue Li <chengxue.li@noaa.gov>
-Description: 
-    The wham-mse is a comprehensive toolbox designed to conduct management strategy evaluation (MSE) 
-    for supporting spatial management for complex, heterogeneous populations. The package 
-    is built upon a state-space age-structured stock assessment model - Woods Hole Assessment Model (WHAM). 
-    WHAM can incorporate time- and/or age-varying process errors (treated as random effects) on 
-    population processes, and can also incorporate environmental effects on population processes. 
-    This package provides tools to simulate and evaluate management strategies (combination of 
-    data collection methods, stock assessment models, and harvest control rules) by allowing users 
-    to explore various scenarios and their impacts on estimation and management performance for fish 
-    stocks with different life-history traits across different regions.
+Description: A comprehensive toolbox for conducting management strategy evaluation (MSE)
+    to support spatial management of complex, heterogeneous fish populations. The package
+    is built upon the Woods Hole Assessment Model (WHAM), a state-space age-structured stock
+    assessment model that can incorporate time- and/or age-varying process errors (treated
+    as random effects) and environmental effects on population processes. whamMSE provides
+    tools to simulate and evaluate management strategies (combinations of data collection
+    methods, stock assessment models, and harvest control rules), allowing users to explore
+    how alternative scenarios affect estimation and management performance for fish stocks
+    with different life-history traits across regions.
 Depends:
-    R (>= 3.6.0)
+    R (>= 4.0.0)
 Imports:
- shiny,
-    dplyr,
-    ggplot2,
-    tidyr,
-    ggpubr,
-    fmsb,
-    ggtern,
-    numDeriv,
-    expm,
-    gridExtra,
-    grid,
     DiagrammeR,
     DiagrammeRsvg,
+    dplyr,
+    expm,
+    ggplot2,
+    ggpubr,
+    ggridges,
+    ggtern,
+    grid,
+    gridExtra,
+    numDeriv,
     rsvg,
+    shiny,
     shinyjs,
-    ggridges
-URL: https://github.com/lichengxue/wham-mse/
+    tidyr,
+    fmsb
+URL: https://github.com/lichengxue/whamMSE
 License: MIT
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.3.2
-Suggests: 
+RoxygenNote: 7.3.3
+Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
