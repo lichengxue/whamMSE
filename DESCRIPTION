@@ -4,15 +4,24 @@ Type: Package
 Version: 1.1.0
 Author: Chengxue Li <chengxue.li@noaa.gov>
 Maintainer: Chengxue Li <chengxue.li@noaa.gov>
-Description: A comprehensive toolbox for conducting management strategy evaluation (MSE)
-    to support spatial management of complex, heterogeneous fish populations. The package
-    is built upon the Woods Hole Assessment Model (WHAM), a state-space age-structured stock
-    assessment model that can incorporate time- and/or age-varying process errors (treated
-    as random effects) and environmental effects on population processes. whamMSE provides
-    tools to simulate and evaluate management strategies (combinations of data collection
-    methods, stock assessment models, and harvest control rules), allowing users to explore
-    how alternative scenarios affect estimation and management performance for fish stocks
-    with different life-history traits across regions.
+Description: A flexible and comprehensive toolbox for conducting management strategy
+    evaluation (MSE) to support spatially explicit management of complex, heterogeneous
+    fish populations. Built upon the Woods Hole Assessment Model (WHAM), a state-space
+    age-structured stock assessment framework that accommodates time- and age-varying
+    process errors and environmental covariates, whamMSE extends WHAM with a fully
+    configurable multi-stock, multi-region operating model. The package supports
+    age-, year-, stock-, and season-specific movement (fixed or random effects),
+    alternative movement structures, and environmental effects on population and
+    movement processes. 
+
+    whamMSE provides tools to simulate and evaluate management procedures—including
+    survey design, data collection methods, stock assessment models, projections,
+    harvest control rules, and management implementation error—within a closed-loop
+    MSE framework. Users can explore how alternative spatial, ecological, and
+    environmental scenarios influence assessment accuracy, management performance,
+    and long-term stock dynamics across regions. A user-friendly Shiny interface is
+    included for interactive configuration of biological, fishery, and movement
+    inputs.
 Depends:
     R (>= 4.0.0)
 Imports:
