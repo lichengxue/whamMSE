@@ -12,16 +12,14 @@ Description: A flexible and comprehensive toolbox for conducting management stra
     configurable multi-stock, multi-region operating model. The package supports
     age-, year-, stock-, and season-specific movement (fixed or random effects),
     alternative movement structures, and environmental effects on population and
-    movement processes. 
-
-    whamMSE provides tools to simulate and evaluate management procedures—including
-    survey design, data collection methods, stock assessment models, projections,
-    harvest control rules, and management implementation error—within a closed-loop
-    MSE framework. Users can explore how alternative spatial, ecological, and
-    environmental scenarios influence assessment accuracy, management performance,
-    and long-term stock dynamics across regions. A user-friendly Shiny interface is
-    included for interactive configuration of biological, fishery, and movement
-    inputs.
+    movement processes. whamMSE provides tools to simulate and evaluate management
+    procedures???including survey design, data collection methods, stock assessment
+    models, projections, harvest control rules, and management implementation error???
+    within a closed-loop MSE framework. Users can explore how alternative spatial,
+    ecological, and environmental scenarios influence assessment accuracy, management
+    performance, and long-term stock dynamics across regions. A user-friendly Shiny
+    interface is included for interactive configuration of biological, fishery, and
+    movement inputs.
 Depends:
     R (>= 4.0.0)
 Imports:
@@ -41,7 +39,7 @@ Imports:
     tidyr,
     fmsb
 URL: https://github.com/lichengxue/whamMSE
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Suggests:
