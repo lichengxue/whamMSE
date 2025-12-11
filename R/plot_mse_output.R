@@ -116,8 +116,7 @@ plot_mse_output <- function(mods,
       function() plot_model_performance_bar4(mods, is.nsim, main_dir, output_dir, new_model_names, width, height, dpi, col.opt, method, use.n.years.first, use.n.years.last, start.years),
       function() plot_AAV_performance(mods, is.nsim, main_dir, output_dir, width, height, dpi, new_model_names, col.opt),
       function() plot_mean_rec_par(mods, is.nsim, main_dir, output_dir, width, height, dpi, col.opt, outlier.opt, new_model_names),
-      function() plot_NAA_sigma_par(mods, is.nsim, main_dir, output_dir, width, height, dpi, col.opt, outlier.opt, new_model_names),
-      function() plot_terminal_ssb_f_bias_by_assessment(mods, is.nsim, main_dir, output_dir, width, height, dpi, col.opt, plot.style, outlier.opt, show.whisker, new_model_names)
+      function() plot_NAA_sigma_par(mods, is.nsim, main_dir, output_dir, width, height, dpi, col.opt, outlier.opt, new_model_names)
     )
     
     # Run all plot functions
