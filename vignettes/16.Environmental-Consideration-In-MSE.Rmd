@@ -13,138 +13,531 @@ editor_options:
     wrap: 72
 ---
 
-This vignette demonstrates how to use the `whamMSE` (Woods Hole Assessment Model Management Strategy Evaluation) package to incorporate an environmental covariate in a management strategy evaluation (MSE). **Note:** all code shown here is for demonstration purposes only; the results are for illustrative use and should not be interpreted as reflecting real-world stock assessments.
 
-### 1. Load "WHAM" and "whamMSE":
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
 
-```{r, eval=FALSE}
+# Overview
+
+This vignette demonstrates an end-to-end `whamMSE` workflow that includes an
+environmental covariate (Ecov) affecting recruitment with a **lag-1 controlling
+effect**. The Ecov time series is modeled with a latent process (here: AR1),
+so the “true” Ecov state is not perfectly observed.
+
+A key MSE design choice is **what varies across realizations**:
+
+1. **Different true Ecov states across realizations**
+   - Each replicate draws a different latent process trajectory (via `Ecov_re`).
+   - This represents variability/uncertainty in the underlying environmental
+     forcing itself.
+
+2. **Same true Ecov state across realizations, but different Ecov observations**
+   - All replicates share the same latent trajectory (`Ecov_re_fixed`), but
+     observed covariate values (`Ecov_obs`) differ across replicates due to
+     observation error.
+   - This is often what we want when the “true world” is the same, but
+     measurements are noisy.
+
+**This vignette includes BOTH examples side-by-side**.
+
+This is a minimal demonstration: **1 stock, 1 region, 1 fleet, 1 index, 1
+season**. Results are illustrative only and should not be interpreted as a
+real-world stock assessment.
+
+# 1. Load packages
+
+```{r, eval=TRUE}
+# Install (if needed):
+# install.packages("remotes")
+# remotes::install_github("lichengxue/whamMSE", dependencies = FALSE)
+# remotes::install_github("lichengxue/wham", ref = "lab", dependencies = FALSE)
+
 library(wham)
 library(whamMSE)
+library(here)
 
-main.dir = here::here()
-```
-
-### 2. Generate Basic Information
-
-```{r, eval=FALSE}
-
-year_start  <- 1  # starting year in the burn-in period
-year_end    <- 20  # end year in the burn-in period
-MSE_years   <- 3     # number of years in the feedback loop
-# Note: no need to include MSE_years in simulation-estimation 
-
-info <- generate_basic_info(n_stocks = 1,
-                            n_regions = 1,
-                            n_indices = 1,
-                            n_fleets = 1,
-                            n_seasons = 1,
-                            base.years = year_start:year_end,
-                            n_feedback_years = MSE_years,
-                            life_history = "medium",
-                            n_ages = 12) 
-
-basic_info = info$basic_info # collect basic information
-catch_info = info$catch_info # collect fleet catch information
-index_info = info$index_info # collect survey information
-F_info = info$F # collect fishing information
+main.dir <- here::here()
 
 ```
 
-### 3. Configure Numbers-at-Age (NAA)
+# 2. Generate basic information for the MSE
 
-```{r, eval=FALSE}
-sigma        <- "rec+1"
-re_cor       <- "iid"
-ini.opt      <- "equilibrium" 
-sigma_vals   <-  array(0.5, dim = c(n_stocks, n_regions, n_ages)) # NAA sigma
+We define:
 
-NAA_re <- list(N1_model=rep(ini.opt,n_stocks),
-               sigma=rep(sigma,n_stocks),
-               cor=rep(re_cor,n_stocks),
-               recruit_model = 2,  # rec random around the mean
-               sigma_vals = sigma_vals) # NAA_where must be specified in basic_info!
+- **Base (burn-in) years**: 2001–2020  
+- **Feedback years**: 3 (so the model years extend to 2023)
+
+```{r, eval=TRUE}
+n_stocks  <- 1
+n_regions <- 1
+n_fleets  <- 1
+n_indices <- 1
+n_seasons <- 1
+n_ages    <- 12
+
+year_start <- 2001
+year_end   <- 2020
+base_years <- year_start:year_end
+n_feedback_years <- 3
+
+info <- generate_basic_info(
+  n_stocks = n_stocks,
+  n_regions = n_regions,
+  n_indices = n_indices,
+  n_fleets  = n_fleets,
+  n_seasons = n_seasons,
+  base.years = base_years,
+  n_feedback_years = n_feedback_years,
+  life_history = "medium",
+  n_ages = n_ages
+)
+
+basic_info <- info$basic_info
+catch_info <- info$catch_info
+index_info <- info$index_info
+F_info     <- info$F
+
+basic_info$years
 ```
 
-### 4. Environmental Covariate on Recruitment
+# 3. Configure population random effects (NAA_re)
 
-In `wham`, environmental covariates can be incorporated into various processes (e.g., **natural mortality**, **recruitment**, **movement**, and **survey catchability**), and can be applied in the **Operating Model (OM)**, **Estimation Model (EM)**, as well as during **projection**. See the [wham vignettes](https://timjmiller.github.io/wham/) for more details.
+```{r, eval=TRUE}
+sigma   <- "rec+1"
+re_cor  <- "iid"
+ini.opt <- "equilibrium"
 
-Here, we demonstrate how to incorporate an **environmental covariate into recruitment** in the OM, which controls fish population dynamics. The same environmental covariate is also included in the EM to ensure consistency during the feedback period. Note that environmental covariates can also be applied in projection, but we do not use that option in this example.
+sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages))
+sigma_vals[1,1,1] <- 0.5
 
-```{r, eval = FALSE}
-# Create a pseudo ecov time series
-years = basic_info$years
-env.dat <- data.frame(Year = years, mean = runif(length(years), -1, 1), sigma = runif(length(years), 0, 0.2))
+NAA_re <- list(
+  N1_model      = rep(ini.opt, n_stocks),
+  recruit_pars  = 10,   # log scale mean recruitment
+  sigma         = rep(sigma, n_stocks),
+  cor           = rep(re_cor, n_stocks),
+  recruit_model = 2,
+  sigma_vals    = sigma_vals
+)
+```
 
+# 4. Environmental covariate (Ecov): data, process model, and recruitment effect
+
+## 4.1 Ecov observations and future assumptions
+
+The model years are 2001–2023. We provide Ecov observations for 2000–2020 and
+extend the observations to 2023 by holding them at the historical mean (users
+can choose a different projection assumption).
+
+```{r, eval=TRUE}
+n_ecov <- 1
+
+years_ecov_obs <- 2000:2020
+temp_vals <- c(
+  8.172843, 7.305779, 7.860323, 6.728931, 6.062992,
+  6.329001, 7.261095, 6.246041, 6.702910, 7.058778,
+  8.338381, 7.509824, 8.949135, 8.299672, 7.942865,
+  8.021900, 8.890488, 7.485228, 8.279137, 7.487395,
+  7.774417
+)
+
+years_ecov_full <- 2000:2023
+temp_mean_val   <- mean(temp_vals)
+temp_future_vals <- rep(temp_mean_val, 3)  # 2021–2023
+temp_vals_full <- c(temp_vals, temp_future_vals)
+
+temp_mat <- matrix(temp_vals_full, ncol = 1)
+colnames(temp_mat) <- "bt_temp"
+rownames(temp_mat) <- years_ecov_full
+```
+
+## 4.2 Recruitment effect and Ecov process parameters
+
+We use a lag-1 controlling effect on recruitment and an AR1 latent process.
+
+### Recruitment effect (lag-1 controlling)
+
+The configuration `"controlling-lag-1-linear"` means the covariate affects
+recruitment in the *next* year (lag = 1) and the effect is linear on the
+recruitment scale used internally by WHAM.
+
+A simple way to think about the effect is:
+
+\[
+\log(R_y) = \ldots + \beta \cdot Ecov_{y-1}
+\]
+
+where \(\beta = -0.3969783\) in this example (a negative effect).
+
+```{r, eval=TRUE}
+Ecov_beta_R <- array(
+  -0.3969783,
+  dim = c(1, 1, 1),
+  dimnames = list(
+    stock = "stock1",
+    ecov  = "bt_temp",
+    poly  = "linear"
+  )
+)
+
+Ecov_process_pars <- matrix(
+  c(
+    7.3656398,   # mu (mean state)
+    -0.5825355,  # log_sigma (process innovation SD)
+    1.2154606    # transformed phi
+  ),
+  nrow = 3,
+  ncol = 1,
+  dimnames = list(c("mu", "log_sigma", "phi"), "bt_temp")
+)
+```
+
+## 4.3 Build the `ecov` list
+
+```{r, eval=TRUE}
 ecov <- list(
-    label = "Ecov_x",
-    mean = as.matrix(env.dat$mean),
-    logsigma = as.matrix(log(env.dat$sigma)),
-    year = env.dat$Year,
-    use_obs = matrix(1, ncol=1, nrow=dim(env.dat)[1]), # use all obs (=1)
-    process_model = "rw", # "rw" or "ar1"
-    recruitment_how = matrix("controlling-lag-1-linear",1,1)) #matrix for number of stocks (1) and number of Ecovs (1)
+  label = "bt_temp",
+  year  = years_ecov_full,
+  mean  = temp_mat,
+  logsigma = "est_1",
+  use_obs = matrix(1, nrow = length(years_ecov_full), ncol = 1),
+  process_model = "ar1",
+  recruitment_how = matrix(
+    "controlling-lag-1-linear",
+    nrow = n_ecov,
+    ncol = n_stocks
+  )
+)
 ```
 
-### 5. Generate `wham` Input
+# 5. Generate WHAM input and build the OM (no fitting)
 
-Here we use `prepare_wham_input()` function to generate a wham input using the basic information we set above:
+```{r, eval=TRUE}
+input <- prepare_wham_input(
+  basic_info = basic_info,
+  NAA_re     = NAA_re,
+  ecov       = ecov,
+  catch_info = catch_info,
+  index_info = index_info,
+  F          = F_info
+)
 
-```{r, eval = FALSE}
-input <- prepare_wham_input(basic_info = basic_info, 
-                            NAA_re = NAA_re,
-                            ecov = ecov,
-                            catch_info = catch_info, 
-                            index_info = index_info, 
-                            F = F_info)
+# Fix Ecov recruitment effect and process parameters for this demo
+input$par$Ecov_beta_R       <- Ecov_beta_R
+input$par$Ecov_process_pars <- Ecov_process_pars
+
+# Build OM without fitting
+random <- input$random
+input$random <- NULL
+
+om <- fit_wham(
+  input,
+  do.fit = FALSE,
+  do.brps = FALSE,
+  MakeADFun.silent = TRUE
+)
+
+# Keep random-effect structure for update_om_fn()
+om$random <- random
 ```
 
-### 6. Generate Operating Model
+# 6. Where Ecov objects live in the simulated OM (direct access)
 
-```{r, eval=FALSE}
-random = input$random # check what processes are random effects
-input$random = NULL # so inner optimization won't change simulated RE
-om <- fit_wham(input, do.fit = F, do.brps = T, MakeADFun.silent = TRUE)
-# Note: do.fit must be FALSE (no modeling fitting yet)
+After simulation with `update_om_fn()`:
+
+- Ecov observation matrix: `om_seed$input$data$Ecov_obs`
+- “True” Ecov state (latent state): `om_seed$rep$Ecov_x`
+- Latent deviations: `om_seed$parList$Ecov_re` (if simulated/used)
+- Ecov year vector (often): `om_seed$years_Ecov` (or `om_seed$input$years_Ecov`)
+
+If any of these are `NULL` in your local setup, run `str(om_seed, 2)` and adjust
+the paths accordingly.
+
+# 7. Example A: TWO different true states across realizations
+
+Here we simulate twice with different seeds. We do not modify `Ecov_re`, so the
+latent state is allowed to vary across realizations (replicates).
+
+```{r, eval=TRUE}
+om_A1 <- update_om_fn(om, seed = 123, random = random)
+om_A2 <- update_om_fn(om, seed = 124, random = random)
+
+# Years for plotting (use what exists; otherwise use row index)
+yrs_A <- om_A1$years_Ecov
+if (is.null(yrs_A) && !is.null(om_A1$input$years_Ecov)) yrs_A <- om_A1$input$years_Ecov
+if (is.null(yrs_A)) yrs_A <- seq_len(nrow(om_A1$input$data$Ecov_obs))
+
+# Observations differ across seeds
+plot(yrs_A, as.numeric(om_A1$input$data$Ecov_obs[,1]),
+     type = "l", lwd = 2, col = "blue",
+     xlab = "Year", ylab = "Ecov_obs",
+     main = "Example A: Ecov observations differ across seeds")
+lines(yrs_A, as.numeric(om_A2$input$data$Ecov_obs[,1]),
+      lwd = 2, col = "red")
+
+legend("topleft",
+       legend = c("Obs (seed 123)", "Obs (seed 124)"),
+       col = c("blue", "red"), lwd = 2, bty = "n")
+
+# True latent state also differs across seeds
+plot(yrs_A, as.numeric(om_A1$rep$Ecov_x),
+     type = "l", lwd = 2, col = "blue",
+     xlab = "Year", ylab = "True Ecov state (Ecov_x)",
+     main = "Example A: True Ecov state differs across seeds")
+lines(yrs_A, as.numeric(om_A2$rep$Ecov_x),
+      lwd = 2, col = "red")
+
+legend("topleft",
+       legend = c("True state (seed 123)", "True state (seed 124)"),
+       col = c("blue", "red"), lwd = 2, bty = "n")
 ```
 
-### 7. Generate Dataset
+# 8. Example B: ONE fixed true state, but Ecov observations differ across realizations
 
-```{r, eval=FALSE}
-om_with_data <- update_om_fn(om, seed = 123, random = random)
+In this example, we **fix** the latent deviations (`Ecov_re`) to a specified
+vector. Then we:
+
+1. Turn OFF Ecov latent simulation (`do_simulate_Ecov_re <- 0L`)
+2. Remove `"Ecov_re"` from the random effects list used for simulation
+3. Build an unfitted OM object and simulate two realizations with different seeds
+
+This guarantees:
+
+- the true state (`Ecov_x`) is identical across realizations (by construction),
+- observations (`Ecov_obs`) can still differ across realizations due to
+  observation error.
+
+## 8.1 Fix `Ecov_re`, build OM, simulate two realizations
+
+```{r, eval=TRUE}
+# Start from the original WHAM input again (so we don't carry modifications from earlier)
+inputB <- prepare_wham_input(
+  basic_info = basic_info,
+  NAA_re     = NAA_re,
+  ecov       = ecov,
+  catch_info = catch_info,
+  index_info = index_info,
+  F          = F_info
+)
+
+inputB$par$Ecov_beta_R       <- Ecov_beta_R
+inputB$par$Ecov_process_pars <- Ecov_process_pars
+
+# Fixed latent deviations (example values)
+Ecov_re_vals <- c(
+  0.006585013,  0.382720922, -0.584829153, -1.209735900,
+  -0.998780628, -0.222456716, -0.990273119, -0.634984723,
+  -0.232817773,  0.842631681,  0.266049570,  1.420400325,
+  0.923464230,  0.612037739,  0.710521898,  1.382505929,
+  0.238340928,  0.771175504,  0.182324835,  0.461804389,
+  1.285226416, 1, 1, 1 # we assume future temperature is 1 degree higher than the mean
+)
+
+# Put the fixed Ecov_re into the input parameter list
+# (this assumes inputB$par$Ecov_re has matching n_years_Ecov x n_ecov dims)
+inputB$par$Ecov_re[,1] <- Ecov_re_vals
+
+# Tell WHAM NOT to simulate Ecov_re (use what we set above)
+inputB$data$do_simulate_Ecov_re <- 0L
+
+# Remove "Ecov_re" from random effects so update_om_fn won't simulate it
+randomB <- inputB$random
+randomB <- randomB[!randomB %in% "Ecov_re"]
+
+# Build OM without fitting
+inputB$random <- NULL
+omB <- fit_wham(inputB, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
+
+# Simulate two realizations (same true state, potentially different observations)
+om_B1 <- update_om_fn(omB, seed = 123, random = randomB)
+om_B2 <- update_om_fn(omB, seed = 124, random = randomB)
+
+# Years for plotting
+yrs_B <- om_B1$years_Ecov
+if (is.null(yrs_B) && !is.null(om_B1$input$years_Ecov)) yrs_B <- om_B1$input$years_Ecov
+if (is.null(yrs_B)) yrs_B <- seq_len(nrow(om_B1$input$data$Ecov_obs))
+
+# Observations differ across seeds (if observation error is simulated)
+plot(yrs_B, as.numeric(om_B1$input$data$Ecov_obs[,1]),
+     type = "l", lwd = 2, col = "blue",
+     xlab = "Year", ylab = "Ecov_obs",
+     main = "Example B: Ecov observations differ, fixed true state")
+lines(yrs_B, as.numeric(om_B2$input$data$Ecov_obs[,1]),
+      lwd = 2, col = "red")
+
+legend("topleft",
+       legend = c("Obs (seed 123)", "Obs (seed 124)"),
+       col = c("blue", "red"), lwd = 2, bty = "n")
+
+# True latent state should be identical across seeds
+plot(yrs_B, as.numeric(om_B1$rep$Ecov_x),
+     type = "l", lwd = 2, col = "blue",
+     xlab = "Year", ylab = "True Ecov state (Ecov_x)",
+     main = "Example B: True Ecov state is fixed across seeds")
+lines(yrs_B, as.numeric(om_B2$rep$Ecov_x),
+      lwd = 2, col = "red")
+
+legend("topleft",
+       legend = c("True state (seed 123)", "True state (seed 124)"),
+       col = c("blue", "red"), lwd = 2, bty = "n")
 ```
 
-### 8. Specify Assessment Interval
+# 9. Run the MSE feedback loop (using Example B)
 
-```{r, eval=FALSE}
-assess.interval <- 3
-base.years      <- year_start:year_end
-first.year      <- head(base.years,1)
-terminal.year   <- tail(base.years,1)
-assess.years    <- seq(terminal.year, tail(om$years,1)-assess.interval,by = assess.interval)
+Example B is often preferable for MSE when you want the same “true world” but
+noisy measurements.
+
+We run a single assessment at the terminal year (2020) to provide advice for
+2021–2023 (`assess_interval = 3`).
+
+```{r, eval=TRUE}
+assess_interval <- 3
+terminal_year   <- max(base_years)
+assess_years <- terminal_year
+
+# -------------------------
+# EM 1: WITH Ecov in the EM
+# -------------------------
+
+mod1 <- loop_through_fn(
+  om = om_B1,
+  em_info = info,
+  random = randomB,
+
+  NAA_re_em   = NAA_re,
+  ecov_em     = ecov,
+  age_comp_em = "multinomial",
+
+  em.opt = list(
+    separate.em = FALSE,
+    separate.em.type = NULL,
+    do.move = FALSE,
+    est.move = FALSE
+  ),
+
+  assess_years = assess_years,
+  assess_interval = assess_interval,
+  base_years = base_years,
+
+  year.use = terminal_year,
+  add.years = TRUE,
+  seed = 123
+)
+
+mod1$converge_list # 2 = converged 
+
+# ----------------------------
+# EM 2: WITHOUT Ecov in the EM
+# ----------------------------
+
+mod2 <- loop_through_fn(
+  om = om_B1,
+  em_info = info,
+  random = randomB,
+
+  NAA_re_em   = NAA_re,
+  # ecov_em   = ecov,   # <-- OMIT Ecov in the EM
+  age_comp_em = "multinomial",
+
+  em.opt = list(
+    separate.em = FALSE,
+    separate.em.type = NULL,
+    do.move = FALSE,
+    est.move = FALSE
+  ),
+
+  assess_years = assess_years,
+  assess_interval = assess_interval,
+  base_years = base_years,
+
+  year.use = terminal_year,
+  add.years = TRUE,
+  seed = 123
+)
+
+mod2$converge_list # 2 = converged 
+
 ```
+# 10. Plot MSE Results
+```{r, eval=TRUE}
+# 10. Plot MSE results: EM with Ecov vs. without Ecov
 
-### 9. Conduct MSE
+# Years corresponding to indices 20:23
+yrs <- basic_info$years[20:23]
 
-During the MSE feedback period, the environmental covariate time series will be automatically truncated to ensure that each assessment model only uses covariate data available up to the most recent assessment year. This prevents the EM from accessing future covariate values beyond the current assessment year, even if the full time series was specified in the OM.
+# ------------------------
+# Spawning Stock Biomass
+# ------------------------
+plot(
+  yrs,
+  mod1$om$rep$SSB[20:23],
+  type = "l",
+  lwd  = 2,
+  col  = "red",
+  xlab = "Year",
+  ylab = "SSB",
+  main = "MSE comparison: SSB",
+  xaxt = "n"          # turn off default x-axis
+)
 
-```{r, eval = FALSE}
-mod = loop_through_fn(om = om_with_data,
-                      em_info = info, 
-                      random = random,
-                      NAA_re_em = NAA_re, 
-                      ecov_em = ecov,
-                      age_comp_em = "multinomial",
-                      em.opt = list(separate.em = FALSE, 
-                                    separate.em.type = 3, 
-                                    do.move = FALSE, 
-                                    est.move = FALSE),
-                      assess_years = assess.years, 
-                      assess_interval = assess.interval, 
-                      base_years = base.years,
-                      year.use = 20,
-                      add.years = TRUE)
+lines(
+  yrs,
+  mod2$om$rep$SSB[20:23],
+  lwd = 2,
+  col = "blue",
+  lty = 2
+)
+
+axis(1, at = yrs, labels = yrs)  # integer-only x-axis
+
+legend(
+  "topleft",
+  legend = c("EM with Ecov", "EM without Ecov"),
+  col = c("red", "blue"),
+  lty = c(1, 2),
+  lwd = 2,
+  bty = "n"
+)
+
+# ------------------------
+# Predicted Catch
+# ------------------------
+plot(
+  yrs,
+  mod1$om$rep$pred_catch[20:23],
+  type = "l",
+  lwd  = 2,
+  col  = "red",
+  xlab = "Year",
+  ylab = "Predicted Catch",
+  main = "MSE comparison: Catch",
+  xaxt = "n"          # turn off default x-axis
+)
+
+lines(
+  yrs,
+  mod2$om$rep$pred_catch[20:23],
+  lwd = 2,
+  col = "blue",
+  lty = 2
+)
+
+axis(1, at = yrs, labels = yrs)  # integer-only x-axis
+
+legend(
+  "topleft",
+  legend = c("EM with Ecov", "EM without Ecov"),
+  col = c("red", "blue"),
+  lty = c(1, 2),
+  lwd = 2,
+  bty = "n"
+)
+
+
 ```
-
-
-

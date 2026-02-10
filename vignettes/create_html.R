@@ -1,6 +1,6 @@
 # Render all vignettes
 library(rmarkdown)
-main.dir = "C:/Users/chengxue.li/whamMSE/"
+main.dir = "C:/Users/liche/Desktop/whamMSE"
 setwd(main.dir)
 vignette_files <- list.files("vignettes", pattern = "\\.Rmd$", full.names = TRUE)
 sapply(vignette_files, render, output_dir = "docs")
