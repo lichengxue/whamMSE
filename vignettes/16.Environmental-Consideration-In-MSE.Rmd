@@ -24,8 +24,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Overview
-
 This vignette demonstrates an end-to-end `whamMSE` workflow that includes an
 environmental covariate (Ecov) affecting recruitment with a **lag-1 controlling
 effect**. The Ecov time series is modeled with a latent process (here: AR1),
@@ -51,7 +49,7 @@ This is a minimal demonstration: **1 stock, 1 region, 1 fleet, 1 index, 1
 season**. Results are illustrative only and should not be interpreted as a
 real-world stock assessment.
 
-# 1. Load packages
+### 1. Load "WHAM" and "whamMSE":
 
 ```{r, eval=TRUE}
 # Install (if needed):
@@ -67,7 +65,7 @@ main.dir <- here::here()
 
 ```
 
-# 2. Generate basic information for the MSE
+### 2. Generate Basic Information
 
 We define:
 
@@ -107,7 +105,7 @@ F_info     <- info$F
 basic_info$years
 ```
 
-# 3. Configure population random effects (NAA_re)
+### 3. Configure Numbers-at-Age (NAA)
 
 ```{r, eval=TRUE}
 sigma   <- "rec+1"
@@ -127,9 +125,9 @@ NAA_re <- list(
 )
 ```
 
-# 4. Environmental covariate (Ecov): data, process model, and recruitment effect
+### 4. Configure Environmental Covariate (Ecov)
 
-## 4.1 Ecov observations and future assumptions
+4.1 Ecov observations and future assumptions
 
 The model years are 2001–2023. We provide Ecov observations for 2000–2020 and
 extend the observations to 2023 by holding them at the historical mean (users
@@ -157,11 +155,11 @@ colnames(temp_mat) <- "bt_temp"
 rownames(temp_mat) <- years_ecov_full
 ```
 
-## 4.2 Recruitment effect and Ecov process parameters
+4.2 Recruitment effect and Ecov process parameters
 
 We use a lag-1 controlling effect on recruitment and an AR1 latent process.
 
-### Recruitment effect (lag-1 controlling)
+*Recruitment effect (lag-1 controlling)*
 
 The configuration `"controlling-lag-1-linear"` means the covariate affects
 recruitment in the *next* year (lag = 1) and the effect is linear on the
@@ -198,7 +196,7 @@ Ecov_process_pars <- matrix(
 )
 ```
 
-## 4.3 Build the `ecov` list
+4.3 Build the `ecov` list
 
 ```{r, eval=TRUE}
 ecov <- list(
@@ -216,7 +214,7 @@ ecov <- list(
 )
 ```
 
-# 5. Generate WHAM input and build the OM (no fitting)
+### 5. Generate `wham` Input
 
 ```{r, eval=TRUE}
 input <- prepare_wham_input(
@@ -247,19 +245,7 @@ om <- fit_wham(
 om$random <- random
 ```
 
-# 6. Where Ecov objects live in the simulated OM (direct access)
-
-After simulation with `update_om_fn()`:
-
-- Ecov observation matrix: `om_seed$input$data$Ecov_obs`
-- “True” Ecov state (latent state): `om_seed$rep$Ecov_x`
-- Latent deviations: `om_seed$parList$Ecov_re` (if simulated/used)
-- Ecov year vector (often): `om_seed$years_Ecov` (or `om_seed$input$years_Ecov`)
-
-If any of these are `NULL` in your local setup, run `str(om_seed, 2)` and adjust
-the paths accordingly.
-
-# 7. Example A: TWO different true states across realizations
+### 6. Example A: Different True States Across Realizations
 
 Here we simulate twice with different seeds. We do not modify `Ecov_re`, so the
 latent state is allowed to vary across realizations (replicates).
@@ -298,7 +284,7 @@ legend("topleft",
        col = c("blue", "red"), lwd = 2, bty = "n")
 ```
 
-# 8. Example B: ONE fixed true state, but Ecov observations differ across realizations
+### 7. Example B: Same True State Across Realizations
 
 In this example, we **fix** the latent deviations (`Ecov_re`) to a specified
 vector. Then we:
@@ -309,11 +295,9 @@ vector. Then we:
 
 This guarantees:
 
-- the true state (`Ecov_x`) is identical across realizations (by construction),
+- the true state (`Ecov_x`) is identical across realizations,
 - observations (`Ecov_obs`) can still differ across realizations due to
   observation error.
-
-## 8.1 Fix `Ecov_re`, build OM, simulate two realizations
 
 ```{r, eval=TRUE}
 # Start from the original WHAM input again (so we don't carry modifications from earlier)
@@ -388,7 +372,7 @@ legend("topleft",
        col = c("blue", "red"), lwd = 2, bty = "n")
 ```
 
-# 9. Run the MSE feedback loop (using Example B)
+### 8. Run MSE
 
 Example B is often preferable for MSE when you want the same “true world” but
 noisy measurements.
@@ -464,7 +448,7 @@ mod2 <- loop_through_fn(
 mod2$converge_list # 2 = converged 
 
 ```
-# 10. Plot MSE Results
+### 9. Plot MSE Results
 ```{r, eval=TRUE}
 # 10. Plot MSE results: EM with Ecov vs. without Ecov
 

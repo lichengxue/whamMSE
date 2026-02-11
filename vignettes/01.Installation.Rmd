@@ -32,13 +32,13 @@ Users can install multi-wham from Tim Miller's github:
 
 ``` r
 install.packages("devtools") 
-devtools::install_github("timjmiller/wham", dependencies=TRUE, ref="devel")
+devtools::install_github("timjmiller/wham", dependencies=TRUE, ref="lab")
 ```
 
 Users can also install the **meta-population** version of multi-wham:
 
 ``` r
-devtools::install_github("lichengxue/wham-devel", dependencies=TRUE) # "meta-population" version of wham
+devtools::install_github("lichengxue/wham", dependencies=TRUE) # "meta-population" version of wham
 ```
 
 Now users can install "whamMSE":
