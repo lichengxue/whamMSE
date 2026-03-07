@@ -41,7 +41,9 @@ loop_through_fn(
   do.brps = FALSE,
   seed = 123,
   save.sdrep = FALSE,
-  save.last.em = FALSE
+  save.last.em = FALSE,
+  process_fix = 0,
+  first_free_year = 1
 )
 }
 \arguments{
@@ -236,6 +238,17 @@ loop_through_fn(
   \item{\code{survey_pointer}}{Integer vector. Indices used for weighting (when \code{weight_type = 3}).}
 }}
 
+\item{implementation_error}{List (optional). Adds variability to catch realization.
+\describe{
+  \item{\code{method}}{Character. Distribution type: \code{"lognormal"}, \code{"normal"}, \code{"uniform"}, or \code{"constant"}.}
+  \item{\code{mean}}{Numeric. Mean of error distribution (log scale if lognormal).}
+  \item{\code{cv}}{Numeric. Coefficient of variation (required for lognormal).}
+  \item{\code{sd}}{Numeric. Standard deviation (required for normal).}
+  \item{\code{min}}{Numeric. Lower bound for uniform distribution.}
+  \item{\code{max}}{Numeric. Upper bound for uniform distribution.}
+  \item{\code{constant_value}}{Numeric. Fixed multiplier (used if \code{method = "constant"}).}
+}}
+
 \item{do.retro}{Logical. Run retrospective analysis (default = FALSE).}
 
 \item{do.osa}{Logical. Calculate OSA residuals (default = FALSE).}
@@ -248,16 +261,17 @@ loop_through_fn(
 
 \item{save.last.em}{Logical. Save final EM (default = FALSE).}
 
-\item{add_implementation_error}{List (optional). Adds variability to catch realization.
-\describe{
-  \item{\code{method}}{Character. Distribution type: \code{"lognormal"}, \code{"normal"}, \code{"uniform"}, or \code{"constant"}.}
-  \item{\code{mean}}{Numeric. Mean of error distribution (log scale if lognormal).}
-  \item{\code{cv}}{Numeric. Coefficient of variation (required for lognormal).}
-  \item{\code{sd}}{Numeric. Standard deviation (required for normal).}
-  \item{\code{min}}{Numeric. Lower bound for uniform distribution.}
-  \item{\code{max}}{Numeric. Upper bound for uniform distribution.}
-  \item{\code{constant_value}}{Numeric. Fixed multiplier (used if \code{method = "constant"}).}
-}}
+\item{process_fix}{Integer. Whether to keep OM process states fixed for the
+historical period when updating the operating model with
+\code{\link{update_om_fn}}. Default = \code{0}. If \code{process_fix = 1},
+only years from \code{first_free_year} onward are updated for the process
+specified by \code{random}; earlier years remain fixed.}
+
+\item{first_free_year}{Integer. First model year that is allowed to vary when
+\code{process_fix = 1}. For example, if historical years 1:50 should remain
+fixed and only feedback years should be simulated, use
+\code{first_free_year = 51}. If \code{process_fix = 0}, this argument is
+passed through but not used.}
 }
 \value{
 List with elements.
