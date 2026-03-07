@@ -1,0 +1,876 @@
+---
+title: "Use Actual Stock Assessment"
+author: "Chengxue Li"
+date: "Last update: `r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    includes:
+      in_header: header.html
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 5
+)
+```
+
+This vignette demonstrates how to use an **actual stock assessment model**
+output to develop an operating model (OM) for `whamMSE`, while keeping the
+historical population dynamics fixed to the fitted stock trajectory.
+
+In many MSE examples, process random effects (for example, recruitment
+deviations) are simulated for the entire time series. That means the
+historical population trajectory can vary from one random seed to another.
+However, when an OM is built from a real stock assessment, users may prefer
+the historical period to reflect the fitted trajectory of the real stock as
+closely as possible. This can make the evaluation of management procedures
+more meaningful for management applications.
+
+The key idea in this vignette is:
+
+1. **Fit a stock assessment model to real data**
+   - Here we use Georges Bank yellowtail flounder data.
+
+2. **Extract estimated parameters and historical process deviations**
+   - These are used to construct an OM for MSE.
+
+3. **Fix the historical period**
+   - The historical trajectory is held constant across seeds, so the
+     underlying population dynamics in the historical period do not change.
+
+4. **Simulate only the feedback period**
+   - Random deviations are still drawn during the feedback years, so future
+     trajectories can differ across seeds.
+
+At present, this feature is available only in the **lab branch** of
+`whamMSE`. In addition, this workflow has only been tested for cases where
+**recruitment is the only process treated as a random effect in the OM**.
+Users should therefore use an OM with **recruitment-only random effects**
+(i.e., no NAA random effects in the OM). Other process variation, such as
+natural mortality, may still be included as fixed process structure. In the
+EM, users may still include any process as random effects if desired.
+
+This vignette provides a full end-to-end example:
+
+- fit the historical stock assessment,
+- build the projection OM,
+- fix the historical period,
+- simulate the future,
+- run MSE.
+
+This is an illustrative example using **Georges Bank yellowtail flounder**.
+
+### 1. Load `WHAM` and `whamMSE`
+
+```{r, eval=TRUE}
+# Install if needed.
+# This fixed-history workflow is currently available in the lab branch.
+# remotes::install_github("lichengxue/whamMSE@lab", upgrade = "never")
+
+library(wham)
+library(whamMSE)
+library(dplyr)
+library(ggplot2)
+library(here)
+
+main.dir <- here::here()
+```
+
+### 2. Read stock assessment data and define global settings
+
+We use Georges Bank yellowtail flounder ASAP input data and set up a short MSE
+feedback period.
+
+```{r, eval=TRUE}
+gb_dat <- read_asap3_dat("Data/GBK.DAT")
+
+input_hist <- prepare_wham_input(gb_dat)
+input      <- prepare_wham_input(gb_dat)
+
+n_stocks  <- 1L
+n_regions <- 1L
+n_ages    <- 6L
+n_indices <- 3L
+n_fleets  <- 1L
+n_seasons <- 1L
+
+year_start <- 1973L
+year_end   <- 2022L
+MSE_years  <- 10L
+
+n_hist_years <- year_end - year_start + 1L
+n_proj_years <- n_hist_years + MSE_years
+
+base_years      <- year_start:year_end
+assess_interval <- 2L
+
+stopifnot(MSE_years %% assess_interval == 0L)
+
+assess_years <- seq(
+  tail(base_years, 1),
+  year_end + MSE_years - assess_interval,
+  by = assess_interval
+)
+
+# Historical period is fixed.
+# Only years from first_free_year onward are allowed to vary.
+first_free_year <- 51L
+```
+
+### 3. Fit the historical stock assessment model
+
+We first fit a historical OM to the real stock assessment data. In this
+example, recruitment is the only process treated as random effects in the
+historical fit.
+
+#### 3.1 Biological inputs for the historical period
+
+```{r, eval=TRUE}
+user_maturity_hist <- array(NA_real_, dim = c(n_stocks, n_hist_years, n_ages))
+user_maturity_hist[, 1:n_hist_years, ] <- input$data$mature
+
+user_waa_hist <- list()
+user_waa_hist$waa <- array(NA_real_, dim = c(5, n_hist_years, n_ages))
+user_waa_hist$waa[, 1:n_hist_years, ] <- input$data$waa
+user_waa_hist$waa_pointer_fleets   <- input$data$waa_pointer_fleets
+user_waa_hist$waa_pointer_indices  <- input$data$waa_pointer_indices
+user_waa_hist$waa_pointer_totcatch <- input$data$waa_pointer_ssb
+user_waa_hist$waa_pointer_ssb      <- input$data$waa_pointer_ssb
+user_waa_hist$waa_pointer_M        <- input$data$waa_pointer_M
+
+fracyr_spawn <- gb_dat[[1]]$dat$fracyr_spawn
+```
+
+#### 3.2 Observation settings for catch and indices
+
+```{r, eval=TRUE}
+catch_info_hist <- list(
+  catch_cv      = 0.05,
+  catch_Neff    = 50,
+  use_agg_catch = 1,
+  use_catch_paa = 1
+)
+
+index_info_hist <- list(
+  index_cv        = rep(0.5, n_indices),
+  index_Neff      = rep(25, n_indices),
+  fracyr_indices  = c(0.25, 0.75, 0.25),
+  q               = rep(0.2, n_indices),
+  use_indices     = rep(1, n_indices),
+  use_index_paa   = rep(1, n_indices),
+  units_indices   = rep(2, n_indices),
+  units_index_paa = rep(2, n_indices)
+)
+```
+
+#### 3.3 Build the historical model scaffold
+
+```{r, eval=TRUE}
+info_hist <- whamMSE::generate_basic_info(
+  n_stocks = n_stocks,
+  n_regions = n_regions,
+  n_indices = n_indices,
+  n_fleets = n_fleets,
+  n_seasons = n_seasons,
+  base.years = year_start:year_end,
+  n_feedback_years = 0L,
+  n_ages = n_ages,
+  catch_info = catch_info_hist,
+  index_info = index_info_hist,
+  user_waa = user_waa_hist,
+  user_maturity = user_maturity_hist,
+  fracyr_spawn = fracyr_spawn
+)
+
+basic_info_hist     <- info_hist$basic_info
+catch_info_use_hist <- info_hist$catch_info
+index_info_use_hist <- info_hist$index_info
+F_info_hist         <- info_hist$F
+
+catch_info_use_hist$agg_catch[1:n_hist_years, ]     <- input$data$agg_catch
+catch_info_use_hist$catch_paa[, 1:n_hist_years, ]   <- input$data$catch_paa
+index_info_use_hist$agg_indices[1:n_hist_years, ]   <- input$data$agg_indices
+index_info_use_hist$index_paa[, 1:n_hist_years, ]   <- input$data$index_paa
+index_info_use_hist$use_indices[1:n_hist_years, ]   <- input$data$use_indices
+index_info_use_hist$use_index_paa[1:n_hist_years, ] <- input$data$use_index_paa
+```
+
+#### 3.4 Selectivity, natural mortality, and recruitment process
+
+```{r, eval=TRUE}
+sel_hist <- list(
+  model = c("age-specific", "logistic", "logistic", "logistic"),
+  re    = c("ar1_y", "none", "none", "none"),
+  initial_pars = list(
+    c(0.1, 0.25, 0.5, 1, 1, 1),
+    c(2, 0.3),
+    c(2, 0.3),
+    c(2, 0.3)
+  ),
+  fix_pars = list(c(4:6), NULL, NULL, NULL)
+)
+
+M_hist <- list(
+  model = "constant",
+  initial_means = array(
+    c(0.57, 0.33, 0.26, 0.23, 0.22, 0.22),
+    dim = c(n_stocks, n_regions, n_ages)
+  )
+)
+
+sigma_vals_hist <- array(0, dim = c(n_stocks, n_regions, n_ages))
+sigma_vals_hist[, , 1] <- 0.5
+
+NAA_re_hist <- list(
+  N1_model      = rep("equilibrium", n_stocks),
+  sigma         = rep("rec", n_stocks),
+  cor           = rep("iid", n_stocks),
+  recruit_model = 3,
+  sigma_vals    = sigma_vals_hist
+)
+```
+
+#### 3.5 Prepare and fit the historical model
+
+```{r, eval=TRUE}
+input_histfit <- prepare_wham_input(
+  basic_info  = basic_info_hist,
+  selectivity = sel_hist,
+  M           = M_hist,
+  NAA_re      = NAA_re_hist,
+  catch_info  = catch_info_use_hist,
+  index_info  = index_info_use_hist,
+  F           = F_info_hist,
+  age_comp    = "logistic-normal-pool0"
+)
+
+input_histfit <- update_waa(input_histfit, waa_info = info_hist$par_inputs$user_waa)
+
+input_e <- prepare_wham_input(gb_dat)
+input_histfit$data$agg_index_sigma[1:n_hist_years, ] <- input_e$data$agg_index_sigma
+input_histfit$data$use_indices[1:n_hist_years, ]     <- input_e$data$use_indices
+input_histfit$data$use_index_paa[1:n_hist_years, ]   <- input_e$data$use_index_paa
+```
+
+```{r, eval=TRUE}
+generate_remove_years <- function(mat) {
+  lz <- lapply(seq_len(ncol(mat)), function(j) which(mat[, j] == 0))
+  if (all(lengths(lz) == 0)) return(NULL)
+  max_rows <- max(sapply(lz, length))
+  out <- matrix(NA_integer_, nrow = max_rows, ncol = length(lz))
+  for (j in seq_along(lz)) {
+    if (length(lz[[j]])) out[seq_along(lz[[j]]), j] <- lz[[j]]
+  }
+  out
+}
+
+remove_agg_years1 <- generate_remove_years(input_e$data$use_indices)
+remove_paa_years1 <- generate_remove_years(input_e$data$use_index_paa)
+
+input_histfit <- update_input_index_info(
+  input_histfit,
+  agg_index_sigma = input_histfit$data$agg_index_sigma,
+  index_Neff      = input_histfit$data$index_Neff,
+  remove_agg = TRUE,
+  remove_agg_pointer = 1:3,
+  remove_agg_years = remove_agg_years1,
+  remove_paa = TRUE,
+  remove_paa_pointer = 1:3,
+  remove_paa_years = remove_paa_years1
+)
+```
+
+```{r, eval=TRUE}
+if (!file.exists("Data/OM.RDS")) {
+  OM <- fit_wham(
+    input_histfit,
+    do.fit = TRUE,
+    do.brps = TRUE,
+    do.retro = FALSE,
+    do.osa = FALSE,
+    MakeADFun.silent = TRUE
+  )
+  saveRDS(OM, "Data/OM.RDS")
+} else {
+  OM <- readRDS("Data/OM.RDS")
+}
+
+check_convergence(OM)
+```
+
+### 4. Build the projection operating model
+
+Next, we extend the model from the historical period into the feedback period.
+The historical years will later be fixed to the fitted stock trajectory, while
+the feedback years will be allowed to vary by seed.
+
+#### 4.1 Biological inputs over the full modeled period
+
+```{r, eval=TRUE}
+user_maturity <- array(NA_real_, dim = c(n_stocks, n_proj_years, n_ages))
+user_maturity[, 1:n_hist_years, ] <- OM$input$data$mature[, 1:n_hist_years, ]
+for (iy in (n_hist_years + 1L):n_proj_years) {
+  user_maturity[, iy, ] <- OM$input$data$mature[, n_hist_years, , drop = FALSE]
+}
+
+user_waa <- list()
+user_waa$waa <- array(NA_real_, dim = c(5, n_proj_years, n_ages))
+user_waa$waa[, 1:n_hist_years, ] <- OM$input$data$waa[, 1:n_hist_years, ]
+for (iy in (n_hist_years + 1L):n_proj_years) {
+  user_waa$waa[, iy, ] <- OM$input$data$waa[, n_hist_years, , drop = FALSE]
+}
+
+user_waa$waa_pointer_fleets   <- OM$input$data$waa_pointer_fleets
+user_waa$waa_pointer_indices  <- OM$input$data$waa_pointer_indices
+user_waa$waa_pointer_totcatch <- OM$input$data$waa_pointer_totcatch
+user_waa$waa_pointer_ssb      <- OM$input$data$waa_pointer_ssb
+user_waa$waa_pointer_M        <- OM$input$data$waa_pointer_M
+```
+
+#### 4.2 Catch and index settings for the OM
+
+```{r, eval=TRUE}
+catch_info <- list(
+  catch_cv      = 0.05,
+  catch_Neff    = 50,
+  use_agg_catch = 1,
+  use_catch_paa = 1
+)
+
+index_info <- list(
+  index_cv        = rep(0.5, n_indices),
+  index_Neff      = rep(25, n_indices),
+  fracyr_indices  = c(0.25, 0.75, 0.25),
+  q               = c(2.110e-4, 2.247e-4, 2.683e-4),
+  use_indices     = rep(1, n_indices),
+  use_index_paa   = rep(1, n_indices),
+  units_indices   = rep(2, n_indices),
+  units_index_paa = rep(2, n_indices)
+)
+```
+
+#### 4.3 Build the projection scaffold
+
+```{r, eval=TRUE}
+info <- whamMSE::generate_basic_info(
+  n_stocks = n_stocks,
+  n_regions = n_regions,
+  n_indices = n_indices,
+  n_fleets = n_fleets,
+  n_seasons = n_seasons,
+  base.years = year_start:year_end,
+  n_feedback_years = MSE_years,
+  n_ages = n_ages,
+  catch_info = catch_info,
+  index_info = index_info,
+  user_waa = user_waa,
+  user_maturity = user_maturity,
+  fracyr_spawn = fracyr_spawn
+)
+
+basic_info     <- info$basic_info
+catch_info_use <- info$catch_info
+index_info_use <- info$index_info
+```
+
+#### 4.4 Initialize fishing mortality
+
+```{r, eval=TRUE}
+F_info <- info$F
+F_info$F[1:n_hist_years, ] <- OM$rep$Fbar[1:n_hist_years, 1, drop = FALSE]
+```
+
+#### 4.5 Define selectivity, M, and process settings for the OM
+
+Although the historical fit used recruitment-only random effects, the
+projection OM uses `rec+1` so that the historical stock trajectory can be
+reconstructed more closely when fixed values are inserted.
+
+```{r, eval=TRUE}
+sel3 <- list(
+  model = c("age-specific", "logistic", "logistic", "logistic"),
+  re    = c("ar1_y", "none", "none", "none"),
+  initial_pars = list(
+    c(0.05, 0.3, 0.7, 0.875, 0.9, 1),
+    c(2.305, 0.327),
+    c(1.611, 0.483),
+    c(2.135, 0.217)
+  ),
+  fix_pars = list(c(4:6), NULL, NULL, NULL)
+)
+
+M <- list(
+  model = "constant",
+  initial_means = array(
+    c(0.57, 0.33, 0.26, 0.23, 0.22, 0.22),
+    dim = c(n_stocks, n_regions, n_ages)
+  )
+)
+
+sigma_vals <- array(0, dim = c(n_stocks, n_regions, n_ages))
+sigma_vals[, , 1] <- exp(OM$parList$log_NAA_sigma[, , 1])
+sigma_vals[, , 2:n_ages] <- exp(OM$parList$log_NAA_sigma[, , 2:n_ages])
+
+recruit_pars_use <- exp(as.numeric(OM$parList$mean_rec_pars[1, ]))
+
+NAA_re <- list(
+  N1_model      = rep("age-specific-fe", n_stocks),
+  sigma         = rep("rec+1", n_stocks),
+  cor           = rep("iid", n_stocks),
+  recruit_model = 3,
+  recruit_pars  = list(recruit_pars_use),
+  sigma_vals    = sigma_vals
+)
+```
+
+#### 4.6 Build the unfitted projection OM input
+
+```{r, eval=TRUE}
+om_input_P <- wham::prepare_wham_input(
+  basic_info  = basic_info,
+  selectivity = sel3,
+  M           = M,
+  NAA_re      = NAA_re,
+  catch_info  = catch_info_use,
+  index_info  = index_info_use,
+  F           = F_info,
+  age_comp    = "logistic-normal-pool0"
+)
+
+waa_info <- info$par_inputs$user_waa
+om_input_P <- whamMSE::update_waa(om_input_P, waa_info = waa_info)
+
+om_input_P$par$catch_paa_pars <- OM$parList$catch_paa_pars
+om_input_P$par$index_paa_pars <- OM$parList$index_paa_pars
+om_input_P$par$sel_repars     <- OM$parList$sel_repars
+
+for (i in 1:n_regions) {
+  om_input_P$par$log_N1[i, i, ] <- log(OM$rep$N1)[i, i, ]
+}
+
+om_input_P$data$agg_index_sigma[1:n_hist_years, ] <- input_hist$data$agg_index_sigma
+om_input_P$data$use_indices[1:n_hist_years, ]     <- input_hist$data$use_indices
+om_input_P$data$use_index_paa[1:n_hist_years, ]   <- input_hist$data$use_index_paa
+
+for (iy in (n_hist_years + 1L):n_proj_years) {
+  om_input_P$data$agg_index_sigma[iy, ] <- input_hist$data$agg_index_sigma[n_hist_years, ]
+}
+```
+
+```{r, eval=TRUE}
+loc_zeros_agg <- lapply(seq_len(ncol(input_hist$data$use_indices)), function(j) {
+  which(input_hist$data$use_indices[, j] == 0)
+})
+
+loc_zeros_paa <- lapply(seq_len(ncol(input_hist$data$use_index_paa)), function(j) {
+  which(input_hist$data$use_index_paa[, j] == 0)
+})
+
+max_agg <- max(sapply(loc_zeros_agg, length))
+max_paa <- max(sapply(loc_zeros_paa, length))
+
+remove_agg_years1 <- if (max_agg > 0) {
+  out <- matrix(NA_integer_, nrow = max_agg, ncol = length(loc_zeros_agg))
+  for (j in seq_along(loc_zeros_agg)) {
+    if (length(loc_zeros_agg[[j]])) {
+      out[seq_along(loc_zeros_agg[[j]]), j] <- loc_zeros_agg[[j]]
+    }
+  }
+  out
+} else NULL
+
+remove_paa_years1 <- if (max_paa > 0) {
+  out <- matrix(NA_integer_, nrow = max_paa, ncol = length(loc_zeros_paa))
+  for (j in seq_along(loc_zeros_paa)) {
+    if (length(loc_zeros_paa[[j]])) {
+      out[seq_along(loc_zeros_paa[[j]]), j] <- loc_zeros_paa[[j]]
+    }
+  }
+  out
+} else NULL
+
+om_input_P <- whamMSE::update_input_index_info(
+  om_input_P,
+  agg_index_sigma = om_input_P$data$agg_index_sigma,
+  index_Neff      = om_input_P$data$index_Neff,
+  remove_agg = TRUE,
+  remove_agg_pointer = 1:3,
+  remove_agg_years = remove_agg_years1,
+  remove_paa = TRUE,
+  remove_paa_pointer = 1:3,
+  remove_paa_years = remove_paa_years1
+)
+```
+
+### 5. Compile the unfitted projection OM
+
+```{r, eval=TRUE}
+om_input_P$data$do_simulate_N_re <- 1L
+
+unfitted_om_P <- fit_wham(
+  om_input_P,
+  do.fit = FALSE,
+  do.brps = FALSE,
+  MakeADFun.silent = TRUE
+)
+```
+
+### 6. Fix the historical period and free only the feedback period
+
+This is the key step. We overwrite the historical `log_NAA` values using the
+fitted historical model so that the historical population trajectory remains
+fixed across seeds. Only the future block is left free and can be simulated.
+
+```{r, eval=TRUE}
+unfitted_om_P$input$random <- "log_NAA"
+unfitted_om_P$input$data$do_simulate_N_re <- 1L
+
+unfitted_om_P$input$par$log_N1 <- log(OM$rep$N1)
+if (!is.null(unfitted_om_P$parList$log_N1)) {
+  unfitted_om_P$parList$log_N1 <- log(OM$rep$N1)
+}
+
+hist_idx <- 1:(first_free_year - 2L)
+unfitted_om_P$input$par$log_NAA[1, 1, hist_idx, ] <-
+  log(OM$rep$NAA[1, 1, hist_idx + 1L, ])
+
+if (!is.null(unfitted_om_P$parList$log_NAA)) {
+  unfitted_om_P$parList$log_NAA[1, 1, hist_idx, ] <-
+    log(OM$rep$NAA[1, 1, hist_idx + 1L, ])
+}
+```
+
+```{r, eval=TRUE}
+logNAA_dim <- dim(unfitted_om_P$input$par$log_NAA)
+future_idx_start <- first_free_year - 1L
+future_idx <- future_idx_start:logNAA_dim[3]
+
+m <- array(NA_integer_, dim = logNAA_dim)
+m[1, 1, future_idx, ] <- 1L
+m[!is.na(m)] <- seq_len(sum(!is.na(m)))
+
+unfitted_om_P$input$map$log_NAA <- factor(m)
+if (!is.null(unfitted_om_P$env$map)) {
+  unfitted_om_P$env$map$log_NAA <- unfitted_om_P$input$map$log_NAA
+}
+```
+
+```{r, eval=TRUE}
+last_fixed_idx <- first_free_year - 2L
+if (last_fixed_idx >= 1L) {
+  unfitted_om_P$input$par$log_NAA[1, 1, future_idx, ] <-
+    array(
+      unfitted_om_P$input$par$log_NAA[1, 1, last_fixed_idx, ],
+      dim = c(1, 1, length(future_idx), logNAA_dim[4])
+    )
+
+  if (!is.null(unfitted_om_P$parList$log_NAA)) {
+    unfitted_om_P$parList$log_NAA[1, 1, future_idx, ] <-
+      array(
+        unfitted_om_P$parList$log_NAA[1, 1, last_fixed_idx, ],
+        dim = c(1, 1, length(future_idx), logNAA_dim[4])
+      )
+  }
+}
+
+unfitted_om_P$parList$logit_selpars <- OM$parList$logit_selpars
+unfitted_om_P$parList$selpars_re    <- OM$parList$selpars_re
+```
+
+```{r, eval=TRUE}
+unfitted_om_P <- fit_wham(
+  unfitted_om_P$input,
+  do.fit = FALSE,
+  do.brps = FALSE,
+  MakeADFun.silent = TRUE
+)
+```
+
+### 7. Simulate only the future block
+
+Now we simulate the OM while keeping the historical period fixed. The future
+trajectory depends on the seed, but the historical trajectory remains
+unchanged.
+
+```{r, eval=TRUE}
+seed <- 12345L
+
+om_future <- update_om_fn(
+  unfitted_om_P,
+  seed = seed,
+  random = "log_NAA",
+  process_fix = 1,
+  first_free_year = first_free_year
+)
+```
+
+### 8. Diagnostics
+
+The historical trajectory should closely match the fitted OM, while the future
+trajectory is free to vary.
+
+```{r, eval=TRUE}
+plot(
+  om_future$rep$SSB,
+  type = "l",
+  main = "SSB with fixed history and simulated feedback period",
+  xlab = "Year index",
+  ylab = "SSB"
+)
+lines(1:n_hist_years, OM$rep$SSB[1:n_hist_years], col = "red", lwd = 2)
+
+legend(
+  "topright",
+  legend = c("Projected OM", "Fitted historical OM"),
+  col = c("black", "red"),
+  lwd = c(1, 2),
+  bty = "n"
+)
+```
+
+```{r, eval=TRUE}
+s <- 1
+r <- 1
+hist_idx <- 1:(n_hist_years - 1L)
+
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+
+plot(
+  hist_idx + 1,
+  exp(om_future$input$par$log_NAA[s, r, hist_idx, 1]),
+  type = "l",
+  xlab = "Model year",
+  ylab = "NAA age 1",
+  main = "Historical check: input log_NAA vs fitted OM rep$NAA"
+)
+lines(
+  hist_idx + 1,
+  OM$rep$NAA[s, r, hist_idx + 1L, 1],
+  col = "red"
+)
+
+plot(
+  om_future$rep$pred_NAA[s, r, , 6],
+  type = "l",
+  main = "pred_NAA age 6",
+  xlab = "Year index",
+  ylab = "pred_NAA age 6"
+)
+abline(v = first_free_year, lty = 2, col = "red")
+```
+
+```{r, eval=TRUE}
+plot(om_future$rep$NAA_devs[, , , 1], type = "l", main = "NAA_devs age 1")
+plot(om_future$rep$pred_NAA[, , , 1], type = "l", main = "pred_NAA age 1")
+```
+
+```{r, eval=TRUE}
+hist_diff <- om_future$rep$NAA[, , 1:n_hist_years, ] -
+  OM$rep$NAA[, , 1:n_hist_years, ]
+print(hist_diff)
+
+plot(
+  om_future$rep$SSB[1:n_hist_years],
+  type = "l",
+  main = "Historical SSB comparison",
+  xlab = "Year index",
+  ylab = "SSB"
+)
+lines(OM$rep$SSB[1:n_hist_years], col = "red")
+```
+
+### 9. Run MSE
+
+We now run MSE using the projected OM with fixed historical dynamics. In this
+example, we compare two harvest control rule settings: 75% FXSPR and 100%
+FXSPR.
+
+#### 9.1 Define assessment years and EM settings
+
+```{r, eval=TRUE}
+assess_interval <- 2L
+base_years      <- year_start:year_end
+terminal_year   <- tail(base_years, 1)
+
+assess_years <- seq(
+  terminal_year,
+  year_end + MSE_years - assess_interval,
+  by = assess_interval
+)
+
+NAA_re_em <- NAA_re
+NAA_re_em$N1_model <- "equilibrium"
+NAA_re_em$sigma    <- "rec"
+NAA_re_em$cor      <- "iid"
+
+update_catch_info_list <- list(
+  agg_catch_sigma = om_input_P$data$agg_catch_sigma,
+  catch_Neff      = om_input_P$data$catch_Neff
+)
+
+update_index_info_list <- list(
+  agg_index_sigma = om_input_P$data$agg_index_sigma,
+  index_Neff      = om_input_P$data$index_Neff,
+  remove_agg = TRUE,
+  remove_agg_pointer = 1:3,
+  remove_agg_years = remove_agg_years1,
+  remove_paa = TRUE,
+  remove_paa_pointer = 1:3,
+  remove_paa_years = remove_paa_years1
+)
+```
+
+#### 9.2 MSE run with 75% FXSPR
+
+```{r, eval=TRUE}
+hcr1 <- list(
+  hcr.type = 1,
+  hcr.opts = list(use_FXSPR = TRUE, percentFXSPR = 75)
+)
+
+if (!file.exists("Results/mod1.RDS")) {
+  mod1 <- loop_through_fn(
+    om = om_future,
+    em_info = info,
+    random = "log_NAA",
+    M_em = M,
+    sel_em = sel3,
+    NAA_re_em = NAA_re_em,
+    age_comp_em = "logistic-normal-pool0",
+    em.opt = list(
+      separate.em = FALSE,
+      separate.em.type = 1,
+      do.move = FALSE,
+      est.move = FALSE
+      ),
+    update_index_info = update_index_info_list,
+    update_catch_info = update_catch_info_list,
+    assess_years = assess_years,
+    assess_interval = assess_interval,
+    base_years = base_years,
+    year.use = 50,
+    add.years = TRUE,
+    seed = 12345L,
+    hcr = hcr1,
+    save.sdrep = FALSE,
+    save.last.em = TRUE,
+    FXSPR_init = 0.5,
+    process_fix = 1,
+    first_free_year = 51
+    ) 
+  saveRDS(mod1, "Results/mod1.RDS")
+  } else {
+    mod1 <- readRDS("Results/mod1.RDS")
+  }
+```
+
+#### 9.3 MSE run with 100% FXSPR
+
+```{r, eval=TRUE}
+hcr2 <- list(
+  hcr.type = 1,
+  hcr.opts = list(use_FXSPR = TRUE, percentFXSPR = 100)
+)
+
+if (!file.exists("Results/mod2.RDS")) {
+  mod2 <- loop_through_fn(
+    om = om_future,
+    em_info = info,
+    random = "log_NAA",
+    M_em = M,
+    sel_em = sel3,
+    NAA_re_em = NAA_re_em,
+    age_comp_em = "logistic-normal-pool0",
+    em.opt = list(
+      separate.em = FALSE,
+      separate.em.type = 1,
+      do.move = FALSE,
+      est.move = FALSE
+      ),
+    update_index_info = update_index_info_list,
+    update_catch_info = update_catch_info_list,
+    assess_years = assess_years,
+    assess_interval = assess_interval,
+    base_years = base_years,
+    year.use = 50,
+    add.years = TRUE,
+    seed = 12345L,
+    hcr = hcr2,
+    save.sdrep = FALSE,
+    save.last.em = TRUE,
+    FXSPR_init = 0.5,
+    process_fix = 1,
+    first_free_year = 51
+    )
+  saveRDS(mod2, "Results/mod2.RDS")
+  } else {
+    mod2 <- readRDS("Results/mod2.RDS")
+  }
+```
+
+### 10. Plot MSE results
+
+Below we compare the realized OM trajectories under the two HCR settings.
+
+```{r, eval=TRUE}
+plot(
+  mod1$om$rep$SSB,
+  type = "l",
+  lwd = 2,
+  col = "blue",
+  xlab = "Year index",
+  ylab = "SSB",
+  main = "MSE comparison: SSB under two HCR settings"
+)
+
+lines(
+  mod2$om$rep$SSB,
+  col = "red",
+  lwd = 2,
+  lty = 2
+)
+
+abline(v = first_free_year, lty = 3)
+
+legend(
+  "topright",
+  legend = c("75% FXSPR", "100% FXSPR", "Start of feedback period"),
+  col = c("blue", "red", "black"),
+  lty = c(1, 2, 3),
+  lwd = c(2, 2, 1),
+  bty = "n"
+)
+```
+
+### 11. Summary
+
+This vignette showed how to build an MSE operating model directly from a fitted
+stock assessment model while keeping the historical population trajectory fixed.
+
+The main advantage of this workflow is that the historical period remains
+anchored to the fitted trajectory of the real stock, rather than changing
+across seeds because of newly simulated historical process deviations. This can
+be especially useful when the goal is to evaluate management procedures under a
+historical stock trajectory that is already scientifically accepted or
+management-relevant.
+
+In this example:
+
+- the historical stock assessment was fit to real Georges Bank yellowtail
+  flounder data,
+- estimated parameters and historical trajectory were used to construct the OM,
+- the historical period was fixed,
+- only the feedback period was simulated,
+- MSE was run under two HCR settings.
+
+At present, users should apply this workflow only to OMs where **recruitment is
+the only random process tested in the historical fixing workflow**.

@@ -1564,7 +1564,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Environmental Consideration in MSE</h1>
 <h4 class="author">Chengxue Li</h4>
-<h4 class="date">Last update: 2026-02-11</h4>
+<h4 class="date">Last update: 2026-03-07</h4>
 
 </div>
 
@@ -1783,10 +1783,10 @@ om$random &lt;- random</code></pre>
 realizations (replicates).</p>
 <pre class="r"><code>om_A1 &lt;- update_om_fn(om, seed = 123, random = random)</code></pre>
 <pre><code>## 
-## Now simulating data</code></pre>
+## Now simulating (process_fix = 0, first_free_year = 1)</code></pre>
 <pre class="r"><code>om_A2 &lt;- update_om_fn(om, seed = 124, random = random)</code></pre>
 <pre><code>## 
-## Now simulating data</code></pre>
+## Now simulating (process_fix = 0, first_free_year = 1)</code></pre>
 <pre class="r"><code># Years for plotting (use what exists; otherwise use row index)
 yrs_A &lt;- om_A1$years_Ecov
 if (is.null(yrs_A) &amp;&amp; !is.null(om_A1$input$years_Ecov)) yrs_A &lt;- om_A1$input$years_Ecov
@@ -1877,10 +1877,10 @@ omB &lt;- fit_wham(inputB, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = T
 # Simulate two realizations (same true state, potentially different observations)
 om_B1 &lt;- update_om_fn(omB, seed = 123, random = randomB)</code></pre>
 <pre><code>## 
-## Now simulating data</code></pre>
+## Now simulating (process_fix = 0, first_free_year = 1)</code></pre>
 <pre class="r"><code>om_B2 &lt;- update_om_fn(omB, seed = 124, random = randomB)</code></pre>
 <pre><code>## 
-## Now simulating data</code></pre>
+## Now simulating (process_fix = 0, first_free_year = 1)</code></pre>
 <pre class="r"><code># Years for plotting
 yrs_B &lt;- om_B1$years_Ecov
 if (is.null(yrs_B) &amp;&amp; !is.null(om_B1$input$years_Ecov)) yrs_B &lt;- om_B1$input$years_Ecov
@@ -1961,55 +1961,45 @@ mod1 &lt;- loop_through_fn(
 ## Now generating catch advice...
 ## 
 ## Harvest Control Rule type 1</code></pre>
-<pre><code>## Final Projection Options:
+<pre><code>## Projection Options:
 ##  n.yrs: 3
-##  use.last.F: FALSE
-##  use.avg.F: FALSE
 ##  use.FXSPR: TRUE
 ##  percentFXSPR: 75
 ##  use.FMSY: FALSE
 ##  percentFMSY: 75
 ##  avg.yrs: 2016, 2017, 2018, 2019, 2020
-##  cont.ecov: TRUE
-##  use.last.ecov: FALSE
 ##  cont.M.re: FALSE
-##  cont.L.re: FALSE
+##  cont.move.re: 
 ## Catch Advice 
 ##  7.690072 5.671714 4.185071 
 ## 
 ## Now calculating F at age in the OM given the catch advice...
 ## 
-## Now calculating fleet-specific F in year  2021 
+## Now calculating fleet-specific F in year 2021
 ## 
-## Fishing mortality is  0.1136029 
+## Fishing mortality is 0.1136029
 ## 
-## Now updating F in OM for year  2021 
+## Now updating F in OM for year 2021
 ## 
-## Now simulating data for year  2021 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2021
 ## 
-## Now projecting data for years after  2021 
+## Now calculating fleet-specific F in year 2022
 ## 
-## Now calculating fleet-specific F in year  2022 
+## Fishing mortality is 0.1093359
 ## 
-## Fishing mortality is  0.1093359 
+## Now updating F in OM for year 2022
 ## 
-## Now updating F in OM for year  2022 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2022
 ## 
-## Now simulating data for year  2022 
+## Now calculating fleet-specific F in year 2023
 ## 
-## Now projecting data for years after  2022 
+## Fishing mortality is 0.07793888
 ## 
-## Now calculating fleet-specific F in year  2023 
+## Now updating F in OM for year 2023
 ## 
-## Fishing mortality is  0.07793888 
-## 
-## Now updating F in OM for year  2023 
-## 
-## Now simulating data for year  2023 
-## 
-## Now projecting data for years after  2023 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2023
 ## Please ignore Warning in check_projF(proj_mod).
-## Total Runtime =  9.149615</code></pre>
+## Total Runtime =  9.825165</code></pre>
 <pre class="r"><code>mod1$converge_list # 2 = converged </code></pre>
 <pre><code>## [[1]]
 ## [1] 2</code></pre>
@@ -2053,55 +2043,45 @@ mod2 &lt;- loop_through_fn(
 ## Now generating catch advice...
 ## 
 ## Harvest Control Rule type 1
-## Final Projection Options:
+## Projection Options:
 ##  n.yrs: 3
-##  use.last.F: FALSE
-##  use.avg.F: FALSE
 ##  use.FXSPR: TRUE
 ##  percentFXSPR: 75
 ##  use.FMSY: FALSE
 ##  percentFMSY: 75
 ##  avg.yrs: 2016, 2017, 2018, 2019, 2020
-##  cont.ecov: TRUE
-##  use.last.ecov: FALSE
 ##  cont.M.re: FALSE
-##  cont.L.re: FALSE
+##  cont.move.re: 
 ## Catch Advice 
 ##  7.712216 5.687457 4.196315 
 ## 
 ## Now calculating F at age in the OM given the catch advice...
 ## 
-## Now calculating fleet-specific F in year  2021 
+## Now calculating fleet-specific F in year 2021
 ## 
-## Fishing mortality is  0.1139487 
+## Fishing mortality is 0.1139487
 ## 
-## Now updating F in OM for year  2021 
+## Now updating F in OM for year 2021
 ## 
-## Now simulating data for year  2021 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2021
 ## 
-## Now projecting data for years after  2021 
+## Now calculating fleet-specific F in year 2022
 ## 
-## Now calculating fleet-specific F in year  2022 
+## Fishing mortality is 0.109696
 ## 
-## Fishing mortality is  0.109696 
+## Now updating F in OM for year 2022
 ## 
-## Now updating F in OM for year  2022 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2022
 ## 
-## Now simulating data for year  2022 
+## Now calculating fleet-specific F in year 2023
 ## 
-## Now projecting data for years after  2022 
+## Fishing mortality is 0.07821364
 ## 
-## Now calculating fleet-specific F in year  2023 
+## Now updating F in OM for year 2023
 ## 
-## Fishing mortality is  0.07821364 
-## 
-## Now updating F in OM for year  2023 
-## 
-## Now simulating data for year  2023 
-## 
-## Now projecting data for years after  2023 
+## Now simulating (process_fix = 0, first_free_year = 1) for year 2023
 ## Please ignore Warning in check_projF(proj_mod).
-## Total Runtime =  8.070435</code></pre>
+## Total Runtime =  8.166833</code></pre>
 <pre class="r"><code>mod2$converge_list # 2 = converged </code></pre>
 <pre><code>## [[1]]
 ## [1] 2</code></pre>
