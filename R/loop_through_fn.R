@@ -12,6 +12,44 @@
 #' @param move_em Configuration for movement in the assessment model.
 #' @param catchability_em Configuration for survey catchability in the assessment model.
 #' @param ecov_em Configuration for environmental covariates in the assessment model.
+#'   This is used to construct the standard environmental covariate (Ecov) model in the EM,
+#'   including latent Ecov processes, Ecov observation error, and any Ecov linkages specified
+#'   for recruitment, natural mortality, catchability, or movement.
+#'
+#'   \strong{Important:} if \code{gauss_rec_em$use = TRUE}, then \code{ecov_em} should still provide
+#'   the environmental covariate time series, but users should \strong{not} specify any Ecov linkage
+#'   on biological or observation processes (e.g., recruitment, M, q, or movement) through
+#'   \code{ecov_em}. In particular, recruitment should not also be linked through the standard
+#'   linear/polynomial Ecov effect when the Gaussian recruitment option is used, because this may
+#'   result in duplicated or conflicting Ecov effects in the EM.
+#'
+#' @param ecov_em_opts List. Optional settings used when constructing environmental covariates in the
+#'   assessment model.
+#'
+#' @param gauss_rec_em List specifying an optional Gaussian environmental effect on recruitment in the
+#'   assessment model (EM). This option adds Gaussian temperature-recruitment settings to the EM input
+#'   through \code{add_gauss_rec_to_em_input()}.
+#'   \describe{
+#'     \item{\code{use}}{Logical. Whether to use the Gaussian environmental effect on recruitment
+#'     in the EM (default = \code{FALSE}).}
+#'     \item{\code{Ecov_rec_T_col}}{Integer. The environmental covariate column used as the temperature
+#'     covariate for recruitment. This should be supplied as a 1-based R index.}
+#'     \item{\code{Topt_rec}}{Numeric. The optimal environmental value (e.g., temperature) at which
+#'     recruitment is maximized.}
+#'     \item{\code{width_rec}}{Numeric. The width parameter of the Gaussian effect on the original
+#'     environmental scale. Must be positive.}
+#'     \item{\code{beta_T_rec}}{Numeric scalar or vector. Strength of the Gaussian environmental effect
+#'     on log-recruitment. If a scalar is supplied, it will be recycled across stocks.}
+#'     \item{\code{estimate}}{Logical. If \code{TRUE}, Gaussian recruitment parameters are estimated
+#'     in the EM. If \code{FALSE}, they are fixed at the supplied values using \code{map}.}
+#'   }
+#'
+#'   \strong{Important:} when \code{gauss_rec_em$use = TRUE}, users should not simultaneously specify
+#'   standard Ecov linkages through \code{ecov_em} for recruitment or other processes, unless they
+#'   intentionally want multiple Ecov effects in the same EM. The recommended use is to supply the
+#'   Ecov time series through \code{ecov_em}, but leave process linkages turned off when using
+#'   \code{gauss_rec_em}.
+#'   
 #' @param age_comp_em Character. Likelihood distribution for age composition data in the assessment model.
 #'   \itemize{
 #'     \item \code{"multinomial"} (default)
@@ -225,6 +263,14 @@ loop_through_fn <- function(om,
                             catchability_em = NULL,
                             ecov_em = NULL,
                             ecov_em_opts = NULL,
+                            gauss_rec_em = list(
+                              use = FALSE,
+                              Ecov_rec_T_col = NULL,
+                              Topt_rec = NULL,
+                              width_rec = NULL,
+                              beta_T_rec = NULL,
+                              estimate = TRUE
+                            ),
                             age_comp_em = "multinomial", 
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
                                           do.move = FALSE, est.move = FALSE), 
@@ -594,6 +640,8 @@ loop_through_fn <- function(om,
                                 update_index_info = update_index_info,
                                 ecov_em_opts = ecov_em_opts) 
       
+      em_input <- add_gauss_rec_to_em_input(em_input, gauss_rec_em)
+      
       if(!is.null(user_SPR_weights_info)) {
         if(is.null(user_SPR_weights_info$method)) user_SPR_weights_info$method = "equal"
         if(is.null(user_SPR_weights_info$weight_years)) user_SPR_weights_info$weight_years = 1
@@ -608,7 +656,7 @@ loop_through_fn <- function(om,
       if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
       
       cat("\nNow fitting assessment model...\n")
-      
+
       if (em.opt$do.move) {
         if (em.opt$est.move) {
           em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
@@ -727,4 +775,103 @@ loop_through_fn <- function(om,
               adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
               converge_list = converge_list, catch_advice = catch_advice, catch_realized = catch_realized, 
               em_full = em_full, em_input = em_input_list, runtime = time.taken, seed.save = seed))
+}
+
+
+add_gauss_rec_to_em_input <- function(em_input, gauss_rec_em) {
+  
+  if (is.null(gauss_rec_em$use)) gauss_rec_em$use <- FALSE
+  
+  n_stocks <- em_input$data$n_stocks
+  n_Ecov   <- em_input$data$n_Ecov
+  
+  # Always pass required data objects because TMB expects them
+  if (!isTRUE(gauss_rec_em$use)) {
+    em_input$data$use_gauss_T_rec <- 0L
+    em_input$data$Ecov_rec_T_col  <- 0L
+    
+    # harmless placeholders
+    em_input$par$Topt_rec      <- 0
+    em_input$par$log_width_rec <- 0
+    em_input$par$beta_T_rec    <- rep(0, n_stocks)
+    
+    # optional: map out so they are fixed
+    if (is.null(em_input$map)) em_input$map <- list()
+    em_input$map$Topt_rec      <- factor(NA)
+    em_input$map$log_width_rec <- factor(NA)
+    em_input$map$beta_T_rec    <- factor(rep(NA, n_stocks))
+    
+    return(em_input)
+  }
+  
+  # ---------- checks ----------
+  if (is.null(gauss_rec_em$Ecov_rec_T_col)) {
+    stop("gauss_rec_em$Ecov_rec_T_col must be provided when gauss_rec_em$use = TRUE.")
+  }
+  
+  # allow user to pass either 1-based R index or 0-based TMB index
+  # here I recommend user supplies 1-based R index
+  Ecov_col_R <- gauss_rec_em$Ecov_rec_T_col
+  
+  if (Ecov_col_R < 1 || Ecov_col_R > n_Ecov) {
+    stop("gauss_rec_em$Ecov_rec_T_col is out of range for em_input$data$n_Ecov.")
+  }
+  
+  Ecov_col_TMB <- as.integer(Ecov_col_R - 1L)
+  
+  if (is.null(gauss_rec_em$Topt_rec)) {
+    stop("gauss_rec_em$Topt_rec must be provided when gauss_rec_em$use = TRUE.")
+  }
+  
+  if (is.null(gauss_rec_em$width_rec)) {
+    stop("gauss_rec_em$width_rec must be provided when gauss_rec_em$use = TRUE.")
+  }
+  
+  if (gauss_rec_em$width_rec <= 0) {
+    stop("gauss_rec_em$width_rec must be > 0.")
+  }
+  
+  if (is.null(gauss_rec_em$beta_T_rec)) {
+    gauss_rec_em$beta_T_rec <- rep(0, n_stocks)
+  }
+  
+  if (length(gauss_rec_em$beta_T_rec) == 1) {
+    gauss_rec_em$beta_T_rec <- rep(gauss_rec_em$beta_T_rec, n_stocks)
+  }
+  
+  if (length(gauss_rec_em$beta_T_rec) != n_stocks) {
+    stop("gauss_rec_em$beta_T_rec must have length 1 or n_stocks.")
+  }
+  
+  # ---------- add data ----------
+  em_input$data$use_gauss_T_rec <- 1L
+  em_input$data$Ecov_rec_T_col  <- Ecov_col_TMB
+  
+  # ---------- add parameter initials ----------
+  em_input$par$Topt_rec      <- gauss_rec_em$Topt_rec
+  em_input$par$log_width_rec <- log(gauss_rec_em$width_rec)
+  em_input$par$beta_T_rec    <- as.numeric(gauss_rec_em$beta_T_rec)
+  
+  # ---------- map logic ----------
+  if (is.null(em_input$map)) em_input$map <- list()
+  
+  if (isTRUE(gauss_rec_em$estimate)) {
+    # leave them free unless user already provided maps
+    if (is.null(em_input$map$Topt_rec)) {
+      em_input$map$Topt_rec <- factor(1)
+    }
+    if (is.null(em_input$map$log_width_rec)) {
+      em_input$map$log_width_rec <- factor(1)
+    }
+    if (is.null(em_input$map$beta_T_rec)) {
+      em_input$map$beta_T_rec <- factor(seq_len(n_stocks))
+    }
+  } else {
+    # fix them at supplied values
+    em_input$map$Topt_rec      <- factor(NA)
+    em_input$map$log_width_rec <- factor(NA)
+    em_input$map$beta_T_rec    <- factor(rep(NA, n_stocks))
+  }
+  
+  return(em_input)
 }

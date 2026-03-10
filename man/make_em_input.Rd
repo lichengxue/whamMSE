@@ -23,7 +23,8 @@ make_em_input(
   filter_indices = NULL,
   reduce_region_info = NULL,
   update_catch_info = NULL,
-  update_index_info = NULL
+  update_index_info = NULL,
+  ecov_em_opts = NULL
 )
 }
 \arguments{

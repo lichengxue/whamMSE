@@ -14,6 +14,9 @@ loop_through_fn(
   move_em = NULL,
   catchability_em = NULL,
   ecov_em = NULL,
+  ecov_em_opts = NULL,
+  gauss_rec_em = list(use = FALSE, Ecov_rec_T_col = NULL, Topt_rec = NULL, width_rec =
+    NULL, beta_T_rec = NULL, estimate = TRUE),
   age_comp_em = "multinomial",
   em.opt = list(separate.em = TRUE, separate.em.type = 1, do.move = FALSE, est.move =
     FALSE),
@@ -33,6 +36,7 @@ loop_through_fn(
   by_fleet = TRUE,
   FXSPR_init = NULL,
   hcr = list(hcr.type = 1, hcr.opts = NULL),
+  proj.opts = list(),
   catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years
     = 1),
   implementation_error = NULL,
@@ -61,7 +65,44 @@ loop_through_fn(
 
 \item{catchability_em}{Configuration for survey catchability in the assessment model.}
 
-\item{ecov_em}{Configuration for environmental covariates in the assessment model.}
+\item{ecov_em}{Configuration for environmental covariates in the assessment model.
+  This is used to construct the standard environmental covariate (Ecov) model in the EM,
+  including latent Ecov processes, Ecov observation error, and any Ecov linkages specified
+  for recruitment, natural mortality, catchability, or movement.
+
+  \strong{Important:} if \code{gauss_rec_em$use = TRUE}, then \code{ecov_em} should still provide
+  the environmental covariate time series, but users should \strong{not} specify any Ecov linkage
+  on biological or observation processes (e.g., recruitment, M, q, or movement) through
+  \code{ecov_em}. In particular, recruitment should not also be linked through the standard
+  linear/polynomial Ecov effect when the Gaussian recruitment option is used, because this may
+  result in duplicated or conflicting Ecov effects in the EM.}
+
+\item{ecov_em_opts}{List. Optional settings used when constructing environmental covariates in the
+assessment model.}
+
+\item{gauss_rec_em}{List specifying an optional Gaussian environmental effect on recruitment in the
+  assessment model (EM). This option adds Gaussian temperature-recruitment settings to the EM input
+  through \code{add_gauss_rec_to_em_input()}.
+  \describe{
+    \item{\code{use}}{Logical. Whether to use the Gaussian environmental effect on recruitment
+    in the EM (default = \code{FALSE}).}
+    \item{\code{Ecov_rec_T_col}}{Integer. The environmental covariate column used as the temperature
+    covariate for recruitment. This should be supplied as a 1-based R index.}
+    \item{\code{Topt_rec}}{Numeric. The optimal environmental value (e.g., temperature) at which
+    recruitment is maximized.}
+    \item{\code{width_rec}}{Numeric. The width parameter of the Gaussian effect on the original
+    environmental scale. Must be positive.}
+    \item{\code{beta_T_rec}}{Numeric scalar or vector. Strength of the Gaussian environmental effect
+    on log-recruitment. If a scalar is supplied, it will be recycled across stocks.}
+    \item{\code{estimate}}{Logical. If \code{TRUE}, Gaussian recruitment parameters are estimated
+    in the EM. If \code{FALSE}, they are fixed at the supplied values using \code{map}.}
+  }
+
+  \strong{Important:} when \code{gauss_rec_em$use = TRUE}, users should not simultaneously specify
+  standard Ecov linkages through \code{ecov_em} for recruitment or other processes, unless they
+  intentionally want multiple Ecov effects in the same EM. The recommended use is to supply the
+  Ecov time series through \code{ecov_em}, but leave process linkages turned off when using
+  \code{gauss_rec_em}.}
 
 \item{age_comp_em}{Character. Likelihood distribution for age composition data in the assessment model.
 \itemize{
