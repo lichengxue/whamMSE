@@ -203,6 +203,12 @@ index_content <- paste0(index_content, paste(vignette_links, collapse = "\n"), '
     <a href="https://github.com/lichengxue/SPASAM.MSE" target="_blank">
     SPASAM.MSE GitHub Repository
     </a>
+    
+    <br><br>
+    Interactive webpage: 
+    <a href="https://lichengxue.github.io/SPASAM.MSE/" target="_blank">
+    https://lichengxue.github.io/SPASAM.MSE/
+    </a>
     </div>
     <p> <br>
     The whamMSE package is a comprehensive toolbox designed to conduct management strategy evaluation (MSE)
