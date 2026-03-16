@@ -141,6 +141,14 @@ index_content <- '<!DOCTYPE html>
     width: 200px;
     }
     
+    .announcement {
+    background-color: #fff3cd;
+    border-left: 6px solid #f0ad4e;
+    padding: 15px;
+    margin: 20px 0;
+    font-size: 1.05em;
+    }
+
     floating-box p {
     margin: 0;
     font-weight: bold;
@@ -181,6 +189,21 @@ index_content <- paste0(index_content, paste(vignette_links, collapse = "\n"), '
   </div>
   <div class="container">
     <h1>Management Strategy Evaluation Package for WHAM</h1>
+    <div class="announcement">
+    <strong>Platform Update:</strong> 
+    The new <b>SPASAM.MSE</b> platform has been released and significantly extends the functionality of 
+    <b>whamMSE</b>. All existing code written for <b>whamMSE</b> remains fully compatible with 
+    <b>SPASAM.MSE</b>. 
+    
+    Future development and new features will primarily occur in <b>SPASAM.MSE</b>, while 
+    <b>whamMSE</b> will continue to be maintained and bugs will be fixed when identified.
+    
+    <br><br>
+    Learn more: 
+    <a href="https://github.com/lichengxue/SPASAM.MSE" target="_blank">
+    SPASAM.MSE GitHub Repository
+    </a>
+    </div>
     <p> <br>
     The whamMSE package is a comprehensive toolbox designed to conduct management strategy evaluation (MSE)
     for supporting spatial management for complex, heterogeneous populations. The package
