@@ -49,7 +49,7 @@
 #'   intentionally want multiple Ecov effects in the same EM. The recommended use is to supply the
 #'   Ecov time series through \code{ecov_em}, but leave process linkages turned off when using
 #'   \code{gauss_rec_em}.
-#'   
+#'
 #' @param age_comp_em Character. Likelihood distribution for age composition data in the assessment model.
 #'   \itemize{
 #'     \item \code{"multinomial"} (default)
@@ -253,13 +253,13 @@
 #' @export
 
 
-loop_through_fn <- function(om, 
-                            em_info = NULL, 
-                            random = NULL, 
-                            M_em = NULL, 
-                            sel_em = NULL, 
-                            NAA_re_em = NULL, 
-                            move_em = NULL, 
+loop_through_fn <- function(om,
+                            em_info = NULL,
+                            random = NULL,
+                            M_em = NULL,
+                            sel_em = NULL,
+                            NAA_re_em = NULL,
+                            move_em = NULL,
                             catchability_em = NULL,
                             ecov_em = NULL,
                             ecov_em_opts = NULL,
@@ -271,9 +271,9 @@ loop_through_fn <- function(om,
                               beta_T_rec = NULL,
                               estimate = TRUE
                             ),
-                            age_comp_em = "multinomial", 
+                            age_comp_em = "multinomial",
                             em.opt = list(separate.em = TRUE, separate.em.type = 1,
-                                          do.move = FALSE, est.move = FALSE), 
+                                          do.move = FALSE, est.move = FALSE),
                             aggregate_catch_info = NULL,
                             aggregate_index_info = NULL,
                             aggregate_weights_info = NULL,
@@ -282,10 +282,10 @@ loop_through_fn <- function(om,
                             update_catch_info = NULL,
                             update_index_info = NULL,
                             user_SPR_weights_info = NULL,
-                            assess_years = NULL, 
-                            assess_interval = NULL, 
-                            base_years = NULL, 
-                            year.use = 20, 
+                            assess_years = NULL,
+                            assess_interval = NULL,
+                            base_years = NULL,
+                            year.use = 20,
                             add.years = FALSE,
                             by_fleet = TRUE,
                             FXSPR_init = NULL,
@@ -293,15 +293,15 @@ loop_through_fn <- function(om,
                             proj.opts = list(),   # <-- NEW
                             catch_alloc = list(weight_type = 1, method = "equal", user_weights = NULL, weight_years = 1),
                             implementation_error = NULL,
-                            do.retro = FALSE, 
-                            do.osa = FALSE, 
+                            do.retro = FALSE,
+                            do.osa = FALSE,
                             do.brps = FALSE,
-                            seed = 123, 
-                            save.sdrep = FALSE, 
+                            seed = 123,
+                            save.sdrep = FALSE,
                             save.last.em = FALSE) {
-  
+
   start.time <- Sys.time()
-  
+
   # Helper function to check convergence
   check_conv <- function(em) {
     conv <- as.logical(1 - em$opt$convergence)
@@ -309,11 +309,11 @@ loop_through_fn <- function(om,
     if (!conv | !pdHess) warnings("Assessment model is not converged!")
     list(conv = conv, pdHess = pdHess)
   }
-  
+
   if (is.null(em.opt)) stop("em.opt has to be specified!")
   if (!is.null(move_em) & em.opt$separate.em) stop("move_em must be NULL if em.opt$separate.em = TRUE!")
   if (em.opt$separate.em) move_em <- NULL
-  
+
   em_list <- list()
   par.est <- list()
   par.se <- list()
@@ -325,73 +325,73 @@ loop_through_fn <- function(om,
   catch_realized <- list()
   em_full <- list()
   em_input_list <- list()
-  
+
   if(is.null(age_comp_em)) age_comp_em = "multinomial"
   if(is.null(em_info)) stop("em_info must be specified!")
-  
+
   if (em.opt$separate.em) {
-    
+
     for (y in assess_years) {
-      
+
       cat(paste0("\nNow conducting stock assessment for year ", y, "\n"))
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
-      
+
       if (add.years && i != 1) year.use = year.use + assess_interval
-        
-      em_input <- make_em_input(om = om, em_info = em_info, 
+
+      em_input <- make_em_input(om = om, em_info = em_info,
                                 M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, 
+                                NAA_re_em = NAA_re_em, move_em = move_em,
                                 catchability_em = catchability_em, ecov_em = ecov_em,
-                                em.opt = em.opt, em_years = em.years, year.use = year.use, 
+                                em.opt = em.opt, em_years = em.years, year.use = year.use,
                                 age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
                                 aggregate_weights_info = aggregate_weights_info,
                                 filter_indices = filter_indices)
-      
+
       #cat("\nNow agg Catch is..", em_input$data$agg_catch[1,])
-      
+
       if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
-      
+
       n_stocks <- om$input$data$n_stocks
-      
+
       if (em.opt$separate.em.type == 1) {
-        
+
         cat("\nNow fitting assessment model...\n")
         em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
-     
+
         cat("\nNow checking convergence of assessment model...\n")
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
-        
+
         cat("\nNow using the EM to project catch...\n")
-        
+
         advice <- advice_fn(em = em,
                             pro.yr = assess_interval,
                             hcr = hcr,
                             proj.opts = proj.opts)
-        
+
         if(is.vector(em.advice)) em.advice = matrix(em.advice, byrow = TRUE)
-        
+
         cat("\nProject catch from assessment model is\n")
         print(em.advice)
-        
+
         cat("\nNow allocating catch...\n")
-        
-        advice <- calculate_catch_advice(om, em.advice, 
-                                         aggregate_catch_info, 
-                                         aggregate_index_info, 
+
+        advice <- calculate_catch_advice(om, em.advice,
+                                         aggregate_catch_info,
+                                         aggregate_index_info,
                                          final_year = y,
                                          catch_alloc)
-        
+
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
-        
+
         cat("\nNow generating catch advice...\n")
         print(advice)
-        
+
         if(!is.null(implementation_error)) {
           cat("\nNow generating implementation error on catch advice...\n")
           method = implementation_error$method
@@ -419,9 +419,9 @@ loop_through_fn <- function(om,
         }
 
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
-        
+
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
-        
+
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
         par.se[[i]] <- as.list(em$sdrep, "Std. Error")
@@ -431,7 +431,7 @@ loop_through_fn <- function(om,
         converge_list[[i]] <- conv + pdHess
         catch_advice[[i]] <- advice
         catch_realized[[i]] <- real_catch
-        
+
         if (save.sdrep) {
           em_full[[i]] <- em
         } else {
@@ -440,11 +440,11 @@ loop_through_fn <- function(om,
           }
           if (!save.last.em) em_full[[1]] <- list()
         }
-        
+
         em_input_list[[i]] <- em_input
-        
+
       } else if (em.opt$separate.em.type == 2) {
-        
+
         cat("\nNow fitting assessment model...\n")
         em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
 
@@ -452,22 +452,22 @@ loop_through_fn <- function(om,
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
-        
+
         cat("\nNow using the EM to project catch...\n")
-        
+
         advice <- advice_fn(em = em,
                             pro.yr = assess_interval,
                             hcr = hcr,
                             proj.opts = proj.opts)
-        
-        
+
+
         if(is.vector(advice)) advice <- as.matrix(t(advice))
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
-        
+
         cat("\nNow generating catch advice...\n")
         print(advice)
-        
+
         if(!is.null(implementation_error)) {
           cat("\nNow generating implementation error on catch advice...\n")
           method = implementation_error$method
@@ -493,11 +493,11 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = advice, years = y + 1:assess_interval)
           real_catch = advice
         }
-        
+
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
-        
+
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
-        
+
         em_list[[i]] <- em$rep
         par.est[[i]] <- as.list(em$sdrep, "Estimate")
         par.se[[i]] <- as.list(em$sdrep, "Std. Error")
@@ -507,7 +507,7 @@ loop_through_fn <- function(om,
         converge_list[[i]] <- conv + pdHess
         catch_advice[[i]] <- advice
         catch_realized[[i]] <- real_catch
-        
+
         if (save.sdrep) {
           em_full[[i]] <- em
         } else {
@@ -516,11 +516,11 @@ loop_through_fn <- function(om,
           }
           if (!save.last.em) em_full[[1]] <- list()
         }
-        
+
         em_input_list[[i]] <- em_input
-        
+
       } else if (em.opt$separate.em.type == 3) {
-        
+
         em_list[[i]] <- list()
         par.est[[i]] <- list()
         par.se[[i]] <- list()
@@ -530,37 +530,37 @@ loop_through_fn <- function(om,
         converge_list[[i]] <- list()
         em_full[[i]] <- list()
         em_input_list[[i]] <- list()
-        
+
         advice <- NULL
         em <- list()
         conv <- rep(0, n_stocks)
         pdHess <- rep(0, n_stocks)
-        
+
         cat("\nNow generating catch advice...\n")
         for (s in 1:n_stocks) {
-          
+
           cat("\nNow fitting assessment model...\n")
           em[[s]] <- fit_wham(em_input[[s]], do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
-          
+
           cat("\nNow checking convergence of assessment model...\n")
           conv <- check_conv(em[[s]])$conv
           pdHess <- check_conv(em[[s]])$pdHess
           if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
-          
+
           tmp <- advice_fn(em = em[[s]],
                            pro.yr = assess_interval,
                            hcr = hcr,
                            proj.opts = proj.opts)
-          
+
           advice <- cbind(advice, tmp)
         }
-        
+
         if(is.vector(advice)) advice <- as.matrix(t(advice))
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", assess_years[i] + 1:assess_interval)
-        
+
         print(advice)
-        
+
         if(!is.null(implementation_error)) {
           cat("\nNow generating implementation error on catch advice...\n")
           method = implementation_error$method
@@ -586,13 +586,13 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
           real_catch = advice
         }
-        
+
         # set the catch for the next assess_interval years
         # interval.info <- list(catch = advice, years = assess_years[i] + 1:assess_interval)
-        
+
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
-        
+
         for (s in 1:n_stocks) {
           em_list[[i]][[s]] <- em[[s]]$rep
           par.est[[i]][[s]] <- as.list(em[[s]]$sdrep, "Estimate")
@@ -603,7 +603,7 @@ loop_through_fn <- function(om,
           converge_list[[i]] <- sum(conv, pdHess)
           catch_advice[[i]] <- advice
           catch_realized[[i]] <- real_catch
-          
+
           if (save.sdrep) {
             em_full[[i]][[s]] <- em[[s]]
           } else {
@@ -618,19 +618,19 @@ loop_through_fn <- function(om,
     }
   } else {
     for (y in assess_years) {
-     
+
       cat(paste0("\nNow conducting stock assessment for year ", y, "\n"))
-      
+
       i <- which(assess_years == y)
       em.years <- base_years[1]:y
-      
+
       if (add.years && i != 1) year.use = year.use + assess_interval
-      
-      em_input <- make_em_input(om = om, em_info = em_info, 
+
+      em_input <- make_em_input(om = om, em_info = em_info,
                                 M_em = M_em, sel_em = sel_em,
-                                NAA_re_em = NAA_re_em, move_em = move_em, 
+                                NAA_re_em = NAA_re_em, move_em = move_em,
                                 catchability_em = catchability_em, ecov_em = ecov_em,
-                                em.opt = em.opt, em_years = em.years, year.use = year.use, 
+                                em.opt = em.opt, em_years = em.years, year.use = year.use,
                                 age_comp_em = age_comp_em,
                                 aggregate_catch_info = aggregate_catch_info,
                                 aggregate_index_info = aggregate_index_info,
@@ -638,23 +638,25 @@ loop_through_fn <- function(om,
                                 reduce_region_info = reduce_region_info,
                                 update_catch_info = update_catch_info,
                                 update_index_info = update_index_info,
-                                ecov_em_opts = ecov_em_opts) 
-      
-      em_input <- add_gauss_rec_to_em_input(em_input, gauss_rec_em)
-      
+                                ecov_em_opts = ecov_em_opts)
+
+      if (is.list(gauss_rec_em) && isTRUE(gauss_rec_em$use)) {
+        em_input <- add_gauss_rec_to_em_input(em_input, gauss_rec_em)
+      }
+
       if(!is.null(user_SPR_weights_info)) {
         if(is.null(user_SPR_weights_info$method)) user_SPR_weights_info$method = "equal"
         if(is.null(user_SPR_weights_info$weight_years)) user_SPR_weights_info$weight_years = 1
         if(is.null(user_SPR_weights_info$index_pointer)) user_SPR_weights_info$index_pointer = NULL
-        em_input <- update_SPR_weights(em_input, 
+        em_input <- update_SPR_weights(em_input,
                                        method = user_SPR_weights$weights_method,
-                                       weight_years = user_SPR_weights_info$weight_years, 
+                                       weight_years = user_SPR_weights_info$weight_years,
                                        index_pointer = user_SPR_weights_info$index_pointer
                                        )
       }
-      
+
       if(!is.null(FXSPR_init)) em_input$data$FXSPR_init[] = FXSPR_init
-      
+
       cat("\nNow fitting assessment model...\n")
 
       if (em.opt$do.move) {
@@ -667,22 +669,22 @@ loop_through_fn <- function(om,
       } else {
         em <- fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE, MakeADFun.silent = TRUE)
       }
-      
+
       if (assess_interval != 0) {
-        
+
         cat("\nNow checking convergence of assessment model...\n")
-        
+
         conv <- check_conv(em)$conv
         pdHess <- check_conv(em)$pdHess
         if (conv & pdHess) cat("\nAssessment model is converged.\n") else warnings("\nAssessment model is not converged!\n")
-        
+
         cat("\nNow generating catch advice...\n")
-        
+
         advice <- advice_fn(em = em,
                             pro.yr = assess_interval,
                             hcr = hcr,
                             proj.opts = proj.opts)
-        
+
         if(!is.null(reduce_region_info$remove_regions)) {
           remove_regions = reduce_region_info$remove_regions
           fleets_to_remove <- which(om$input$data$fleet_regions %in% which(remove_regions == 0))  # Get fleet indices
@@ -694,7 +696,7 @@ loop_through_fn <- function(om,
           }
           advice <- advice.tmp
         }
-        
+
         if(is.vector(advice)) {
           if(assess_interval == 1) {
             advice <- as.matrix(t(advice))
@@ -702,12 +704,12 @@ loop_through_fn <- function(om,
             advice <- matrix(advice, byrow = T)
           }
         }
-        
+
         colnames(advice) <- paste0("Fleet_", 1:om$input$data$n_fleets)
         rownames(advice) <- paste0("Year_", y + 1:assess_interval)
-        
+
         cat("Catch Advice \n",advice,"\n")
-        
+
         if(!is.null(implementation_error)) {
           cat("\nNow generating implementation error on catch advice...\n")
           method = implementation_error$method
@@ -733,7 +735,7 @@ loop_through_fn <- function(om,
           interval.info <- list(catch = advice, years = y + 1:assess_interval)
           real_catch = advice
         }
-        
+
         cat("\nNow calculating F at age in the OM given the catch advice...\n")
         om <- update_om_fn(om, interval.info, seed = seed, random = random, method = "nlminb", by_fleet = by_fleet, do.brps = do.brps)
       } else {
@@ -752,7 +754,7 @@ loop_through_fn <- function(om,
       converge_list[[i]] <- conv + pdHess
       catch_advice[[i]] <- advice
       catch_realized[[i]] <- real_catch
-      
+
       if (save.sdrep) {
         em_full[[i]] <- em
       } else {
@@ -761,117 +763,20 @@ loop_through_fn <- function(om,
         }
         if (!save.last.em) em_full[[1]] <- list()
       }
-      
+
       em_input_list[[i]] <- em_input
     }
   }
-  
+
   end.time <- Sys.time()
   time.taken <- end.time - start.time
   cat("Please ignore Warning in check_projF(proj_mod).")
   cat("\nTotal Runtime = ", time.taken,"\n")
-  
-  return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se, 
-              adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list, 
-              converge_list = converge_list, catch_advice = catch_advice, catch_realized = catch_realized, 
+
+  return(list(om = om, em_list = em_list, par.est = par.est, par.se = par.se,
+              adrep.est = adrep.est, adrep.se = adrep.se, opt_list = opt_list,
+              converge_list = converge_list, catch_advice = catch_advice, catch_realized = catch_realized,
               em_full = em_full, em_input = em_input_list, runtime = time.taken, seed.save = seed))
 }
 
 
-add_gauss_rec_to_em_input <- function(em_input, gauss_rec_em) {
-  
-  if (is.null(gauss_rec_em$use)) gauss_rec_em$use <- FALSE
-  
-  n_stocks <- em_input$data$n_stocks
-  n_Ecov   <- em_input$data$n_Ecov
-  
-  # Always pass required data objects because TMB expects them
-  if (!isTRUE(gauss_rec_em$use)) {
-    em_input$data$use_gauss_T_rec <- 0L
-    em_input$data$Ecov_rec_T_col  <- 0L
-    
-    # harmless placeholders
-    em_input$par$Topt_rec      <- 0
-    em_input$par$log_width_rec <- 0
-    em_input$par$beta_T_rec    <- rep(0, n_stocks)
-    
-    # optional: map out so they are fixed
-    if (is.null(em_input$map)) em_input$map <- list()
-    em_input$map$Topt_rec      <- factor(NA)
-    em_input$map$log_width_rec <- factor(NA)
-    em_input$map$beta_T_rec    <- factor(rep(NA, n_stocks))
-    
-    return(em_input)
-  }
-  
-  # ---------- checks ----------
-  if (is.null(gauss_rec_em$Ecov_rec_T_col)) {
-    stop("gauss_rec_em$Ecov_rec_T_col must be provided when gauss_rec_em$use = TRUE.")
-  }
-  
-  # allow user to pass either 1-based R index or 0-based TMB index
-  # here I recommend user supplies 1-based R index
-  Ecov_col_R <- gauss_rec_em$Ecov_rec_T_col
-  
-  if (Ecov_col_R < 1 || Ecov_col_R > n_Ecov) {
-    stop("gauss_rec_em$Ecov_rec_T_col is out of range for em_input$data$n_Ecov.")
-  }
-  
-  Ecov_col_TMB <- as.integer(Ecov_col_R - 1L)
-  
-  if (is.null(gauss_rec_em$Topt_rec)) {
-    stop("gauss_rec_em$Topt_rec must be provided when gauss_rec_em$use = TRUE.")
-  }
-  
-  if (is.null(gauss_rec_em$width_rec)) {
-    stop("gauss_rec_em$width_rec must be provided when gauss_rec_em$use = TRUE.")
-  }
-  
-  if (gauss_rec_em$width_rec <= 0) {
-    stop("gauss_rec_em$width_rec must be > 0.")
-  }
-  
-  if (is.null(gauss_rec_em$beta_T_rec)) {
-    gauss_rec_em$beta_T_rec <- rep(0, n_stocks)
-  }
-  
-  if (length(gauss_rec_em$beta_T_rec) == 1) {
-    gauss_rec_em$beta_T_rec <- rep(gauss_rec_em$beta_T_rec, n_stocks)
-  }
-  
-  if (length(gauss_rec_em$beta_T_rec) != n_stocks) {
-    stop("gauss_rec_em$beta_T_rec must have length 1 or n_stocks.")
-  }
-  
-  # ---------- add data ----------
-  em_input$data$use_gauss_T_rec <- 1L
-  em_input$data$Ecov_rec_T_col  <- Ecov_col_TMB
-  
-  # ---------- add parameter initials ----------
-  em_input$par$Topt_rec      <- gauss_rec_em$Topt_rec
-  em_input$par$log_width_rec <- log(gauss_rec_em$width_rec)
-  em_input$par$beta_T_rec    <- as.numeric(gauss_rec_em$beta_T_rec)
-  
-  # ---------- map logic ----------
-  if (is.null(em_input$map)) em_input$map <- list()
-  
-  if (isTRUE(gauss_rec_em$estimate)) {
-    # leave them free unless user already provided maps
-    if (is.null(em_input$map$Topt_rec)) {
-      em_input$map$Topt_rec <- factor(1)
-    }
-    if (is.null(em_input$map$log_width_rec)) {
-      em_input$map$log_width_rec <- factor(1)
-    }
-    if (is.null(em_input$map$beta_T_rec)) {
-      em_input$map$beta_T_rec <- factor(seq_len(n_stocks))
-    }
-  } else {
-    # fix them at supplied values
-    em_input$map$Topt_rec      <- factor(NA)
-    em_input$map$log_width_rec <- factor(NA)
-    em_input$map$beta_T_rec    <- factor(rep(NA, n_stocks))
-  }
-  
-  return(em_input)
-}
