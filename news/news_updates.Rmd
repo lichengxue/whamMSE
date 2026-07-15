@@ -1,4 +1,4 @@
----
+﻿---
 title: "Recent News and Updates"
 output: html_document
 ---
@@ -10,34 +10,48 @@ library(htmltools)
 ```{r echo=FALSE, results='asis'}
 # Define the news updates
 news_updates <- list(
-  list(date = "2025-7-07", title = "New Figures", content = "More New Ways of Data Visualizations"),
-  list(date = "2025-4-14", title = "Implementation Error", content = "Implementation error added"),
-  list(date = "2025-4-14", title = "Vignettes Updated", content = "Vignettes have been updated"),
-  list(date = "2025-4-14", title = "Environmental Covariates", content = "Environmental effects can be added into MSE"),
-  list(date = "2025-4-14", title = "Catchability Random Effects", content = "catchability random effects can be added into MSE"),
-  list(date = "2025-4-09", title = "Vignettes Updated", content = "Vignettes have been updated"),
-  list(date = "2025-4-09", title = "New functionality added", content = "Many new functionalities have been released"),
-  list(date = "2025-1-28", title = "Code Updated", content = "Code updated"),
-  list(date = "2024-12-03", title = "Vignettes Updated", content = "Vignettes have been updated"),
-  list(date = "2024-11-29", title = "Catch apportionment", content = "Options for catch apportionment have been updated"),
-  list(date = "2024-11-22", title = "Metapopulation beta version", content = "Metapopulation beta version has been uploaded"),
-  list(date = "2024-11-15", title = "Ontogenetic functionality", content = "Ontogenetic functionality has been added"),
-  list(date = "2024-08-15", title = "Improve Shiny App for movement", content = "Users can use Specify_move Shiny app to configure movement without using the generate_move() function"),
-  list(date = "2024-08-15", title = "Add Shiny App Vignettes", content = "Description for Shiny App Specify_move()"),
-  list(date = "2024-08-15", title = "Add options for movement configuration", content = "Add more options in generate_move()"),
-  list(date = "2024-08-14", title = "Add options for HCR", content = "Add more options in advice_fn()"),
-  list(date = "2024-08-09", title = "Add em_info in loop_through_fn", content = "Add em_info to allow flexibility in simulation study"),
-  list(date = "2024-08-09", title = "Priors movement estimation", content = "Options for priors are added"),
-  list(date = "2024-07-30", title = "Vignettes Updated", content = "Correct some plots and typos in vignettes"),
-  list(date = "2024-07-15", title = "Add shiny_move.R", content = "Add a Rshiny to let users mannually specify movement rate"),
-  list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Example of output analysis tools uploaded"),
-  list(date = "2024-07-15", title = "Add More Vignettes Examples", content = "Hockey-stick HCR and parallel computing code uploaded"),
-  list(date = "2024-07-13", title = "Description of EM Structure", content = "Table and figures of EM structure uploaded"),
-  list(date = "2024-07-10", title = "Vignettes Updated", content = "Vignettes have been updated"),
-  list(date = "2024-07-03", title = "Catch Adivice Based on Survey", content = "Automatic disallocate total catch to regional catch given the weights calculated from the most recent survey"),
-  list(date = "2024-07-01", title = "Ontogenetic Movement", content = "Ontogenetic/age-specific movement can be specified (hard coded) externally in TMB code but users have to reinstall wham package to get this functionality work"),
-  list(date = "2024-06-26", title = "Region-specific FAA", content = "Add wrapper to calculate region-specific FAA in the OM given the region-specific catch advice in the feedback loop"),
-  list(date = "2024-06-20", title = "Version 1.0.0 Released", content = "Perform comprehensive checks on whamMSE package.")
+  list(
+    date = "2026-07-15",
+    title = "Version 1.1.1 Released",
+    details = c(
+      "Projection branch release",
+      "Custom proj.opts",
+      "EM Ecov projections",
+      "F-XSPR/F-MSY controls",
+      "Hockey-stick HCR",
+      "Saved hcr.config"
+    )
+  ),
+  list(
+    date = "2025-07-07",
+    title = "Version 1.1.0 Released",
+    details = c(
+      "New performance figures",
+      "Implementation error",
+      "Environmental covariates",
+      "Catchability random effects",
+      "Catch apportionment options",
+      "Metapopulation beta workflow",
+      "Ontogenetic movement",
+      "Movement Shiny app",
+      "Movement configuration options",
+      "HCR options",
+      "EM info in loop_through_fn",
+      "Movement priors",
+      "Region-specific FAA wrapper",
+      "EM structure documentation",
+      "Vignette updates"
+    )
+  ),
+  list(
+    date = "2024-06-20",
+    title = "Version 1.0.0 Released",
+    details = c(
+      "Initial whamMSE release",
+      "Core MSE workflow",
+      "WHAM-based simulation checks"
+    )
+  )
 )
 
 # Create dropdown menu
@@ -64,6 +78,15 @@ dropdown_menu(news_updates)
 for (item in news_updates) {
   cat(paste0("### ", item$title, "\n\n"))
   cat(paste0("**Date:** ", item$date, "\n\n"))
-  cat(paste0(item$content, "\n\n"))
+  if (!is.null(item$content) && nzchar(item$content)) {
+    cat(paste0(item$content, "\n\n"))
+  }
+  if (!is.null(item$details)) {
+    cat("<ul>\n")
+    for (detail in item$details) {
+      cat(paste0("<li>", htmlEscape(detail), "</li>\n"))
+    }
+    cat("</ul>\n\n")
+  }
 }
 ```

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -94,20 +94,38 @@
     a:hover {
       text-decoration: underline;
     }
-    footer {
+    .brand-strip {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 34px;
+    flex-wrap: wrap;
+    padding: 18px 14px;
+    margin: 28px 0 4px;
+    border-top: 1px solid #d7dde3;
+    border-bottom: 1px solid #d7dde3;
+    background-color: #f8fafc;
     }
-    .footer.logo-container {
+    .brand-logo {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    min-width: 180px;
     }
-    .footer img {
-    margin-left: 100px;
+    .brand-logo img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
     }
-    
+    .brand-logo.wham img {
+    max-width: 220px;
+    max-height: 118px;
+    }
+    .brand-logo.noaa img {
+    max-width: 190px;
+    max-height: 96px;
+    }
     .floating-box {
     position: fixed;
     right: 20px;
@@ -120,6 +138,14 @@
     width: 200px;
     }
     
+    .version-note {
+    background-color: #e8f4ff;
+    border-left: 6px solid #0073e6;
+    padding: 12px 15px;
+    margin: 20px 0;
+    font-size: 1.02em;
+    }
+
     .announcement {
     background-color: #fff3cd;
     border-left: 6px solid #f0ad4e;
@@ -181,6 +207,9 @@
   </div>
   <div class="container">
     <h1>Management Strategy Evaluation Package for WHAM</h1>
+    <div class="version-note">
+    <strong>whamMSE v1.1.1:</strong> Projection branch release; custom proj.opts; EM Ecov projections; F-XSPR/F-MSY controls; hockey-stick HCR; saved hcr.config.
+    </div>
     <div class="announcement">
     <strong>Platform Update:</strong> 
     The new <b>SPASAM.MSE</b> platform has been released and significantly extends the functionality of 
@@ -242,14 +271,16 @@
     of any commercial product or activity by DOC or the United States Government.
     </p>
     
+    <div class="brand-strip" aria-label="Project partners">
+      <a class="brand-logo wham" href="https://timjmiller.github.io/wham/" target="_blank" rel="noopener">
+        <img src="https://raw.githubusercontent.com/lichengxue/whamMSE/master/icons/wham_icon.png" alt="WHAM logo">
+      </a>
+      <a class="brand-logo noaa" href="https://www.fisheries.noaa.gov/about/northeast-fisheries-science-center" target="_blank" rel="noopener">
+        <img src="https://raw.githubusercontent.com/lichengxue/whamMSE/master/icons/noaa_logo2.png" alt="NOAA Fisheries logo">
+      </a>
+    </div>
   </div>
-  <div class="footer">
-    <img src="https://raw.githubusercontent.com/lichengxue/whamMSE/master/icons/wham_icon.png" alt="logo 1" style="width:400px; height:220px;">
-    <img src="https://raw.githubusercontent.com/lichengxue/whamMSE/master/icons/SPASAM_logo.jpeg" alt="logo 2" style="width:300px; height:300;">
-    <img src="https://raw.githubusercontent.com/lichengxue/whamMSE/master/icons/noaa_logo2.png" alt="logo 3" style="width:400px; height:180px;">
-  </div>
-  
-  <div class="floating-box">
+<div class="floating-box">
     <p>Developed by: Chengxue Li</p>
     <p>chengxue.li@noaa.gov </p>
     <p>Institution: NOAA Northeast Fisheries Science Center</p>

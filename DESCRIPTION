@@ -1,7 +1,7 @@
-Package: whamMSE
+﻿Package: whamMSE
 Title: Management Strategy Evaluation Tool for the Woods Hole Assessment Model (WHAM)
 Type: Package
-Version: 1.1.0
+Version: 1.1.1
 Author: Chengxue Li <chengxue.li@noaa.gov>
 Maintainer: Chengxue Li <chengxue.li@noaa.gov>
 Description: A flexible and comprehensive toolbox for conducting management strategy
