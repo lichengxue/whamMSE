@@ -264,6 +264,11 @@ loop_through_fn <- function(om,
   
   start.time <- Sys.time()
   
+  hcr.config <- hcr
+  if (is.null(hcr.config)) {
+    hcr.config <- list(hcr.type = 1, hcr.opts = NULL)
+  }
+  
   check_conv <- function(em) {
     conv <- as.logical(1 - em$opt$convergence)
     pdHess <- as.logical(if (em$na_sdrep == FALSE & !is.na(em$na_sdrep)) 1 else 0)
@@ -740,18 +745,21 @@ loop_through_fn <- function(om,
   cat("Please ignore Warning in check_projF(proj_mod).")
   cat("\nTotal Runtime = ", time.taken, "\n")
   
-  return(list(om = om,
-              em_list = em_list,
-              par.est = par.est,
-              par.se = par.se,
-              adrep.est = adrep.est,
-              adrep.se = adrep.se,
-              opt_list = opt_list,
-              converge_list = converge_list,
-              catch_advice = catch_advice,
-              catch_realized = catch_realized,
-              em_full = em_full,
-              em_input = em_input_list,
-              runtime = time.taken,
-              seed.save = seed))
+  return(list(
+    om = om,
+    em_list = em_list,
+    par.est = par.est,
+    par.se = par.se,
+    adrep.est = adrep.est,
+    adrep.se = adrep.se,
+    opt_list = opt_list,
+    converge_list = converge_list,
+    catch_advice = catch_advice,
+    catch_realized = catch_realized,
+    em_full = em_full,
+    em_input = em_input_list,
+    hcr.config = hcr.config,
+    runtime = time.taken,
+    seed.save = seed
+  ))
 }
