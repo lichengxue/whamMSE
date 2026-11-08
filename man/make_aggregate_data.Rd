@@ -54,13 +54,17 @@ Used for aggregating across fleets or indices to form total/stock/regional summa
     \itemize{
       \item `$fleet` Logical. Whether to use fleet-specific weights.
       \item `$index` Logical. Whether to use index-specific weights.
-      \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+      \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+        A vector may instead identify all original members of one aggregated group,
+        for example \code{c(1, 2)} when both original indices belong to group 1.
     }
   \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
     \itemize{
       \item `$fleet` Logical. Whether to use fleet-specific weights.
       \item `$index` Logical. Whether to use index-specific weights.
       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+        A vector may instead identify all original members of one aggregated group,
+        for example \code{c(1, 2)} when both original indices belong to group 1.
     }
 }}
 }
