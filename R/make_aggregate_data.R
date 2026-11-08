@@ -39,13 +39,17 @@
 #'     \itemize{
 #'       \item `$fleet` Logical. Whether to use fleet-specific weights.
 #'       \item `$index` Logical. Whether to use index-specific weights.
-#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group (e.g., 1 means the first valid fleet group).
+#'       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+#'         A vector may instead identify all original members of one aggregated group,
+#'         for example \code{c(1, 2)} when both original indices belong to group 1.
 #'     }
 #'   \item `$maturity_weights` List. Settings for weighting maturity-at-age used for spawning stock biomass.
 #'     \itemize{
 #'       \item `$fleet` Logical. Whether to use fleet-specific weights.
 #'       \item `$index` Logical. Whether to use index-specific weights.
 #'       \item `$pointer` Integer. Index pointing to the selected fleet or index group.
+#'         A vector may instead identify all original members of one aggregated group,
+#'         for example \code{c(1, 2)} when both original indices belong to group 1.
 #'     }
 #' }
 #' @param ind_em Vector. Indices specifying the years for which the estimation model should use data.
@@ -105,6 +109,27 @@ make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggre
     return(aggregated_values)
   }
   
+  resolve_weight_pointer <- function(pointer, pointers, name) {
+    if (length(pointer) > 1L) {
+      if (!is.numeric(pointer) || anyNA(pointer) ||
+          any(!is.finite(pointer)) || any(pointer < 1 | pointer > length(pointers)) ||
+          any(pointer != as.integer(pointer)) || anyDuplicated(pointer)) {
+        stop("Invalid original-member pointer for `", name, "`.")
+      }
+      groups <- unique(pointers[pointer])
+      if (length(groups) != 1L || groups == 0L ||
+          !setequal(pointer, which(pointers == groups))) {
+        stop("The pointer for `", name,
+             "` must identify all original members of one aggregated group.")
+      }
+      pointer <- groups
+    }
+    if (length(pointer) != 1L) {
+      stop("A weight group must be specified for `", name, "`.")
+    }
+    pointer
+  }
+
   # ---- Define fleet_pointer & index_pointer BEFORE Aggregation ---- #
   
   fleet_pointer <- aggregate_catch_info$fleet_pointer
@@ -306,7 +331,7 @@ make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggre
       
     }
     
-    weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
+    weighted_waa <- waa_mat * array(t(weights), dim = dim(waa_mat))
     
     aggregated <- apply(weighted_waa, c(2,3), sum)
     
@@ -338,7 +363,7 @@ make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggre
       
     }
     
-    weighted_waa <- waa_mat * array(weights, dim = dim(waa_mat))
+    weighted_waa <- waa_mat * array(t(weights), dim = dim(waa_mat))
     
     aggregated <- apply(weighted_waa, c(2,3), sum)
     
@@ -369,11 +394,13 @@ make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggre
     weights <- matrix(1/dim(waa_mat)[1], nrow = dim(waa_mat)[1], ncol = dim(waa_mat)[2])
   } else {
     if(ssb_waa_weights$fleet) {
-      pointer = ssb_waa_weights$pointer
+      pointer = resolve_weight_pointer(ssb_waa_weights$pointer, fleet_pointer,
+                                       "ssb_waa_weights")
       weights = t(fleet_weights[[pointer]])
     }
     if(ssb_waa_weights$index) {
-      pointer = ssb_waa_weights$pointer
+      pointer = resolve_weight_pointer(ssb_waa_weights$pointer, index_pointer,
+                                       "ssb_waa_weights")
       weights = t(index_weights[[pointer]])
     }
   }
@@ -406,11 +433,13 @@ make_aggregate_data <- function(om, em_info, ind_em, aggregate_catch_info, aggre
     weights <- matrix(1/dim(maturity)[1], nrow = dim(maturity)[1], ncol = dim(maturity)[2])
   } else {
     if(maturity_weights$fleet) {
-      pointer = maturity_weights$pointer
+      pointer = resolve_weight_pointer(maturity_weights$pointer, fleet_pointer,
+                                       "maturity_weights")
       weights = t(fleet_weights[[pointer]])
     }
     if(maturity_weights$index) {
-      pointer = maturity_weights$pointer
+      pointer = resolve_weight_pointer(maturity_weights$pointer, index_pointer,
+                                       "maturity_weights")
       weights = t(index_weights[[pointer]])
     }
   }
